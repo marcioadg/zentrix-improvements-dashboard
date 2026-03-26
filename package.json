@@ -1,0 +1,9 @@
+{
+  "name": "zentrix-improvements-dashboard",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'static site'",
+    "start": "node server.js"
+  }
+}

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>⚙️ Zentrix Improvements</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #090909; color: #e2e3e5; font-family: Inter, -apple-system, sans-serif; font-size: 13px; min-height: 100vh; }
+  header { background: #0f1011; border-bottom: 1px solid #25262b; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 15px; font-weight: 500; }
+  .meta { color: #5e5e5f; font-size: 12px; }
+  .refresh-btn { color: #5c84fe; cursor: pointer; font-size: 12px; background: none; border: 1px solid #5c84fe44; padding: 4px 10px; border-radius: 4px; }
+  .stats { display: flex; gap: 12px; padding: 12px 24px; border-bottom: 1px solid #25262b; flex-wrap: wrap; }
+  .stat { background: #191a22; border: 1px solid #25262b; border-radius: 4px; padding: 8px 14px; min-width: 100px; }
+  .stat .val { font-size: 20px; font-weight: 600; color: #5c84fe; }
+  .stat .lbl { font-size: 11px; color: #5e5e5f; margin-top: 2px; }
+  .filters { padding: 10px 24px; background: #0f1011; border-bottom: 1px solid #25262b; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .filters label { color: #5e5e5f; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .filter-btn { background: #191a22; border: 1px solid #25262b; color: #96979a; padding: 3px 9px; border-radius: 3px; cursor: pointer; font-size: 11px; }
+  .filter-btn:hover { color: #e2e3e5; border-color: #5c84fe55; }
+  .filter-btn.active { color: #5c84fe; border-color: #5c84fe; background: #5c84fe11; }
+  #search { background: #191a22; border: 1px solid #25262b; color: #e2e3e5; padding: 5px 10px; border-radius: 4px; font-size: 12px; width: 180px; outline: none; }
+  #search:focus { border-color: #5c84fe; }
+  .entries { padding: 16px 24px; display: flex; flex-direction: column; gap: 8px; }
+  .card { background: #191a22; border: 1px solid #25262b; border-radius: 6px; padding: 12px 14px; }
+  .card:hover { border-color: #5c84fe33; }
+  .card.hidden { display: none; }
+  .card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+  .repo-tag { background: #0f1011; color: #5c84fe; border: 1px solid #5c84fe33; padding: 2px 7px; border-radius: 3px; font-size: 11px; font-weight: 500; }
+  .cat-tag { padding: 2px 7px; border-radius: 3px; font-size: 11px; font-weight: 500; }
+  .score { font-size: 11px; font-weight: 600; margin-left: auto; }
+  .time { color: #5e5e5f; font-size: 11px; }
+  .card-body { color: #c4c5c7; line-height: 1.5; }
+  .empty { color: #5e5e5f; text-align: center; padding: 64px 24px; font-size: 14px; }
+  .loading { color: #5e5e5f; text-align: center; padding: 64px; }
+  .sep { width: 1px; background: #25262b; height: 18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>⚙️ Zentrix Improvements Dashboard</h1>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="meta" id="last-updated">Loading...</span>
+    <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+  </div>
+</header>
+<div class="stats" id="stats"></div>
+<div class="filters" id="filters">
+  <label>Repo</label>
+  <button class="filter-btn active" onclick="setFilter('repo',null,this)">All</button>
+  <div class="sep"></div>
+  <label>Category</label>
+  <button class="filter-btn active" onclick="setFilter('cat',null,this)">All</button>
+  <div style="flex:1"></div>
+  <input id="search" type="text" placeholder="Search..." oninput="applyFilters()">
+</div>
+<div class="entries" id="entries"><div class="loading">Loading improvements...</div></div>
+
+<script>
+const CAT_COLORS = {
+  'UX/UI':'#5c84fe','Bug Fix':'#f87171','Tests':'#4ade80','Performance':'#fbbf24',
+  'Security':'#a78bfa','Dependencies':'#60a5fa','Cleanup':'#96979a','TypeScript':'#34d399','Improvement':'#5e69d1'
+}
+const SCORE_COLOR = s => s>=80?'#4ade80':s>=60?'#fbbf24':'#f87171'
+
+let allEntries = [], activeRepo = null, activeCat = null
+
+async function loadData() {
+  try {
+    const r = await fetch('data/entries.json?t=' + Date.now())
+    allEntries = await r.json()
+    render()
+    document.getElementById('last-updated').textContent = `${allEntries.length} improvements · updated ${new Date().toLocaleTimeString()}`
+  } catch(e) {
+    document.getElementById('entries').innerHTML = '<div class="empty">No data yet — improvements will appear after the next hourly run.</div>'
+    document.getElementById('last-updated').textContent = 'No data yet'
+  }
+}
+
+function render() {
+  // Build stats
+  const repos = [...new Set(allEntries.map(e=>e.repo))]
+  const bugs = allEntries.filter(e=>e.category==='Bug Fix').length
+  const ux = allEntries.filter(e=>e.category==='UX/UI').length
+  const days = [...new Set(allEntries.map(e=>e.date))].length
+  document.getElementById('stats').innerHTML = [
+    {v:allEntries.length,l:'Total'},{v:repos.length,l:'Repos'},{v:days,l:'Days'},{v:bugs,l:'Bugs Fixed'},{v:ux,l:'UX Improvements'}
+  ].map(s=>`<div class="stat"><div class="val">${s.v}</div><div class="lbl">${s.l}</div></div>`).join('')
+
+  // Repo filters
+  const repoStats = {}
+  allEntries.forEach(e=>{
+    if(!repoStats[e.repo]) repoStats[e.repo]={count:0,score:null,name:e.repoName}
+    repoStats[e.repo].count++
+    if(!repoStats[e.repo].score&&e.score) repoStats[e.repo].score=e.score
+  })
+  const cats = [...new Set(allEntries.map(e=>e.category))]
+
+  const filtersEl = document.getElementById('filters')
+  filtersEl.innerHTML = `
+    <label>Repo</label>
+    <button class="filter-btn active" onclick="setFilter('repo',null,this)">All</button>
+    ${Object.entries(repoStats).map(([r,i])=>`<button class="filter-btn" onclick="setFilter('repo','${r}',this)">${i.name}${i.score?` <span style="color:${SCORE_COLOR(i.score)}">${i.score}</span>`:''}</button>`).join('')}
+    <div class="sep"></div>
+    <label>Category</label>
+    <button class="filter-btn active" onclick="setFilter('cat',null,this)">All</button>
+    ${cats.map(c=>`<button class="filter-btn" style="border-color:${CAT_COLORS[c]||'#25262b'}44" onclick="setFilter('cat','${c}',this)">${c}</button>`).join('')}
+    <div style="flex:1"></div>
+    <input id="search" type="text" placeholder="Search..." oninput="applyFilters()">
+  `
+
+  // Cards
+  document.getElementById('entries').innerHTML = allEntries.length ? allEntries.map(e=>`
+    <div class="card" data-repo="${e.repo}" data-cat="${e.category}">
+      <div class="card-header">
+        <span class="repo-tag">${e.repoName}</span>
+        <span class="cat-tag" style="background:${CAT_COLORS[e.category]||'#5e5e5f'}22;color:${CAT_COLORS[e.category]||'#96979a'};border:1px solid ${CAT_COLORS[e.category]||'#25262b'}44">${e.category}</span>
+        ${e.score?`<span class="score" style="color:${SCORE_COLOR(e.score)}">${e.score}/100</span>`:''}
+        <span class="time">${e.date} ${e.time}</span>
+      </div>
+      <div class="card-body">${e.summary||'(no summary)'}</div>
+    </div>`).join('') : '<div class="empty">No improvements logged yet.</div>'
+
+  applyFilters()
+}
+
+function setFilter(type, val, btn) {
+  if(type==='repo') activeRepo=val; else activeCat=val
+  document.querySelectorAll(`.filter-btn`).forEach(b=>{ if((type==='repo'&&!b.onclick?.toString().includes("'cat'"))||(type==='cat'&&b.onclick?.toString().includes("'cat'"))) b.classList.remove('active') })
+  btn.classList.add('active')
+  applyFilters()
+}
+
+function applyFilters() {
+  const search = (document.getElementById('search')?.value||'').toLowerCase()
+  document.querySelectorAll('.card').forEach(c=>{
+    const show = (!activeRepo||c.dataset.repo===activeRepo) && (!activeCat||c.dataset.cat===activeCat) && (!search||c.textContent.toLowerCase().includes(search))
+    c.classList.toggle('hidden',!show)
+  })
+}
+
+loadData()
+setInterval(loadData, 60000)
+</script>
+</body>
+</html>
