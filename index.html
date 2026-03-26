@@ -76,12 +76,14 @@
   <div class="chart-card"><h3>Category Breakdown</h3><canvas id="chart-categories"></canvas></div>
   <div class="chart-card"><h3>Repo Activity (Top 10)</h3><canvas id="chart-repos"></canvas></div>
   <div class="chart-card"><h3>Avg Health Score per Repo</h3><canvas id="chart-scores"></canvas></div>
+  <div class="chart-card" id="chart-errors-card" style="display:none"><h3>Build Errors by Repo</h3><canvas id="chart-errors"></canvas></div>
 </div>
 
 <script>
 const CAT_COLORS = {
   'UX/UI':'#5c84fe','Bug Fix':'#f87171','Tests':'#4ade80','Performance':'#fbbf24',
-  'Security':'#a78bfa','Dependencies':'#60a5fa','Cleanup':'#96979a','TypeScript':'#34d399','Improvement':'#5e69d1'
+  'Security':'#a78bfa','Dependencies':'#60a5fa','Cleanup':'#96979a','TypeScript':'#34d399','Improvement':'#5e69d1',
+  'Build Error':'#f87171'
 }
 const SCORE_COLOR = s => s>=80?'#4ade80':s>=60?'#fbbf24':'#f87171'
 
@@ -104,10 +106,11 @@ function render() {
   const repos = [...new Set(allEntries.map(e=>e.repo))]
   const bugs = allEntries.filter(e=>e.category==='Bug Fix').length
   const ux = allEntries.filter(e=>e.category==='UX/UI').length
+  const buildErrors = allEntries.filter(e=>e.category==='Build Error').length
   const days = [...new Set(allEntries.map(e=>e.date))].length
   document.getElementById('stats').innerHTML = [
-    {v:allEntries.length,l:'Total'},{v:repos.length,l:'Repos'},{v:days,l:'Days'},{v:bugs,l:'Bugs Fixed'},{v:ux,l:'UX Improvements'}
-  ].map(s=>`<div class="stat"><div class="val">${s.v}</div><div class="lbl">${s.l}</div></div>`).join('')
+    {v:allEntries.length,l:'Total'},{v:repos.length,l:'Repos'},{v:days,l:'Days'},{v:bugs,l:'Bugs Fixed'},{v:ux,l:'UX Improvements'},{v:buildErrors,l:'Build Errors',color:'#f87171'}
+  ].map(s=>`<div class="stat"><div class="val" ${s.color?`style="color:${s.color}"`:''}>${s.v}</div><div class="lbl">${s.l}</div></div>`).join('')
 
   // Repo filters
   const repoStats = {}
@@ -132,16 +135,24 @@ function render() {
   `
 
   // Cards
-  document.getElementById('entries').innerHTML = allEntries.length ? allEntries.map(e=>`
-    <div class="card" data-repo="${e.repo}" data-cat="${e.category}">
+  document.getElementById('entries').innerHTML = allEntries.length ? allEntries.map(e=>{
+    const isError = e.category === 'Build Error'
+    const borderStyle = isError ? 'border-left:3px solid #f87171' : ''
+    const catStyle = isError
+      ? 'background:#f8717122;color:#f87171;border:1px solid #f8717144'
+      : `background:${CAT_COLORS[e.category]||'#5e5e5f'}22;color:${CAT_COLORS[e.category]||'#96979a'};border:1px solid ${CAT_COLORS[e.category]||'#25262b'}44`
+    const details = (e.errorDetails && e.errorDetails.length)
+      ? `<details style="margin-top:6px;font-size:11px;color:#96979a"><summary style="cursor:pointer;color:#f87171">Error details</summary><pre style="margin-top:4px;white-space:pre-wrap;color:#c4c5c7;font-size:11px;background:#0f1011;padding:8px;border-radius:4px;overflow-x:auto">${e.errorDetails.map(l=>l.replace(/</g,'&lt;')).join('\n')}</pre></details>`
+      : ''
+    return `<div class="card" data-repo="${e.repo}" data-cat="${e.category}" style="${borderStyle}">
       <div class="card-header">
         <span class="repo-tag">${e.repoName}</span>
-        <span class="cat-tag" style="background:${CAT_COLORS[e.category]||'#5e5e5f'}22;color:${CAT_COLORS[e.category]||'#96979a'};border:1px solid ${CAT_COLORS[e.category]||'#25262b'}44">${e.category}</span>
+        <span class="cat-tag" style="${catStyle}">${e.category}</span>
         ${e.score?`<span class="score" style="color:${SCORE_COLOR(e.score)}">${e.score}/100</span>`:''}
         <span class="time">${e.date} ${e.time} EST</span>
       </div>
-      <div class="card-body">${e.summary||'(no summary)'}</div>
-    </div>`).join('') : '<div class="empty">No improvements logged yet.</div>'
+      <div class="card-body">${e.summary||'(no summary)'}${details}</div>
+    </div>`}).join('') : '<div class="empty">No improvements logged yet.</div>'
 
   applyFilters()
 }
@@ -178,6 +189,7 @@ function renderCharts() {
   drawCategoryChart()
   drawRepoChart()
   drawScoreChart()
+  drawErrorChart()
 }
 
 function setupCanvas(id) {
@@ -330,6 +342,45 @@ function drawScoreChart() {
     ctx.fillStyle = '#e2e3e5'
     ctx.textAlign = 'left'
     ctx.fillText(avg, padLeft + barW + 6, y + barH / 2)
+  })
+}
+
+function drawErrorChart() {
+  const errorEntries = allEntries.filter(e => e.category === 'Build Error')
+  const card = document.getElementById('chart-errors-card')
+  if (!errorEntries.length) { card.style.display = 'none'; return }
+  card.style.display = ''
+
+  const repoCounts = {}
+  const repoNames = {}
+  errorEntries.forEach(e => {
+    repoCounts[e.repo] = (repoCounts[e.repo] || 0) + 1
+    repoNames[e.repo] = e.repoName
+  })
+  const sorted = Object.entries(repoCounts).sort((a, b) => b[1] - a[1])
+  const maxVal = Math.max(...sorted.map(s => s[1]), 1)
+
+  const barH = 28, gap = 4, padLeft = 140, padRight = 16, padTop = 8, padBottom = 8
+  const h = Math.max(sorted.length * (barH + gap) + padTop + padBottom, 60)
+  const { ctx, w, canvas, dpr } = setupCanvas('chart-errors')
+  canvas.style.height = h + 'px'
+  canvas.height = h * dpr
+  ctx.scale(dpr, dpr)
+
+  const chartW = w - padLeft - padRight
+  sorted.forEach(([repo, count], i) => {
+    const y = padTop + i * (barH + gap)
+    const barW = Math.max((count / maxVal) * chartW, 2)
+    ctx.fillStyle = '#f87171'
+    ctx.fillRect(padLeft, y, barW, barH)
+    ctx.fillStyle = '#5e5e5f'
+    ctx.font = '11px Inter, sans-serif'
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(repoNames[repo] || repo, padLeft - 8, y + barH / 2)
+    ctx.fillStyle = '#e2e3e5'
+    ctx.textAlign = 'left'
+    ctx.fillText(count, padLeft + barW + 6, y + barH / 2)
   })
 }
 
