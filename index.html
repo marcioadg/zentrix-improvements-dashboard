@@ -35,6 +35,17 @@
   .empty { color: #5e5e5f; text-align: center; padding: 64px 24px; font-size: 14px; }
   .loading { color: #5e5e5f; text-align: center; padding: 64px; }
   .sep { width: 1px; background: #25262b; height: 18px; }
+  .view-toggle { display: flex; gap: 0; }
+  .view-btn { color: #96979a; cursor: pointer; font-size: 12px; background: none; border: 1px solid #5c84fe44; padding: 4px 10px; }
+  .view-btn:first-child { border-radius: 4px 0 0 4px; }
+  .view-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+  .view-btn.active { color: #5c84fe; background: #5c84fe11; border-color: #5c84fe; }
+  .view-btn.active + .view-btn { border-left: 1px solid #5c84fe; }
+  .analytics { padding: 16px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 768px) { .analytics { grid-template-columns: 1fr; } }
+  .chart-card { background: #191a22; border: 1px solid #25262b; border-radius: 6px; padding: 16px; }
+  .chart-card h3 { color: #fff; font-size: 13px; font-weight: 500; margin-bottom: 12px; }
+  .chart-card canvas { width: 100%; }
 </style>
 </head>
 <body>
@@ -42,6 +53,10 @@
   <h1>⚙️ Zentrix Improvements Dashboard</h1>
   <div style="display:flex;align-items:center;gap:12px">
     <span class="meta" id="last-updated">Loading...</span>
+    <div class="view-toggle">
+      <button class="view-btn active" onclick="switchView('list',this)">List</button>
+      <button class="view-btn" onclick="switchView('analytics',this)">Analytics</button>
+    </div>
     <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
   </div>
 </header>
@@ -56,6 +71,12 @@
   <input id="search" type="text" placeholder="Search..." oninput="applyFilters()">
 </div>
 <div class="entries" id="entries"><div class="loading">Loading improvements...</div></div>
+<div class="analytics" id="analytics" style="display:none">
+  <div class="chart-card"><h3>Improvements Over Time</h3><canvas id="chart-timeline"></canvas></div>
+  <div class="chart-card"><h3>Category Breakdown</h3><canvas id="chart-categories"></canvas></div>
+  <div class="chart-card"><h3>Repo Activity (Top 10)</h3><canvas id="chart-repos"></canvas></div>
+  <div class="chart-card"><h3>Avg Health Score per Repo</h3><canvas id="chart-scores"></canvas></div>
+</div>
 
 <script>
 const CAT_COLORS = {
@@ -137,6 +158,178 @@ function applyFilters() {
   document.querySelectorAll('.card').forEach(c=>{
     const show = (!activeRepo||c.dataset.repo===activeRepo) && (!activeCat||c.dataset.cat===activeCat) && (!search||c.textContent.toLowerCase().includes(search))
     c.classList.toggle('hidden',!show)
+  })
+}
+
+let currentView = 'list'
+
+function switchView(view, btn) {
+  currentView = view
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  document.getElementById('entries').style.display = view === 'list' ? 'flex' : 'none'
+  document.getElementById('filters').style.display = view === 'list' ? 'flex' : 'none'
+  document.getElementById('analytics').style.display = view === 'analytics' ? 'grid' : 'none'
+  if (view === 'analytics' && allEntries.length) renderCharts()
+}
+
+function renderCharts() {
+  drawTimelineChart()
+  drawCategoryChart()
+  drawRepoChart()
+  drawScoreChart()
+}
+
+function setupCanvas(id) {
+  const canvas = document.getElementById(id)
+  const container = canvas.parentElement
+  const dpr = window.devicePixelRatio || 1
+  const w = container.clientWidth - 32
+  canvas.style.width = w + 'px'
+  canvas.width = w * dpr
+  const ctx = canvas.getContext('2d')
+  ctx.scale(dpr, dpr)
+  return { canvas, ctx, w, dpr }
+}
+
+function drawTimelineChart() {
+  const dateCounts = {}
+  allEntries.forEach(e => { dateCounts[e.date] = (dateCounts[e.date] || 0) + 1 })
+  const dates = Object.keys(dateCounts).sort()
+  const counts = dates.map(d => dateCounts[d])
+  const maxVal = Math.max(...counts, 1)
+
+  const barH = 28, gap = 4, padLeft = 80, padRight = 16, padTop = 8, padBottom = 8
+  const h = dates.length * (barH + gap) + padTop + padBottom
+  const { ctx, w, canvas, dpr } = setupCanvas('chart-timeline')
+  canvas.style.height = h + 'px'
+  canvas.height = h * dpr
+  ctx.scale(dpr, dpr)
+
+  const chartW = w - padLeft - padRight
+  dates.forEach((d, i) => {
+    const y = padTop + i * (barH + gap)
+    const barW = Math.max((counts[i] / maxVal) * chartW, 2)
+    ctx.fillStyle = '#5c84fe'
+    ctx.fillRect(padLeft, y, barW, barH)
+    ctx.fillStyle = '#5e5e5f'
+    ctx.font = '11px Inter, sans-serif'
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(d, padLeft - 8, y + barH / 2)
+    ctx.fillStyle = '#e2e3e5'
+    ctx.textAlign = 'left'
+    ctx.fillText(counts[i], padLeft + barW + 6, y + barH / 2)
+  })
+}
+
+function drawCategoryChart() {
+  const catCounts = {}
+  allEntries.forEach(e => { catCounts[e.category] = (catCounts[e.category] || 0) + 1 })
+  const sorted = Object.entries(catCounts).sort((a, b) => b[1] - a[1])
+  const maxVal = Math.max(...sorted.map(s => s[1]), 1)
+
+  const barH = 28, gap = 4, padLeft = 100, padRight = 16, padTop = 8, padBottom = 8
+  const h = sorted.length * (barH + gap) + padTop + padBottom
+  const { ctx, w, canvas, dpr } = setupCanvas('chart-categories')
+  canvas.style.height = h + 'px'
+  canvas.height = h * dpr
+  ctx.scale(dpr, dpr)
+
+  const chartW = w - padLeft - padRight
+  sorted.forEach(([cat, count], i) => {
+    const y = padTop + i * (barH + gap)
+    const barW = Math.max((count / maxVal) * chartW, 2)
+    ctx.fillStyle = CAT_COLORS[cat] || '#5e5e5f'
+    ctx.fillRect(padLeft, y, barW, barH)
+    ctx.fillStyle = '#5e5e5f'
+    ctx.font = '11px Inter, sans-serif'
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(cat, padLeft - 8, y + barH / 2)
+    ctx.fillStyle = '#e2e3e5'
+    ctx.textAlign = 'left'
+    ctx.fillText(count, padLeft + barW + 6, y + barH / 2)
+  })
+}
+
+function drawRepoChart() {
+  const repoCounts = {}
+  const repoNames = {}
+  allEntries.forEach(e => {
+    repoCounts[e.repo] = (repoCounts[e.repo] || 0) + 1
+    repoNames[e.repo] = e.repoName
+  })
+  const sorted = Object.entries(repoCounts).sort((a, b) => b[1] - a[1]).slice(0, 10)
+  const maxVal = Math.max(...sorted.map(s => s[1]), 1)
+
+  const barH = 28, gap = 4, padLeft = 140, padRight = 16, padTop = 8, padBottom = 8
+  const h = sorted.length * (barH + gap) + padTop + padBottom
+  const { ctx, w, canvas, dpr } = setupCanvas('chart-repos')
+  canvas.style.height = h + 'px'
+  canvas.height = h * dpr
+  ctx.scale(dpr, dpr)
+
+  const chartW = w - padLeft - padRight
+  sorted.forEach(([repo, count], i) => {
+    const y = padTop + i * (barH + gap)
+    const barW = Math.max((count / maxVal) * chartW, 2)
+    ctx.fillStyle = '#5c84fe'
+    ctx.fillRect(padLeft, y, barW, barH)
+    ctx.fillStyle = '#5e5e5f'
+    ctx.font = '11px Inter, sans-serif'
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(repoNames[repo] || repo, padLeft - 8, y + barH / 2)
+    ctx.fillStyle = '#e2e3e5'
+    ctx.textAlign = 'left'
+    ctx.fillText(count, padLeft + barW + 6, y + barH / 2)
+  })
+}
+
+function drawScoreChart() {
+  const repoScores = {}
+  const repoNames = {}
+  allEntries.forEach(e => {
+    if (e.score) {
+      if (!repoScores[e.repo]) repoScores[e.repo] = []
+      repoScores[e.repo].push(e.score)
+      repoNames[e.repo] = e.repoName
+    }
+  })
+  const avgs = Object.entries(repoScores).map(([repo, scores]) => ({
+    repo, name: repoNames[repo] || repo, avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+  })).sort((a, b) => b.avg - a.avg)
+
+  const barH = 28, gap = 4, padLeft = 140, padRight = 40, padTop = 8, padBottom = 8
+  const h = Math.max(avgs.length * (barH + gap) + padTop + padBottom, 60)
+  const { ctx, w, canvas, dpr } = setupCanvas('chart-scores')
+  canvas.style.height = h + 'px'
+  canvas.height = h * dpr
+  ctx.scale(dpr, dpr)
+
+  if (!avgs.length) {
+    ctx.fillStyle = '#5e5e5f'
+    ctx.font = '12px Inter, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText('No health scores available', w / 2, h / 2)
+    return
+  }
+
+  const chartW = w - padLeft - padRight
+  avgs.forEach(({ name, avg }, i) => {
+    const y = padTop + i * (barH + gap)
+    const barW = Math.max((avg / 100) * chartW, 2)
+    ctx.fillStyle = avg >= 80 ? '#4ade80' : avg >= 60 ? '#fbbf24' : '#f87171'
+    ctx.fillRect(padLeft, y, barW, barH)
+    ctx.fillStyle = '#5e5e5f'
+    ctx.font = '11px Inter, sans-serif'
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(name, padLeft - 8, y + barH / 2)
+    ctx.fillStyle = '#e2e3e5'
+    ctx.textAlign = 'left'
+    ctx.fillText(avg, padLeft + barW + 6, y + barH / 2)
   })
 }
 
