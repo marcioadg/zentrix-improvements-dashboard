@@ -82,9 +82,16 @@
       <button class="view-btn active" onclick="switchView('list',this)">List</button>
       <button class="view-btn" onclick="switchView('analytics',this)">Analytics</button>
     </div>
+    <button class="refresh-btn" onclick="toggleSummary()">✨ AI Summary</button>
     <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
   </div>
 </header>
+<div id="summary-card" style="display:none;margin:12px 24px 0;background:var(--card-bg);border:1px solid rgba(92,132,254,0.3);border-radius:6px;padding:16px;position:relative">
+  <button onclick="closeSummary()" style="position:absolute;top:8px;right:12px;background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;line-height:1">&times;</button>
+  <div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:4px">AI Summary — Last 24 Hours</div>
+  <div id="summary-generated" style="font-size:11px;color:var(--text-muted);margin-bottom:10px"></div>
+  <div id="summary-text" style="font-size:13px;font-weight:400;color:var(--text-secondary);line-height:1.6;white-space:pre-wrap"></div>
+</div>
 <div class="stats" id="stats"></div>
 <div class="filters" id="filters">
   <label>Repo</label>
@@ -407,6 +414,32 @@ function drawErrorChart() {
     ctx.textAlign = 'left'
     ctx.fillText(count, padLeft + barW + 6, y + barH / 2)
   })
+}
+
+async function toggleSummary() {
+  const card = document.getElementById('summary-card')
+  if (card.style.display !== 'none') { closeSummary(); return }
+  const textEl = document.getElementById('summary-text')
+  const genEl = document.getElementById('summary-generated')
+  textEl.textContent = 'Loading summary...'
+  genEl.textContent = ''
+  card.style.display = 'block'
+  try {
+    const r = await fetch('https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/summary.json?t=' + Date.now())
+    if (!r.ok) throw new Error('not found')
+    const data = await r.json()
+    textEl.textContent = data.summary
+    if (data.generated) {
+      const d = new Date(data.generated)
+      genEl.textContent = 'Generated at ' + d.toLocaleTimeString('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}) + ' EST'
+    }
+  } catch(e) {
+    textEl.textContent = 'Summary not available yet. It will be generated on the next data update.'
+  }
+}
+
+function closeSummary() {
+  document.getElementById('summary-card').style.display = 'none'
 }
 
 loadData()
