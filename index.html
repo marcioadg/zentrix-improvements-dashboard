@@ -71,7 +71,7 @@ async function loadData() {
     const r = await fetch('https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/entries.json?t=' + Date.now())
     allEntries = await r.json()
     render()
-    document.getElementById('last-updated').textContent = `${allEntries.length} improvements · updated ${new Date().toLocaleTimeString()}`
+    document.getElementById('last-updated').textContent = `${allEntries.length} improvements · updated ${new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true})} EST`
   } catch(e) {
     document.getElementById('entries').innerHTML = '<div class="empty">No data yet — improvements will appear after the next hourly run.</div>'
     document.getElementById('last-updated').textContent = 'No data yet'
@@ -117,7 +117,7 @@ function render() {
         <span class="repo-tag">${e.repoName}</span>
         <span class="cat-tag" style="background:${CAT_COLORS[e.category]||'#5e5e5f'}22;color:${CAT_COLORS[e.category]||'#96979a'};border:1px solid ${CAT_COLORS[e.category]||'#25262b'}44">${e.category}</span>
         ${e.score?`<span class="score" style="color:${SCORE_COLOR(e.score)}">${e.score}/100</span>`:''}
-        <span class="time">${e.date} ${e.time}</span>
+        <span class="time">${e.date} ${e.time} EST</span>
       </div>
       <div class="card-body">${e.summary||'(no summary)'}</div>
     </div>`).join('') : '<div class="empty">No improvements logged yet.</div>'
