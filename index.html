@@ -68,7 +68,7 @@ let allEntries = [], activeRepo = null, activeCat = null
 
 async function loadData() {
   try {
-    const r = await fetch('data/entries.json?t=' + Date.now())
+    const r = await fetch('https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/entries.json?t=' + Date.now())
     allEntries = await r.json()
     render()
     document.getElementById('last-updated').textContent = `${allEntries.length} improvements · updated ${new Date().toLocaleTimeString()}`
