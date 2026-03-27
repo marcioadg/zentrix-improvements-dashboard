@@ -35,12 +35,29 @@ if [ -z "$FORMATTED" ]; then
 fi
 
 SUMMARY=$(cat <<PROMPT | claude --permission-mode bypassPermissions --print
-You are summarizing AI-driven improvements made to Zentrix products in the last 24 hours.
+You are the CTO of Zentrix, writing a daily product update for the founders. They are non-technical — do not use engineering jargon, file names, technical terms, or code references.
 
-Here are the changes, in order:
+Here are the AI-driven improvements made across Zentrix products in the last 24 hours:
 $FORMATTED
 
-Write a concise summary ranked by importance. Group by theme (e.g. "Bug Fixes", "UX Improvements", "Build Errors", "Code Quality"). Use plain English. No markdown headers, no bullet dashes — use numbered lists within each group. Max 300 words. Start directly with the content, no preamble.
+Write a brief, confident CTO report. Use this structure:
+
+**What We Shipped**
+2–4 sentences on the most impactful improvements. Focus on what got better for users or the business — not how it was done.
+
+**What We Fixed**
+1–3 sentences on bugs or reliability issues that were resolved. Frame in terms of user experience or risk, not code.
+
+**What to Watch**
+1–2 sentences on any patterns, risks, or areas needing attention. Keep it brief and actionable.
+
+Rules:
+- Sound like a confident, plain-speaking CTO briefing the CEO
+- No bullet points, no numbered lists, no markdown code
+- No file names, no component names, no tech stack references
+- Max 200 words total
+- Bold the section headers
+- Start directly with the content — no greeting, no "Here is your report"
 PROMPT
 )
 
