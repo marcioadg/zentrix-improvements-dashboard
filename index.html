@@ -63,6 +63,10 @@
   .score { font-size: 11px; font-weight: 600; margin-left: auto; }
   .time { color: var(--text-muted); font-size: 11px; font-weight: 400; }
   .card-body { color: rgba(226,227,229,0.75); font-size: 13px; line-height: 20px; }
+  .card-body strong { color: var(--text-primary); font-weight: 600; }
+  .card-body .bullet-list { margin: 6px 0 0 0; padding-left: 0; list-style: none; }
+  .card-body .bullet-list li { margin-top: 4px; position: relative; padding-left: 14px; }
+  .card-body .bullet-list li:before { content: '•'; position: absolute; left: 0; color: var(--accent); }
   .empty { color: var(--text-muted); text-align: center; padding: 64px 24px; font-size: 14px; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 260px); }
   .loading { color: var(--text-muted); text-align: center; padding: 64px; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 260px); }
   .sep { width: 1px; background: var(--border); height: 16px; margin-left: 4px; }
@@ -73,16 +77,40 @@
   .view-btn:hover { background: var(--hover); color: var(--text-primary); }
   .view-btn.active { color: var(--accent); background: rgba(92, 132, 254, 0.08); border-color: var(--accent); }
   .view-btn.active + .view-btn { border-left: 1px solid var(--accent); }
+  /* Analytics */
   .analytics { padding: 16px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 768px) { .analytics { grid-template-columns: 1fr; } }
-  .chart-card { background: var(--card-bg); border: 1px solid var(--border); border-top: 1px solid rgba(92,132,254,0.3); border-radius: 6px; padding: 16px; transition: all 150ms ease; }
+  .chart-card { background: var(--card-bg); border: 1px solid var(--border); border-top: 1px solid rgba(92,132,254,0.3); border-radius: 6px; padding: 16px; overflow: hidden; }
   .chart-card:hover { border-color: rgba(92, 132, 254, 0.2); border-top-color: rgba(92,132,254,0.5); background: var(--hover-medium); }
   .chart-card h3 { color: var(--text-primary); font-size: 13px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; }
   .chart-card h3::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; margin-right: 6px; flex-shrink: 0; }
-  .chart-card canvas { width: 100%; }
+  .chart-wrap { width: 100%; overflow: hidden; }
+  .chart-wrap canvas { display: block; max-width: 100%; }
   #summary-card { background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box, linear-gradient(135deg, var(--accent), var(--accent-muted)) border-box; border: 1px solid transparent; border-radius: 6px; }
   #summary-card .summary-title { display: flex; align-items: center; gap: 6px; }
   #summary-card .ai-badge { font-size: 10px; font-weight: 600; color: var(--accent); }
+  /* Security dashboard */
+  .security-view { padding: 16px 24px; }
+  .security-header { margin-bottom: 16px; }
+  .security-header h2 { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .security-header p { font-size: 12px; color: var(--text-muted); }
+  .security-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .sec-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; position: relative; cursor: default; transition: all 150ms ease; }
+  .sec-card:hover { border-color: rgba(92,132,254,0.3); background: var(--hover-medium); }
+  .sec-card:hover .sec-tooltip { display: block; }
+  .sec-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .sec-repo-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .sec-score-badge { font-size: 13px; font-weight: 700; }
+  .sec-bar-track { background: rgba(255,255,255,0.06); border-radius: 3px; height: 6px; width: 100%; overflow: hidden; }
+  .sec-bar-fill { height: 6px; border-radius: 3px; transition: width 0.4s ease; }
+  .sec-updated { font-size: 10px; color: var(--text-muted); margin-top: 6px; }
+  .sec-tooltip { display: none; position: absolute; bottom: calc(100% + 8px); left: 0; right: 0; background: #1b1c23; border: 1px solid var(--border); border-radius: 6px; padding: 12px; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 240px; }
+  .sec-tooltip h4 { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .sec-tooltip ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .sec-tooltip ul li { font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding-left: 12px; position: relative; }
+  .sec-tooltip ul li:before { content: '⚠'; position: absolute; left: 0; font-size: 10px; color: var(--warning); }
+  .sec-no-data { font-size: 12px; color: var(--text-muted); font-style: italic; }
+  .security-stale { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.2); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: var(--warning); display: none; }
   button, .filter-btn, .view-btn, .refresh-btn { cursor: pointer; }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--page-bg); }
@@ -103,6 +131,7 @@
     <div class="view-toggle">
       <button class="view-btn active" onclick="switchView('list',this)">List</button>
       <button class="view-btn" onclick="switchView('analytics',this)">Analytics</button>
+      <button class="view-btn" onclick="switchView('security',this)">Security</button>
     </div>
     <button class="refresh-btn" onclick="toggleSummary()">✨ AI Summary</button>
     <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
@@ -126,11 +155,19 @@
 </div>
 <div class="entries" id="entries"><div class="loading">Loading improvements...</div></div>
 <div class="analytics" id="analytics" style="display:none">
-  <div class="chart-card"><h3>Improvements Over Time</h3><canvas id="chart-timeline"></canvas></div>
-  <div class="chart-card"><h3>Category Breakdown</h3><canvas id="chart-categories"></canvas></div>
-  <div class="chart-card"><h3>Repo Activity (Top 10)</h3><canvas id="chart-repos"></canvas></div>
-  <div class="chart-card"><h3>Avg Health Score per Repo</h3><canvas id="chart-scores"></canvas></div>
-  <div class="chart-card" id="chart-errors-card" style="display:none"><h3>Build Errors by Repo</h3><canvas id="chart-errors"></canvas></div>
+  <div class="chart-card"><h3>Improvements Over Time</h3><div class="chart-wrap"><canvas id="chart-timeline"></canvas></div></div>
+  <div class="chart-card"><h3>Category Breakdown</h3><div class="chart-wrap"><canvas id="chart-categories"></canvas></div></div>
+  <div class="chart-card"><h3>Repo Activity (Top 10)</h3><div class="chart-wrap"><canvas id="chart-repos"></canvas></div></div>
+  <div class="chart-card"><h3>Avg Health Score per Repo</h3><div class="chart-wrap"><canvas id="chart-scores"></canvas></div></div>
+  <div class="chart-card" id="chart-errors-card" style="display:none"><h3>Build Errors by Repo</h3><div class="chart-wrap"><canvas id="chart-errors"></canvas></div></div>
+</div>
+<div class="security-view" id="security" style="display:none">
+  <div class="security-header">
+    <h2>🔒 Security Scores by Repo</h2>
+    <p>Updated daily · Hover a repo to see top issues · Score 0–100</p>
+  </div>
+  <div class="security-stale" id="security-stale">Security data is more than 25 hours old — scores may be outdated.</div>
+  <div class="security-grid" id="security-grid"><div class="loading">Loading security scores...</div></div>
 </div>
 
 <script>
@@ -140,12 +177,13 @@ const CAT_COLORS = {
   'Build Error':'#f87171'
 }
 const SCORE_COLOR = s => s>=80?'#4ade80':s>=60?'#fbbf24':'#f87171'
+const GH_BASE = 'https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/'
 
 let allEntries = [], activeRepo = null, activeCat = null
 
 async function loadData() {
   try {
-    const r = await fetch('https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/entries.json?t=' + Date.now())
+    const r = await fetch(GH_BASE + 'entries.json?t=' + Date.now())
     allEntries = await r.json()
     render()
     document.getElementById('last-updated').textContent = `${allEntries.length} improvements · updated ${new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true})} EST`
@@ -156,7 +194,6 @@ async function loadData() {
 }
 
 function render() {
-  // Build stats
   const repos = [...new Set(allEntries.map(e=>e.repo))]
   const bugs = allEntries.filter(e=>e.category==='Bug Fix').length
   const ux = allEntries.filter(e=>e.category==='UX/UI').length
@@ -166,7 +203,6 @@ function render() {
     {v:allEntries.length,l:'Total'},{v:repos.length,l:'Repos'},{v:days,l:'Days'},{v:bugs,l:'Bugs Fixed'},{v:ux,l:'UX Improvements'},{v:buildErrors,l:'Build Errors',color:'var(--error)'}
   ].map(s=>`<div class="stat"><div class="val" ${s.color?`style="color:${s.color}"`:''}>${s.v}</div><div class="lbl">${s.l}</div></div>`).join('')
 
-  // Repo filters
   const repoStats = {}
   allEntries.forEach(e=>{
     if(!repoStats[e.repo]) repoStats[e.repo]={count:0,score:null,name:e.repoName}
@@ -175,8 +211,7 @@ function render() {
   })
   const cats = [...new Set(allEntries.map(e=>e.category))]
 
-  const filtersEl = document.getElementById('filters')
-  filtersEl.innerHTML = `
+  document.getElementById('filters').innerHTML = `
     <label>Repo</label>
     <button class="filter-btn active" onclick="setFilter('repo',null,this)">All</button>
     ${Object.entries(repoStats).map(([r,i])=>`<button class="filter-btn" onclick="setFilter('repo','${r}',this)">${i.name}${i.score?` <span style="color:${SCORE_COLOR(i.score)}">${i.score}</span>`:''}</button>`).join('')}
@@ -188,10 +223,8 @@ function render() {
     <input id="search" type="text" placeholder="Search..." oninput="applyFilters()">
   `
 
-  // Cards
   document.getElementById('entries').innerHTML = allEntries.length ? allEntries.map(e=>{
     const isError = e.category === 'Build Error'
-    const borderStyle = isError ? 'border-left:3px solid var(--error)' : ''
     const catStyle = isError
       ? 'background:#f8717122;color:#f87171;border:1px solid #f8717144'
       : `background:${CAT_COLORS[e.category]||'#5e5e5f'}22;color:${CAT_COLORS[e.category]||'#96979a'};border:1px solid ${CAT_COLORS[e.category]||'#25262b'}44`
@@ -199,7 +232,7 @@ function render() {
       ? `<details style="margin-top:6px;font-size:11px;color:#96979a"><summary style="cursor:pointer;color:#f87171">Error details</summary><pre style="margin-top:4px;white-space:pre-wrap;color:#c4c5c7;font-size:11px;background:#0f1011;padding:8px;border-radius:4px;overflow-x:auto">${e.errorDetails.map(l=>l.replace(/</g,'&lt;')).join('\n')}</pre></details>`
       : ''
     const timeStyle = e.score ? '' : 'margin-left:auto'
-    return `<div class="card" data-repo="${e.repo}" data-cat="${e.category}" style="${borderStyle}">
+    return `<div class="card" data-repo="${e.repo}" data-cat="${e.category}" ${isError?'style="border-left:3px solid var(--error)"':''}>
       <div class="card-header">
         <span class="repo-tag">${e.repoName}</span>
         <span class="cat-tag" style="${catStyle}">${e.category}</span>
@@ -214,7 +247,7 @@ function render() {
 
 function setFilter(type, val, btn) {
   if(type==='repo') activeRepo=val; else activeCat=val
-  document.querySelectorAll(`.filter-btn`).forEach(b=>{ if((type==='repo'&&!b.onclick?.toString().includes("'cat'"))||(type==='cat'&&b.onclick?.toString().includes("'cat'"))) b.classList.remove('active') })
+  document.querySelectorAll('.filter-btn').forEach(b=>{ if((type==='repo'&&!b.onclick?.toString().includes("'cat'"))||(type==='cat'&&b.onclick?.toString().includes("'cat'"))) b.classList.remove('active') })
   btn.classList.add('active')
   applyFilters()
 }
@@ -228,7 +261,6 @@ function applyFilters() {
 }
 
 let currentView = 'list'
-
 function switchView(view, btn) {
   currentView = view
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'))
@@ -236,22 +268,17 @@ function switchView(view, btn) {
   document.getElementById('entries').style.display = view === 'list' ? 'flex' : 'none'
   document.getElementById('filters').style.display = view === 'list' ? 'flex' : 'none'
   document.getElementById('analytics').style.display = view === 'analytics' ? 'grid' : 'none'
+  document.getElementById('security').style.display = view === 'security' ? 'block' : 'none'
   if (view === 'analytics' && allEntries.length) renderCharts()
+  if (view === 'security') loadSecurityData()
 }
 
-function renderCharts() {
-  drawTimelineChart()
-  drawCategoryChart()
-  drawRepoChart()
-  drawScoreChart()
-  drawErrorChart()
-}
-
+// ── Charts ───────────────────────────────────────────────────────────────────
 function setupCanvas(id) {
   const canvas = document.getElementById(id)
-  const container = canvas.parentElement
+  const wrap = canvas.parentElement
   const dpr = window.devicePixelRatio || 1
-  const w = container.clientWidth - 32
+  const w = wrap.clientWidth
   canvas.style.width = w + 'px'
   canvas.width = w * dpr
   const ctx = canvas.getContext('2d')
@@ -259,186 +286,129 @@ function setupCanvas(id) {
   return { canvas, ctx, w, dpr }
 }
 
-function drawTimelineChart() {
+function drawBarChart(canvasId, labels, values, color, maxOverride) {
+  const maxVal = maxOverride || Math.max(...values, 1)
+  const barH = 28, gap = 4
+  const padLeft = Math.max(...labels.map(l => l.length)) * 6.5 + 12
+  const padRight = 48 // enough room for numbers
+  const padTop = 8, padBottom = 8
+  const h = labels.length * (barH + gap) + padTop + padBottom
+
+  const { ctx, w, canvas, dpr } = setupCanvas(canvasId)
+  canvas.style.height = h + 'px'
+  canvas.height = h * dpr
+  ctx.scale(dpr, dpr)
+
+  const chartW = w - padLeft - padRight
+  labels.forEach((label, i) => {
+    const y = padTop + i * (barH + gap)
+    const val = values[i]
+    const barW = Math.max((val / maxVal) * chartW, 2)
+    const fill = Array.isArray(color) ? color[i] : color
+    ctx.fillStyle = fill
+    ctx.fillRect(padLeft, y, barW, barH)
+    // label
+    ctx.fillStyle = '#5e5e5f'
+    ctx.font = '11px Inter, sans-serif'
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(label, padLeft - 8, y + barH / 2)
+    // value — always inside padRight so never clips
+    ctx.fillStyle = '#e2e3e5'
+    ctx.textAlign = 'left'
+    ctx.fillText(val, padLeft + barW + 6, y + barH / 2)
+  })
+}
+
+function renderCharts() {
+  // Timeline
   const dateCounts = {}
   allEntries.forEach(e => { dateCounts[e.date] = (dateCounts[e.date] || 0) + 1 })
   const dates = Object.keys(dateCounts).sort()
-  const counts = dates.map(d => dateCounts[d])
-  const maxVal = Math.max(...counts, 1)
+  drawBarChart('chart-timeline', dates, dates.map(d=>dateCounts[d]), '#5c84fe')
 
-  const barH = 28, gap = 4, padLeft = 80, padRight = 16, padTop = 8, padBottom = 8
-  const h = dates.length * (barH + gap) + padTop + padBottom
-  const { ctx, w, canvas, dpr } = setupCanvas('chart-timeline')
-  canvas.style.height = h + 'px'
-  canvas.height = h * dpr
-  ctx.scale(dpr, dpr)
-
-  const chartW = w - padLeft - padRight
-  dates.forEach((d, i) => {
-    const y = padTop + i * (barH + gap)
-    const barW = Math.max((counts[i] / maxVal) * chartW, 2)
-    ctx.fillStyle = '#5c84fe'
-    ctx.fillRect(padLeft, y, barW, barH)
-    ctx.fillStyle = '#5e5e5f'
-    ctx.font = '11px Inter, sans-serif'
-    ctx.textAlign = 'right'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(d, padLeft - 8, y + barH / 2)
-    ctx.fillStyle = '#e2e3e5'
-    ctx.textAlign = 'left'
-    ctx.fillText(counts[i], padLeft + barW + 6, y + barH / 2)
-  })
-}
-
-function drawCategoryChart() {
+  // Categories
   const catCounts = {}
   allEntries.forEach(e => { catCounts[e.category] = (catCounts[e.category] || 0) + 1 })
-  const sorted = Object.entries(catCounts).sort((a, b) => b[1] - a[1])
-  const maxVal = Math.max(...sorted.map(s => s[1]), 1)
+  const sortedCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1])
+  drawBarChart('chart-categories', sortedCats.map(s=>s[0]), sortedCats.map(s=>s[1]), sortedCats.map(s=>CAT_COLORS[s[0]]||'#5e5e5f'))
 
-  const barH = 28, gap = 4, padLeft = 100, padRight = 16, padTop = 8, padBottom = 8
-  const h = sorted.length * (barH + gap) + padTop + padBottom
-  const { ctx, w, canvas, dpr } = setupCanvas('chart-categories')
-  canvas.style.height = h + 'px'
-  canvas.height = h * dpr
-  ctx.scale(dpr, dpr)
+  // Repos
+  const repoCounts = {}, repoNames = {}
+  allEntries.forEach(e => { repoCounts[e.repo]=(repoCounts[e.repo]||0)+1; repoNames[e.repo]=e.repoName })
+  const sortedRepos = Object.entries(repoCounts).sort((a,b)=>b[1]-a[1]).slice(0,10)
+  drawBarChart('chart-repos', sortedRepos.map(s=>repoNames[s[0]]||s[0]), sortedRepos.map(s=>s[1]), '#5c84fe')
 
-  const chartW = w - padLeft - padRight
-  sorted.forEach(([cat, count], i) => {
-    const y = padTop + i * (barH + gap)
-    const barW = Math.max((count / maxVal) * chartW, 2)
-    ctx.fillStyle = CAT_COLORS[cat] || '#5e5e5f'
-    ctx.fillRect(padLeft, y, barW, barH)
-    ctx.fillStyle = '#5e5e5f'
-    ctx.font = '11px Inter, sans-serif'
-    ctx.textAlign = 'right'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(cat, padLeft - 8, y + barH / 2)
-    ctx.fillStyle = '#e2e3e5'
-    ctx.textAlign = 'left'
-    ctx.fillText(count, padLeft + barW + 6, y + barH / 2)
-  })
-}
-
-function drawRepoChart() {
-  const repoCounts = {}
-  const repoNames = {}
-  allEntries.forEach(e => {
-    repoCounts[e.repo] = (repoCounts[e.repo] || 0) + 1
-    repoNames[e.repo] = e.repoName
-  })
-  const sorted = Object.entries(repoCounts).sort((a, b) => b[1] - a[1]).slice(0, 10)
-  const maxVal = Math.max(...sorted.map(s => s[1]), 1)
-
-  const barH = 28, gap = 4, padLeft = 140, padRight = 16, padTop = 8, padBottom = 8
-  const h = sorted.length * (barH + gap) + padTop + padBottom
-  const { ctx, w, canvas, dpr } = setupCanvas('chart-repos')
-  canvas.style.height = h + 'px'
-  canvas.height = h * dpr
-  ctx.scale(dpr, dpr)
-
-  const chartW = w - padLeft - padRight
-  sorted.forEach(([repo, count], i) => {
-    const y = padTop + i * (barH + gap)
-    const barW = Math.max((count / maxVal) * chartW, 2)
-    ctx.fillStyle = '#5c84fe'
-    ctx.fillRect(padLeft, y, barW, barH)
-    ctx.fillStyle = '#5e5e5f'
-    ctx.font = '11px Inter, sans-serif'
-    ctx.textAlign = 'right'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(repoNames[repo] || repo, padLeft - 8, y + barH / 2)
-    ctx.fillStyle = '#e2e3e5'
-    ctx.textAlign = 'left'
-    ctx.fillText(count, padLeft + barW + 6, y + barH / 2)
-  })
-}
-
-function drawScoreChart() {
-  const repoScores = {}
-  const repoNames = {}
-  allEntries.forEach(e => {
-    if (e.score) {
-      if (!repoScores[e.repo]) repoScores[e.repo] = []
-      repoScores[e.repo].push(e.score)
-      repoNames[e.repo] = e.repoName
-    }
-  })
-  const avgs = Object.entries(repoScores).map(([repo, scores]) => ({
-    repo, name: repoNames[repo] || repo, avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-  })).sort((a, b) => b.avg - a.avg)
-
-  const barH = 28, gap = 4, padLeft = 140, padRight = 40, padTop = 8, padBottom = 8
-  const h = Math.max(avgs.length * (barH + gap) + padTop + padBottom, 60)
-  const { ctx, w, canvas, dpr } = setupCanvas('chart-scores')
-  canvas.style.height = h + 'px'
-  canvas.height = h * dpr
-  ctx.scale(dpr, dpr)
-
-  if (!avgs.length) {
-    ctx.fillStyle = '#5e5e5f'
-    ctx.font = '12px Inter, sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText('No health scores available', w / 2, h / 2)
-    return
+  // Health scores
+  const repoScoresMap = {}
+  allEntries.forEach(e => { if(e.score){ if(!repoScoresMap[e.repo]) repoScoresMap[e.repo]={scores:[],name:e.repoName}; repoScoresMap[e.repo].scores.push(e.score) } })
+  const avgs = Object.entries(repoScoresMap).map(([r,d])=>({name:d.name,avg:Math.round(d.scores.reduce((a,b)=>a+b,0)/d.scores.length)})).sort((a,b)=>b.avg-a.avg)
+  if (avgs.length) {
+    drawBarChart('chart-scores', avgs.map(a=>a.name), avgs.map(a=>a.avg), avgs.map(a=>SCORE_COLOR(a.avg)), 100)
+  } else {
+    const {ctx,w} = setupCanvas('chart-scores')
+    ctx.fillStyle='#5e5e5f'; ctx.font='12px Inter,sans-serif'; ctx.textAlign='center'
+    ctx.fillText('No health scores available', w/2, 30)
   }
 
-  const chartW = w - padLeft - padRight
-  avgs.forEach(({ name, avg }, i) => {
-    const y = padTop + i * (barH + gap)
-    const barW = Math.max((avg / 100) * chartW, 2)
-    ctx.fillStyle = avg >= 80 ? '#4ade80' : avg >= 60 ? '#fbbf24' : '#f87171'
-    ctx.fillRect(padLeft, y, barW, barH)
-    ctx.fillStyle = '#5e5e5f'
-    ctx.font = '11px Inter, sans-serif'
-    ctx.textAlign = 'right'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(name, padLeft - 8, y + barH / 2)
-    ctx.fillStyle = '#e2e3e5'
-    ctx.textAlign = 'left'
-    ctx.fillText(avg, padLeft + barW + 6, y + barH / 2)
-  })
-}
-
-function drawErrorChart() {
-  const errorEntries = allEntries.filter(e => e.category === 'Build Error')
+  // Errors
+  const errorEntries = allEntries.filter(e=>e.category==='Build Error')
   const card = document.getElementById('chart-errors-card')
-  if (!errorEntries.length) { card.style.display = 'none'; return }
-  card.style.display = ''
-
-  const repoCounts = {}
-  const repoNames = {}
-  errorEntries.forEach(e => {
-    repoCounts[e.repo] = (repoCounts[e.repo] || 0) + 1
-    repoNames[e.repo] = e.repoName
-  })
-  const sorted = Object.entries(repoCounts).sort((a, b) => b[1] - a[1])
-  const maxVal = Math.max(...sorted.map(s => s[1]), 1)
-
-  const barH = 28, gap = 4, padLeft = 140, padRight = 16, padTop = 8, padBottom = 8
-  const h = Math.max(sorted.length * (barH + gap) + padTop + padBottom, 60)
-  const { ctx, w, canvas, dpr } = setupCanvas('chart-errors')
-  canvas.style.height = h + 'px'
-  canvas.height = h * dpr
-  ctx.scale(dpr, dpr)
-
-  const chartW = w - padLeft - padRight
-  sorted.forEach(([repo, count], i) => {
-    const y = padTop + i * (barH + gap)
-    const barW = Math.max((count / maxVal) * chartW, 2)
-    ctx.fillStyle = '#f87171'
-    ctx.fillRect(padLeft, y, barW, barH)
-    ctx.fillStyle = '#5e5e5f'
-    ctx.font = '11px Inter, sans-serif'
-    ctx.textAlign = 'right'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(repoNames[repo] || repo, padLeft - 8, y + barH / 2)
-    ctx.fillStyle = '#e2e3e5'
-    ctx.textAlign = 'left'
-    ctx.fillText(count, padLeft + barW + 6, y + barH / 2)
-  })
+  if (!errorEntries.length) { card.style.display='none'; return }
+  card.style.display=''
+  const errCounts={}, errNames={}
+  errorEntries.forEach(e=>{ errCounts[e.repo]=(errCounts[e.repo]||0)+1; errNames[e.repo]=e.repoName })
+  const sortedErr=Object.entries(errCounts).sort((a,b)=>b[1]-a[1])
+  drawBarChart('chart-errors', sortedErr.map(s=>errNames[s[0]]||s[0]), sortedErr.map(s=>s[1]), '#f87171')
 }
 
+// ── Security Dashboard ───────────────────────────────────────────────────────
+async function loadSecurityData() {
+  const grid = document.getElementById('security-grid')
+  try {
+    const r = await fetch(GH_BASE + 'security.json?t=' + Date.now())
+    if (!r.ok) throw new Error('not found')
+    const data = await r.json()
+
+    // Check staleness
+    const staleEl = document.getElementById('security-stale')
+    if (data.generated) {
+      const genDate = new Date(data.generated)
+      const ageHours = (Date.now() - genDate.getTime()) / 3600000
+      staleEl.style.display = ageHours > 25 ? 'block' : 'none'
+    }
+
+    if (!data.repos || !data.repos.length) {
+      grid.innerHTML = '<div class="empty">No security data yet — runs daily.</div>'
+      return
+    }
+
+    const sorted = [...data.repos].sort((a,b) => b.score - a.score)
+    grid.innerHTML = sorted.map(repo => {
+      const color = SCORE_COLOR(repo.score)
+      const issues = (repo.issues || []).slice(0, 5)
+      const issueHtml = issues.length
+        ? `<ul>${issues.map(i=>`<li>${i.replace(/</g,'&lt;')}</li>`).join('')}</ul>`
+        : `<p class="sec-no-data">No issues found</p>`
+      return `<div class="sec-card">
+        <div class="sec-card-top">
+          <span class="sec-repo-name">${repo.name}</span>
+          <span class="sec-score-badge" style="color:${color}">${repo.score}/100</span>
+        </div>
+        <div class="sec-bar-track"><div class="sec-bar-fill" style="width:${repo.score}%;background:${color}"></div></div>
+        <div class="sec-updated">${repo.updated ? 'Updated ' + new Date(repo.updated).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'Pending first scan'}</div>
+        <div class="sec-tooltip">
+          <h4>Top Issues</h4>
+          ${issueHtml}
+        </div>
+      </div>`
+    }).join('')
+  } catch(e) {
+    grid.innerHTML = '<div class="empty" style="min-height:200px">Security data not available yet.<br><span style="font-size:11px;margin-top:8px;display:block">Scores will appear after the first daily security run.</span></div>'
+  }
+}
+
+// ── AI Summary ───────────────────────────────────────────────────────────────
 async function toggleSummary() {
   const card = document.getElementById('summary-card')
   if (card.style.display !== 'none') { closeSummary(); return }
@@ -448,7 +418,7 @@ async function toggleSummary() {
   genEl.textContent = ''
   card.style.display = 'block'
   try {
-    const r = await fetch('https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/summary.json?t=' + Date.now())
+    const r = await fetch(GH_BASE + 'summary.json?t=' + Date.now())
     if (!r.ok) throw new Error('not found')
     const data = await r.json()
     textEl.textContent = data.summary
@@ -461,9 +431,7 @@ async function toggleSummary() {
   }
 }
 
-function closeSummary() {
-  document.getElementById('summary-card').style.display = 'none'
-}
+function closeSummary() { document.getElementById('summary-card').style.display = 'none' }
 
 loadData()
 setInterval(loadData, 60000)
