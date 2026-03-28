@@ -608,9 +608,7 @@ function renderCharts() {
 async function loadSecurityData() {
   const grid = document.getElementById('security-grid')
   try {
-    const r = await fetchFresh('security.json')
-    if (!r.ok) throw new Error('not found')
-    const data = await r.json()
+    const data = await fetchFresh('security.json')
 
     // Check staleness
     const staleEl = document.getElementById('security-stale')
@@ -679,9 +677,7 @@ async function loadSummaryContent() {
   textEl.innerHTML = 'Loading summary...'
   genEl.textContent = ''
   try {
-    const r = await fetchFresh('summary.json')
-    if (!r.ok) throw new Error('not found')
-    const data = await r.json()
+    const data = await fetchFresh('summary.json')
     textEl.innerHTML = mdToHtml(data.summary || '')
     if (data.generated) {
       const d = new Date(data.generated)
