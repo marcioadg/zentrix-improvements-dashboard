@@ -1,4 +1,44 @@
 {
-  "generated": null,
-  "repos": []
+  "generated": "2026-03-28T09:00:01",
+  "repos": [
+    {
+      "repo": "dietforge",
+      "name": "DietForge",
+      "score": 68,
+      "updated": "2026-03-28T09:02:13",
+      "issues": [
+        "Supabase JWT anon key exposed in git history (commit a38fa8fc), valid until 2080",
+        "User input interpolated into ILIKE query in search-forgepedia/index.ts:56",
+        "Raw error messages exposed to UI in 27+ locations leaking internal details",
+        "Known CVEs in dependencies: serialize-javascript (RCE), xlsx (prototype pollution)",
+        "Client-side admin auth checks without confirmed Supabase RLS policy enforcement"
+      ]
+    },
+    {
+      "repo": "zentrix-insights",
+      "name": "Zentrix Insights",
+      "score": 62,
+      "updated": "2026-03-28T09:04:45",
+      "issues": [
+        "Hardcoded Supabase credentials in src/integrations/supabase/client.ts (lines 4-5)",
+        ".env file with secrets committed to git history despite .gitignore entry",
+        "SSO tokens passed via URL hash params risk exposure in logs/history",
+        "Admin can change any user password without notification or audit logging",
+        "esbuild CVE-2024-51319: dev server request hijack via outdated vite dependency"
+      ]
+    },
+    {
+      "repo": "zentrixmail",
+      "name": "Zentrix Mail",
+      "score": 62,
+      "updated": "2026-03-28T09:06:35",
+      "issues": [
+        "Supabase credentials (JWT token) exposed in git history, need rotation",
+        "OAuth tokens logged to console in gmail-sync, gmail-send, gmail-labels functions",
+        "CSP allows 'unsafe-inline' and 'unsafe-eval' for scripts in securityHeaders.ts",
+        "CORS set to wildcard '*' on all Supabase edge functions",
+        "Regex-based HTML sanitization in EmailBody.tsx instead of robust lib like DOMPurify"
+      ]
+    }
+  ]
 }
