@@ -117,23 +117,27 @@ lines = [l.strip() for l in sys.stdin.read().splitlines() if l.strip()]
 print(json.dumps(lines))
 ")
 
-  python3 - "$repo" "$name" "$SCORE" "$RESULTS_FILE" <<PYEOF
+  ISSUES_FILE=$(mktemp)
+  echo "$ISSUES_JSON" > "$ISSUES_FILE"
+  UPDATED=$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S)
+  python3 - "$repo" "$name" "$SCORE" "$RESULTS_FILE" "$ISSUES_FILE" "$UPDATED" <<'PYEOF'
 import json, sys
-repo, name, score_str, results_file = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-issues_raw = """$ISSUES"""
-issues = [l.strip() for l in issues_raw.splitlines() if l.strip()]
+repo, name, score_str, results_file, issues_file, updated = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
+with open(issues_file) as f:
+    issues = json.load(f)
 with open(results_file) as f:
     results = json.load(f)
 results.append({
     'repo': repo,
     'name': name,
     'score': int(score_str),
-    'updated': '$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S)',
+    'updated': updated,
     'issues': issues
 })
 with open(results_file, 'w') as f:
     json.dump(results, f)
 PYEOF
+  rm -f "$ISSUES_FILE"
 
   echo "    $repo: $SCORE/100"
   sleep 30
