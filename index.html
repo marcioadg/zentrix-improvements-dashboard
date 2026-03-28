@@ -53,7 +53,7 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--page-bg); color: var(--text-primary); font-family: Inter, -apple-system, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; min-height: 100vh; font-feature-settings: "cv01", "cv02", "cv11"; }
-  header { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); min-height: 48px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  header { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); min-height: 52px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; top: 0; z-index: 10; }
   header h1 { font-size: 13px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
   header h1 .logo-icon { flex-shrink: 0; }
   header h1 .brand { font-weight: 600; color: var(--text-primary); }
@@ -66,7 +66,8 @@
   .stat .val { font-size: 20px; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
   .stat .lbl { font-size: 10px; font-weight: 500; color: var(--text-muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   [data-theme="light"] .stat .lbl { color: var(--text-muted); }
-  .filters { padding: 7px 20px; background: var(--page-bg); border-bottom: 1px solid var(--border-subtle); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .filters { padding: 7px 20px; background: var(--page-bg); border-bottom: 1px solid var(--border-subtle); display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .filters::-webkit-scrollbar { display: none; }
   .filters label { color: var(--text-muted); font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
   .filter-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 400; height: 26px; transition: all 150ms ease; }
   .filter-btn:hover { background: var(--hover); color: var(--text-primary); border-color: var(--border); }
@@ -147,7 +148,8 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
   /* ── Hamburger menu button ── */
-  .header-controls { display: flex; align-items: center; gap: 8px; }
+  .header-controls { display: flex; align-items: center; gap: 6px; }
+  .header-controls .view-toggle { margin-right: 4px; }
 
   /* ── Mobile responsive ── */
   @media (max-width: 768px) {
@@ -167,12 +169,11 @@
     .stat .lbl { font-size: 9px; letter-spacing: 0.05em; }
 
     /* Filters */
-    .filters { padding: 10px 12px; gap: 6px; }
-    .filters label { width: 100%; margin-top: 4px; }
-    .filters label:first-child { margin-top: 0; }
-    .filter-btn { height: 36px; font-size: 12px; padding: 6px 12px; min-height: 36px; }
-    .repo-select { width: 100%; height: 36px; font-size: 13px; }
-    #search { width: 100%; height: 44px; font-size: 14px; }
+    .filters { padding: 6px 12px; gap: 6px; flex-wrap: nowrap; }
+    .filters label { display: none; }
+    .filter-btn { height: 30px; font-size: 11px; padding: 0 10px; min-height: unset; white-space: nowrap; }
+    .repo-select { height: 30px; font-size: 11px; min-width: 130px; }
+    #search { width: 110px; height: 30px; font-size: 11px; }
     .sep { display: none; }
     .filters > div[style*="flex:1"] { display: none; }
 
