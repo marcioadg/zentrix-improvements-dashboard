@@ -4,149 +4,193 @@
     {
       "repo": "zentrixpulse",
       "name": "Zentrix Pulse",
-      "score": 42,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "dietforge",
       "name": "DietForge",
-      "score": 75,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrix-insights",
       "name": "Zentrix Insights",
-      "score": 68,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrixmail",
       "name": "Zentrix Mail",
-      "score": 52,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "lineagevault",
       "name": "Lineage Vault",
-      "score": 42,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrix-cyber",
       "name": "Zentrix Cyber",
-      "score": 72,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrixprojects",
       "name": "Zentrix Projects",
-      "score": 42,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "decision-command",
       "name": "Decision Command",
-      "score": 52,
+      "score": 72,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        ".env not in .gitignore; Supabase anon key + project ID exposed in repo",
+        "Console logs leak auth flow details (routing, onboarding, migration state)",
+        "Regex-based HTML sanitizer is bypassable; use DOMPurify instead"
+      ]
     },
     {
       "repo": "zentrix-improvements-dashboard",
       "name": "Improvements Dashboard",
-      "score": 72,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "wisevasdashboard",
       "name": "WiseVAs",
-      "score": 78,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrixcrm",
       "name": "Zentrix CRM",
       "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrixcreative",
       "name": "Zentrix Creative",
-      "score": 58,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "business-os",
       "name": "Zentrix OS",
-      "score": 72,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "thoughtline",
       "name": "Thoughtline",
-      "score": 78,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrixmarketing",
       "name": "Zentrix Marketing",
-      "score": 52,
+      "score": 50,
       "updated": "2026-03-28T12:00:00",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrixcapture",
       "name": "Zentrix Capture",
-      "score": 45,
+      "score": 50,
       "updated": "2026-03-28T13:03:09",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrix-sign",
       "name": "Zentrix Sign",
       "score": 50,
       "updated": "2026-03-28T13:03:09",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrixchat",
       "name": "Zentrix Chat",
       "score": 50,
       "updated": "2026-03-28T13:03:09",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrix-email-marketing",
       "name": "Zentrix Email Mktg",
       "score": 50,
       "updated": "2026-03-28T13:03:09",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrixcontent",
       "name": "Zentrix Content",
-      "score": 42,
+      "score": 50,
       "updated": "2026-03-28T13:03:09",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     },
     {
       "repo": "zentrixfinance",
       "name": "Zentrix Finance",
-      "score": 62,
+      "score": 50,
       "updated": "2026-03-28T13:03:09",
-      "issues": []
+      "issues": [
+        "Could not complete scan"
+      ]
     }
   ]
 }
