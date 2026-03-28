@@ -552,7 +552,7 @@ function render() {
       <div class="swipe-action swipe-action-right" id="action-right-${esc(cardKey)}">${denyIcon}<span class="swipe-action-label">Deny</span></div>
       ${cardEl}
     </div>`
-  }).join('') : '<div class="empty">No improvements logged yet.</div>'
+  }).join('') : '<div class="empty">No improvements logged yet.<span style="font-size:12px;color:var(--text-muted);margin-top:2px">New entries appear automatically after each hourly run.</span></div>'
 
   applyFilters()
 }
