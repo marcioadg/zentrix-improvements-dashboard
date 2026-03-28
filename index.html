@@ -239,7 +239,11 @@
   .unread-dot { position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; background:var(--accent); pointer-events:none; z-index:2; }
   .card { position:relative; }
   /* Swipe overlay */
-  .swipe-overlay { position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; opacity:0; pointer-events:none; z-index:1; transition:opacity 80ms ease; border-radius:5px; }
+  .swipe-overlay { position:absolute; top:0; left:0; right:0; bottom:0; opacity:0; pointer-events:none; z-index:1; transition:opacity 80ms ease; border-radius:5px; overflow:hidden; }
+  .swipe-hint-left { position:absolute; top:0; left:0; bottom:0; width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:0 10px; }
+  .swipe-hint-right { position:absolute; top:0; right:0; bottom:0; width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:0 10px; }
+  .swipe-hint-icon { font-size:22px; line-height:1; }
+  .swipe-hint-label { font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; text-align:center; line-height:1.2; }
   /* Toast */
   .zentrix-toast { position:fixed; bottom:24px; right:24px; left:auto; max-width:calc(100vw - 48px); background:var(--card-bg); border:1px solid var(--border); color:var(--text-primary); padding:12px 20px; border-radius:6px; font-size:13px; font-weight:500; z-index:1000; box-shadow:0 4px 16px rgba(0,0,0,0.2); animation:toastIn 200ms ease; }
   @keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
@@ -496,7 +500,10 @@ function render() {
     const timeStyle = e.score ? '' : 'margin-left:auto'
     const proposalBadge = isProposal ? '<span class="proposal-badge">PROPOSAL</span>' : ''
     const unreadDot = !isRead ? '<span class="unread-dot"></span>' : ''
-    const swipeOverlay = isProposal ? '<div class="swipe-overlay"></div>' : ''
+    const swipeOverlay = isProposal ? `<div class="swipe-overlay">
+      <div class="swipe-hint-left"><span class="swipe-hint-icon">✓</span><span class="swipe-hint-label" style="color:#22c55e">Approve</span></div>
+      <div class="swipe-hint-right"><span class="swipe-hint-icon">✕</span><span class="swipe-hint-label" style="color:#ef4444">Deny</span></div>
+    </div>` : ''
     return `<div class="card${isProposal?' proposal-card':''}" data-repo="${esc(e.repo)}" data-cat="${esc(e.category)}" data-status="${esc(e.status||'')}" data-key="${esc(cardKey)}" data-summary="${esc(e.summary||'')}" ${isError?'style="border-left:3px solid var(--error)"':''}>
       ${unreadDot}${swipeOverlay}
       <div class="card-header">
@@ -925,9 +932,34 @@ function showToast(msg) {
     if (!overlay) return
     const state = getOverlayState(dx)
     const pct = Math.abs(dx) / cardW
-    overlay.style.background = state.color
-    overlay.style.opacity = Math.min(pct * 2, 1)
-    overlay.innerHTML = `<span style="font-size:32px">${state.icon}</span>`
+    const opacity = Math.min(pct * 2.5, 1)
+    overlay.style.opacity = opacity
+
+    const hintLeft = overlay.querySelector('.swipe-hint-left')
+    const hintRight = overlay.querySelector('.swipe-hint-right')
+    const committed = pct >= 0.4
+
+    if (dx > 0) {
+      // swiping right — approve
+      overlay.style.background = `rgba(34,197,94,${committed ? 0.2 : 0.12})`
+      if (hintLeft) { hintLeft.style.transform = `scale(${committed ? 1.15 : 1})`; hintLeft.style.opacity = '1' }
+      if (hintRight) hintRight.style.opacity = '0.2'
+      // update right side to plan if deep enough
+      if (hintRight) hintRight.querySelector('.swipe-hint-label').textContent = 'Deny'
+    } else {
+      // swiping left — deny or plan (deep)
+      const isDeep = pct >= 0.6
+      overlay.style.background = isDeep ? `rgba(168,85,247,${committed ? 0.2 : 0.12})` : `rgba(239,68,68,${committed ? 0.2 : 0.12})`
+      if (hintRight) {
+        hintRight.querySelector('.swipe-hint-icon').textContent = isDeep ? '📋' : '✕'
+        hintRight.querySelector('.swipe-hint-label').textContent = isDeep ? 'Plan' : 'Deny'
+        hintRight.querySelector('.swipe-hint-label').style.color = isDeep ? '#a855f7' : '#ef4444'
+        hintRight.style.transform = `scale(${committed ? 1.15 : 1})`
+        hintRight.style.opacity = '1'
+      }
+      if (hintLeft) hintLeft.style.opacity = '0.2'
+    }
+
     card.style.transform = `translateX(${dx}px)`
     card.style.transition = 'none'
   }
