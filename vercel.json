@@ -1,4 +1,11 @@
 {
   "outputDirectory": ".",
-  "buildCommand": null
+  "buildCommand": null,
+  "functions": {
+    "api/action.js": { "runtime": "nodejs20.x" }
+  },
+  "env": {
+    "SLACK_TOKEN": "@slack-token",
+    "API_KEY": "@dashboard-api-key"
+  }
 }

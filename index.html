@@ -1011,25 +1011,20 @@ function showToast(msg) {
     const summary = card.dataset.summary
     markCardRead(key)
 
-    const apiBase = 'http://172.31.39.87:3847'
+    const apiBase = 'https://zentrix-improvements-dashboard.vercel.app'
     const apiKey = 'c3e403b4008e93cb225ceb884667f4802ecdd1263706ff550d63260217487003'
     const repoName = card.querySelector('.repo-tag')?.textContent || repo
     const payload = { cardId: key, repo, repoName, summary, requestedAt: new Date().toISOString() }
     const headers = { 'Content-Type': 'application/json', 'x-api-key': apiKey }
 
-    if (action === 'approve') {
-      saveSwipeAction(key, 'approved')
-      showToast('Approved ✓')
-      fetch(apiBase + '/api/approve', { method: 'POST', headers, body: JSON.stringify(payload) }).catch(() => {})
-    } else if (action === 'deny') {
-      saveSwipeAction(key, 'denied')
-      showToast('Denied')
-      fetch(apiBase + '/api/deny', { method: 'POST', headers, body: JSON.stringify(payload) }).catch(() => {})
-    } else if (action === 'plan') {
-      saveSwipeAction(key, 'plan_requested')
-      showToast('Plan requested — posting to Slack…')
-      fetch(apiBase + '/api/plan-request', { method: 'POST', headers, body: JSON.stringify(payload) }).catch(() => {})
-    }
+    const actionMap = { approve: 'approved', deny: 'denied', plan: 'plan_requested' }
+    const toastMap = { approve: 'Approved ✓', deny: 'Denied', plan: 'Plan requested — posting to Slack…' }
+    saveSwipeAction(key, actionMap[action] || action)
+    showToast(toastMap[action] || action)
+    fetch(apiBase + '/api/action', {
+      method: 'POST', headers,
+      body: JSON.stringify({ ...payload, action })
+    }).catch(() => {})
 
     setTimeout(() => { render(); updateUnreadCount() }, 290)
   }
