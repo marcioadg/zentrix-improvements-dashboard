@@ -326,9 +326,18 @@ function render() {
   const bugs = allEntries.filter(e=>e.category==='Bug Fix').length
   const ux = allEntries.filter(e=>e.category==='UX/UI').length
   const buildErrors = allEntries.filter(e=>e.category==='Build Error').length
+  const dates = allEntries.map(e=>e.date).sort()
+  const firstDate = dates[0] ? new Date(dates[0]+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : ''
+  const lastDate = dates[dates.length-1] ? new Date(dates[dates.length-1]+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : ''
+  const timeframe = firstDate && lastDate && firstDate !== lastDate ? `${firstDate} – ${lastDate}` : (firstDate || 'today')
   document.getElementById('stats').innerHTML = [
-    {v:allEntries.length,l:'Total'},{v:repos.length,l:'Repos'},{v:'~1.4M',l:'Lines of Code'},{v:bugs,l:'Bugs Fixed'},{v:ux,l:'UX Improvements'},{v:buildErrors,l:'Build Errors',color:'var(--error)'}
-  ].map(s=>`<div class="stat"><div class="val" ${s.color?`style="color:${s.color}"`:''}>${s.v}</div><div class="lbl">${s.l}</div></div>`).join('')
+    {v:allEntries.length,l:`Code improvements`,sub:timeframe},
+    {v:repos.length,l:'Active repos'},
+    {v:'~1.4M',l:'Lines of code'},
+    {v:bugs,l:'Bugs fixed',sub:timeframe},
+    {v:ux,l:'UX improvements',sub:timeframe},
+    {v:buildErrors,l:'Build errors',color:'var(--error)',sub:timeframe}
+  ].map(s=>`<div class="stat"><div class="val" ${s.color?`style="color:${s.color}"`:''}>${s.v}</div><div class="lbl">${s.l}</div>${s.sub?`<div style="font-size:9px;color:var(--text-muted);margin-top:2px">${s.sub}</div>`:''}</div>`).join('')
 
   const repoStats = {}
   allEntries.forEach(e=>{
