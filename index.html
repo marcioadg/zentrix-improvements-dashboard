@@ -235,6 +235,10 @@
 
   /* Proposal badge */
   .proposal-badge { display:inline-block; padding:2px 8px; border-radius:2px; font-size:11px; font-weight:600; color:#fbbf24; background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.3); text-transform:uppercase; letter-spacing:0.04em; }
+  .decision-badge { display:inline-block; padding:2px 8px; border-radius:2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; }
+  .decision-badge.approved { color:#22c55e; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3); }
+  .decision-badge.denied { color:#ef4444; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); }
+  .decision-badge.plan { color:#a855f7; background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.3); }
   /* Unread dot */
   .unread-dot { position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; background:var(--accent); pointer-events:none; z-index:2; }
   .card { position:relative; }
@@ -497,7 +501,7 @@ function render() {
   const swipedActions = getSwipeActions()
   document.getElementById('entries').innerHTML = allEntries.length ? allEntries.map(e=>{
     const cardKey = getCardKey(e)
-    if (swipedActions[cardKey]) return '' // hide swiped cards
+    const decisionAction = swipedActions[cardKey]
     const isError = e.category === 'Build Error'
     const isProposal = e.status === 'proposal'
     const isRead = !!readCards[cardKey]
@@ -508,7 +512,13 @@ function render() {
       ? `<details style="margin-top:6px;font-size:11px;color:#96979a"><summary style="cursor:pointer;color:#f87171">Error details</summary><pre style="margin-top:4px;white-space:pre-wrap;color:#c4c5c7;font-size:11px;background:#0f1011;padding:8px;border-radius:4px;overflow-x:auto">${e.errorDetails.map(l=>l.replace(/</g,'&lt;')).join('\n')}</pre></details>`
       : ''
     const timeStyle = e.score ? '' : 'margin-left:auto'
-    const proposalBadge = isProposal ? '<span class="proposal-badge">PROPOSAL</span>' : ''
+    const decisionLabels = { approved: '✓ Approved', denied: '✕ Denied', plan_requested: '📋 Plan Requested' }
+    const decisionClasses = { approved: 'approved', denied: 'denied', plan_requested: 'plan' }
+    const proposalBadge = isProposal
+      ? (decisionAction
+          ? `<span class="decision-badge ${decisionClasses[decisionAction]}">${decisionLabels[decisionAction] || decisionAction}</span>`
+          : '<span class="proposal-badge">PROPOSAL</span>')
+      : ''
     const unreadDot = !isRead ? '<span class="unread-dot"></span>' : ''
     const approveIcon = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`
     const denyIcon = `<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
@@ -525,7 +535,7 @@ function render() {
       </div>
       <div class="card-body">${esc(e.summary||'(no summary)')}${details}</div>
     </div>`
-    if (!isProposal) return cardEl
+    if (!isProposal || decisionAction) return cardEl
     return `<div class="swipe-wrap" data-key="${esc(cardKey)}">
       <div class="swipe-action swipe-action-left" id="action-left-${esc(cardKey)}">${approveIcon}<span class="swipe-action-label">Approve</span></div>
       <div class="swipe-action swipe-action-right" id="action-right-${esc(cardKey)}">${denyIcon}<span class="swipe-action-label">Deny</span></div>
@@ -1008,7 +1018,7 @@ function showToast(msg) {
       showToast('Plan requested — Ezra will follow up')
     }
 
-    setTimeout(() => { wrap.remove(); updateUnreadCount() }, 290)
+    setTimeout(() => { render(); updateUnreadCount() }, 290)
   }
 
   function onStart(x, target) {
