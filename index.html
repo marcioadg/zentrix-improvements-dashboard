@@ -354,27 +354,44 @@ function formatEntryTime(date, time) {
     return `${date} ${time} EST`
   }
 }
-const GH_BASE = 'https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/'
+const GH_RAW = 'https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/'
+const GH_API = 'https://api.github.com/repos/marcioadg/zentrix-improvements-dashboard/contents/data/'
 
 let allEntries = [], activeRepo = null, activeCat = null
+
+async function fetchFresh(filename) {
+  // Try GitHub API first (bypasses CDN cache), fall back to raw
+  try {
+    const r = await fetch(GH_API + filename, { headers: { 'Accept': 'application/vnd.github.v3.raw' }, cache: 'no-store' })
+    if (r.ok) return r.json()
+  } catch(e) {}
+  const r = await fetch(GH_RAW + filename + '?t=' + Date.now(), { cache: 'no-store' })
+  return r.json()
+}
 
 async function loadData() {
   const refreshBtn = document.querySelector('.refresh-btn svg')
   if (refreshBtn) refreshBtn.style.animation = 'spin 0.8s linear infinite'
+  // Optimistic: update timestamp immediately so user knows fetch started
+  const luEl = document.getElementById('last-updated')
+  const luBar = document.getElementById('last-updated-bar')
+  const fetchingStr = 'Fetching latest…'
+  if (luEl) luEl.textContent = fetchingStr
+  if (luBar) luBar.textContent = fetchingStr
   try {
-    const r = await fetch(GH_BASE + 'entries.json?t=' + Date.now())
-    allEntries = (await r.json()).sort((a,b) => {
+    const data = await fetchFresh('entries.json')
+    allEntries = data.sort((a,b) => {
       const da = a.date + 'T' + (a.time||'00:00') + ':00Z'
       const db = b.date + 'T' + (b.time||'00:00') + ':00Z'
       return new Date(db) - new Date(da)
     })
     render()
     const _updatedStr = `Updated ${new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date())} EST`
-    document.getElementById('last-updated').textContent = _updatedStr
-    const luBar = document.getElementById('last-updated-bar'); if (luBar) luBar.textContent = _updatedStr
+    if (luEl) luEl.textContent = _updatedStr
+    if (luBar) luBar.textContent = _updatedStr
   } catch(e) {
     document.getElementById('entries').innerHTML = '<div class="empty">No data yet — improvements will appear after the next hourly run.</div>'
-    document.getElementById('last-updated').textContent = 'No data yet'
+    if (luEl) luEl.textContent = 'No data yet'
   } finally {
     if (refreshBtn) refreshBtn.style.animation = ''
   }
@@ -591,7 +608,7 @@ function renderCharts() {
 async function loadSecurityData() {
   const grid = document.getElementById('security-grid')
   try {
-    const r = await fetch(GH_BASE + 'security.json?t=' + Date.now())
+    const r = await fetchFresh('security.json')
     if (!r.ok) throw new Error('not found')
     const data = await r.json()
 
@@ -662,7 +679,7 @@ async function loadSummaryContent() {
   textEl.innerHTML = 'Loading summary...'
   genEl.textContent = ''
   try {
-    const r = await fetch(GH_BASE + 'summary.json?t=' + Date.now())
+    const r = await fetchFresh('summary.json')
     if (!r.ok) throw new Error('not found')
     const data = await r.json()
     textEl.innerHTML = mdToHtml(data.summary || '')
