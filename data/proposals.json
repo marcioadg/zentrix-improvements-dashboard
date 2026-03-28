@@ -5,9 +5,20 @@
     "time": "19:22",
     "repo": "zentrixcrm",
     "repoName": "Zentrix CRM",
-    "summary": "Add keyboard shortcut (Cmd+K) to open the global search from any page — reduces friction for power users navigating between deals and contacts",
+    "summary": "Add keyboard shortcut (Cmd+K) to open the global search from any page \u2014 reduces friction for power users navigating between deals and contacts",
     "category": "UX/UI",
     "route": "/deals",
+    "status": "proposal"
+  },
+  {
+    "id": "prop-002",
+    "date": "2026-03-28",
+    "time": "19:50",
+    "repo": "business-os",
+    "repoName": "Business OS",
+    "summary": "Replace the static sidebar nav with a collapsible panel \u2014 saves 240px of horizontal space on tablet and keeps keyboard shortcuts visible. Affects /dashboard and all sub-pages.",
+    "category": "UX/UI",
+    "route": "/dashboard",
     "status": "proposal"
   }
 ]
