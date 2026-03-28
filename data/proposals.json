@@ -1,0 +1,13 @@
+[
+  {
+    "id": "prop-001",
+    "date": "2026-03-28",
+    "time": "19:22",
+    "repo": "zentrixcrm",
+    "repoName": "Zentrix CRM",
+    "summary": "Add keyboard shortcut (Cmd+K) to open the global search from any page — reduces friction for power users navigating between deals and contacts",
+    "category": "UX/UI",
+    "route": "/deals",
+    "status": "proposal"
+  }
+]
