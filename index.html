@@ -825,7 +825,7 @@ async function loadSecurityData() {
       const color = SCORE_COLOR(repo.score)
       const issues = (repo.issues || []).slice(0, 5)
       const issueHtml = issues.length
-        ? `<ul>${issues.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`
+        ? `<ul>${issues.map((issue,idx)=>`<li>${esc(issue)} <button onclick="requestSecFix(event,'${esc(repo.repo)}','${esc(repo.name)}',${idx},'${esc(issue)}')" style="margin-left:6px;font-size:10px;padding:1px 6px;border-radius:3px;border:1px solid var(--accent);color:var(--accent);background:none;cursor:pointer;vertical-align:middle;white-space:nowrap">Request fix</button></li>`).join('')}</ul>`
         : `<p class="sec-no-data">No issues found</p>`
       return `<div class="sec-card">
         <div class="sec-card-top">
@@ -842,6 +842,35 @@ async function loadSecurityData() {
     }).join('')
   } catch(e) {
     grid.innerHTML = '<div class="empty" style="min-height:200px">Security data not available yet.<br><span style="font-size:11px;margin-top:8px;display:block">Scores will appear after the first daily security run.</span></div>'
+  }
+}
+
+// ── Security fix request ──────────────────────────────────────────────────────
+async function requestSecFix(e, repo, repoName, issueIdx, issue) {
+  e.stopPropagation()
+  const btn = e.target
+  btn.textContent = '…'
+  btn.disabled = true
+  try {
+    const apiBase = 'https://zentrix-improvements-dashboard.vercel.app'
+    const apiKey = 'c3e403b4008e93cb225ceb884667f4802ecdd1263706ff550d63260217487003'
+    await fetch(apiBase + '/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+      body: JSON.stringify({
+        action: 'sec_fix',
+        cardId: `sec-${repo}-${issueIdx}`,
+        repo, repoName,
+        summary: issue,
+        requestedAt: new Date().toISOString()
+      })
+    })
+    btn.textContent = '✓ Sent'
+    btn.style.color = 'var(--success)'
+    btn.style.borderColor = 'var(--success)'
+  } catch(err) {
+    btn.textContent = 'Retry'
+    btn.disabled = false
   }
 }
 

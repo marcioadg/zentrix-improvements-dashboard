@@ -56,7 +56,7 @@ export default async function handler(req, res) {
   const { action, cardId, repo, repoName, summary, requestedAt, route } = req.body
   if (!action || !cardId) return res.status(400).json({ error: 'Missing action or cardId' })
 
-  const labels = { approve: '✅ Approved', deny: '❌ Denied', plan: '📋 Plan Requested' }
+  const labels = { approve: '✅ Approved', deny: '❌ Denied', plan: '📋 Plan Requested', sec_fix: '🔐 Security Fix Requested' }
   const label = labels[action] || action
 
   let blocks = [
