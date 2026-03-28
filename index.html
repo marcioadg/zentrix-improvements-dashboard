@@ -224,11 +224,11 @@
     <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
   </div>
 </header>
-<div id="summary-card" style="display:none;margin:12px 24px 0;padding:16px;position:relative">
-  <button onclick="closeSummary()" style="position:absolute;top:8px;right:12px;background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;line-height:1">&times;</button>
+<div id="summary-card" style="margin:12px 24px 0;padding:20px;position:relative">
+  <button onclick="closeSummary()" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1;padding:4px 8px">&times;</button>
   <div class="summary-title" style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:4px"><span class="ai-badge">✦ AI</span> Summary — Last 24 Hours</div>
-  <div id="summary-generated" style="font-size:11px;color:var(--text-muted);margin-bottom:10px"></div>
-  <div id="summary-text" style="font-size:13px;font-weight:400;color:var(--text-secondary);line-height:1.6"></div>
+  <div id="summary-generated" style="font-size:11px;color:var(--text-muted);margin-bottom:14px"></div>
+  <div id="summary-text" style="font-size:15px;font-weight:400;color:var(--text-secondary);line-height:1.7"></div>
 </div>
 <div class="stats" id="stats"></div>
 <div class="filters" id="filters">
@@ -523,27 +523,30 @@ async function loadSecurityData() {
 function mdToHtml(md) {
   return md
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') // escape HTML
-    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')               // **bold**
+    .replace(/\*\*([^*\n]+)\*\*/g, '<strong style="color:var(--text-primary);font-weight:600">$1</strong>') // **bold**
     .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')                           // *italic*
-    .replace(/^### (.+)$/gm, '<h4 style="color:var(--text-primary);font-size:12px;font-weight:600;margin:12px 0 4px;text-transform:uppercase;letter-spacing:0.05em">$1</h4>')
-    .replace(/^## (.+)$/gm,  '<h3 style="color:var(--text-primary);font-size:13px;font-weight:600;margin:14px 0 6px">$1</h3>')
-    .replace(/^# (.+)$/gm,   '<h2 style="color:var(--text-primary);font-size:15px;font-weight:600;margin:16px 0 8px">$1</h2>')
-    .replace(/^\d+\. (.+)$/gm, '<li style="margin:3px 0;padding-left:4px">$1</li>')   // numbered list items
-    .replace(/^[•\-\*] (.+)$/gm, '<li style="margin:3px 0;padding-left:4px">$1</li>') // bullet list items
-    .replace(/(<li[^>]*>.*<\/li>\n?)+/gs, m => `<ol style="padding-left:18px;margin:6px 0">${m}</ol>`)
-    .replace(/\n{2,}/g, '<br><br>')
-    .replace(/\n/g, '<br>')
+    .replace(/^### (.+)$/gm, '<p style="color:var(--text-primary);font-size:15px;font-weight:600;margin:20px 0 8px 0;line-height:1.4">$1</p>')
+    .replace(/^## (.+)$/gm,  '<p style="color:var(--text-primary);font-size:15px;font-weight:600;margin:20px 0 8px 0;line-height:1.4">$1</p>')
+    .replace(/^# (.+)$/gm,   '<p style="color:var(--text-primary);font-size:15px;font-weight:600;margin:20px 0 8px 0;line-height:1.4">$1</p>')
+    .replace(/^\d+\. (.+)$/gm, '<li style="margin:4px 0;padding-left:4px">$1</li>')   // numbered list items
+    .replace(/^[•\-\*] (.+)$/gm, '<li style="margin:4px 0;padding-left:4px">$1</li>') // bullet list items
+    .replace(/(<li[^>]*>.*<\/li>\n?)+/gs, m => `<ul style="padding-left:18px;margin:8px 0">${m}</ul>`)
+    .replace(/\n{2,}/g, '</p><p style="margin:0 0 12px 0;line-height:1.7">')
+    .replace(/^/, '<p style="margin:0 0 12px 0;line-height:1.7">')
+    .replace(/$/, '</p>')
+    .replace(/\n/g, ' ')
 }
 
 // ── AI Summary ───────────────────────────────────────────────────────────────
-async function toggleSummary() {
-  const card = document.getElementById('summary-card')
-  if (card.style.display !== 'none') { closeSummary(); return }
+let summaryLoaded = false
+
+async function loadSummaryContent() {
+  if (summaryLoaded) return
+  summaryLoaded = true
   const textEl = document.getElementById('summary-text')
   const genEl = document.getElementById('summary-generated')
   textEl.innerHTML = 'Loading summary...'
   genEl.textContent = ''
-  card.style.display = 'block'
   try {
     const r = await fetch(GH_BASE + 'summary.json?t=' + Date.now())
     if (!r.ok) throw new Error('not found')
@@ -555,6 +558,16 @@ async function toggleSummary() {
     }
   } catch(e) {
     textEl.innerHTML = 'Summary not available yet. It will be generated on the next data update.'
+  }
+}
+
+async function toggleSummary() {
+  const card = document.getElementById('summary-card')
+  if (card.style.display === 'none') {
+    card.style.display = 'block'
+    await loadSummaryContent()
+  } else {
+    closeSummary()
   }
 }
 
@@ -574,6 +587,7 @@ const origSwitchView = switchView
 switchView = function(view, btn) { closeMenu(); origSwitchView(view, btn) }
 
 loadData()
+loadSummaryContent()
 setInterval(loadData, 60000)
 </script>
 </body>
