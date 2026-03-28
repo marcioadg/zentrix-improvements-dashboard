@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#090909">
-<title>Zentrix Improvements — Dashboard</title>
+<title>Zentrix Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -232,10 +232,10 @@
     <svg class="logo-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M8 0.5L14.5 4.25V11.75L8 15.5L1.5 11.75V4.25L8 0.5Z" fill="var(--accent)" opacity="0.9"/>
     </svg>
-    <span class="brand">Zentrix</span><span class="brand-sub"> Improvements</span>
+    <span class="brand">Zentrix</span>
   </h1>
   <div class="header-controls" style="margin-left:auto">
-    <span class="meta" id="last-updated">Loading...</span>
+    <span class="meta" id="last-updated" style="display:none">Loading...</span>
     <div class="view-toggle">
       <!-- List -->
       <button class="view-btn active" onclick="switchView('list',this)" title="List view" aria-label="List view">
@@ -271,7 +271,10 @@
   <div id="summary-generated" style="font-size:11px;color:var(--text-muted);margin-bottom:14px"></div>
   <div id="summary-text" style="font-size:15px;font-weight:400;color:var(--text-secondary);line-height:1.7"></div>
 </div>
-<div id="stats-header" style="padding:6px 16px 0;font-size:10px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;background:var(--sidebar-bg);border-bottom:none">Last 24 hours</div>
+<div style="padding:6px 16px 0;display:flex;align-items:center;justify-content:space-between;background:var(--sidebar-bg)">
+  <span id="stats-header" style="font-size:10px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Last 24 hours</span>
+  <span id="last-updated-bar" style="font-size:10px;color:var(--text-muted)"></span>
+</div>
 <div class="stats" id="stats"></div>
 <div class="filters" id="filters">
   <label>Repo</label>
@@ -351,7 +354,9 @@ async function loadData() {
       return new Date(db) - new Date(da)
     })
     render()
-    document.getElementById('last-updated').textContent = `${allEntries.length} improvements · updated ${new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date())} EST`
+    const _updatedStr = `Updated ${new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date())} EST`
+    document.getElementById('last-updated').textContent = _updatedStr
+    const luBar = document.getElementById('last-updated-bar'); if (luBar) luBar.textContent = _updatedStr
   } catch(e) {
     document.getElementById('entries').innerHTML = '<div class="empty">No data yet — improvements will appear after the next hourly run.</div>'
     document.getElementById('last-updated').textContent = 'No data yet'
