@@ -402,6 +402,7 @@ async function fetchFresh(filename) {
     if (r.ok) return r.json()
   } catch(e) {}
   const r = await fetch(GH_RAW + filename + '?t=' + Date.now(), { cache: 'no-store' })
+  if (!r.ok) throw new Error(`Failed to fetch ${filename}: ${r.status}`)
   return r.json()
 }
 
@@ -1096,7 +1097,17 @@ function showToast(msg) {
 })()
 
 loadData()
-setInterval(loadData, 60000)
+// Visibility-aware polling: pause when tab is hidden to save GitHub API rate limits
+let pollTimer = setInterval(loadData, 60000)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  } else {
+    loadData()
+    pollTimer = setInterval(loadData, 60000)
+  }
+})
 
 // ── Collapsible chart cards ───────────────────────────────────────────────────
 function toggleCard(h3) {
