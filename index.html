@@ -434,6 +434,7 @@ function render() {
       <div class="card-header">
         <span class="repo-tag">${e.repoName}</span>
         <span class="cat-tag" style="${catStyle}">${e.category}</span>
+        ${e.route?`<span style="font-size:10px;font-weight:500;color:var(--text-muted);background:var(--active);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:ui-monospace,monospace;letter-spacing:0">${e.route}</span>`:''}
         ${e.score?`<span class="score" style="color:${SCORE_COLOR(e.score)}">${e.score}/100</span>`:''}
         <span class="time" style="${timeStyle}">${formatEntryTime(e.date, e.time)} · <span style="opacity:0.6">${timeAgo(e.date, e.time)}</span></span>
       </div>
