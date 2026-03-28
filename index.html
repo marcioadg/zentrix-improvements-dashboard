@@ -238,12 +238,15 @@
   /* Unread dot */
   .unread-dot { position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; background:var(--accent); pointer-events:none; z-index:2; }
   .card { position:relative; }
-  /* Swipe overlay */
-  .swipe-overlay { position:absolute; top:0; left:0; right:0; bottom:0; opacity:0; pointer-events:none; z-index:1; transition:opacity 80ms ease; border-radius:5px; overflow:hidden; }
-  .swipe-hint-left { position:absolute; top:0; left:0; bottom:0; width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:0 10px; }
-  .swipe-hint-right { position:absolute; top:0; right:0; bottom:0; width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:0 10px; }
-  .swipe-hint-icon { font-size:22px; line-height:1; }
-  .swipe-hint-label { font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; text-align:center; line-height:1.2; }
+  /* Swipe action panels */
+  .swipe-wrap { position:relative; border-radius:6px; overflow:hidden; }
+  .swipe-action { position:absolute; top:0; bottom:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-width:80px; padding:0 18px; }
+  .swipe-action-left { left:0; background:#22c55e; }
+  .swipe-action-right { right:0; background:#ef4444; }
+  .swipe-action-right.plan { background:#a855f7; }
+  .swipe-action svg { width:22px; height:22px; stroke:#fff; fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+  .swipe-action-label { font-size:11px; font-weight:700; color:#fff; letter-spacing:0.05em; text-transform:uppercase; }
+  .swipe-action { transition: min-width 150ms ease; }
   /* Toast */
   .zentrix-toast { position:fixed; bottom:24px; right:24px; left:auto; max-width:calc(100vw - 48px); background:var(--card-bg); border:1px solid var(--border); color:var(--text-primary); padding:12px 20px; border-radius:6px; font-size:13px; font-weight:500; z-index:1000; box-shadow:0 4px 16px rgba(0,0,0,0.2); animation:toastIn 200ms ease; }
   @keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
@@ -507,12 +510,11 @@ function render() {
     const timeStyle = e.score ? '' : 'margin-left:auto'
     const proposalBadge = isProposal ? '<span class="proposal-badge">PROPOSAL</span>' : ''
     const unreadDot = !isRead ? '<span class="unread-dot"></span>' : ''
-    const swipeOverlay = isProposal ? `<div class="swipe-overlay">
-      <div class="swipe-hint-left"><span class="swipe-hint-icon">✓</span><span class="swipe-hint-label" style="color:#22c55e">Approve</span></div>
-      <div class="swipe-hint-right"><span class="swipe-hint-icon">✕</span><span class="swipe-hint-label" style="color:#ef4444">Deny</span></div>
-    </div>` : ''
-    return `<div class="card${isProposal?' proposal-card':''}" data-repo="${esc(e.repo)}" data-cat="${esc(e.category)}" data-status="${esc(e.status||'')}" data-key="${esc(cardKey)}" data-summary="${esc(e.summary||'')}" ${isError?'style="border-left:3px solid var(--error)"':''}>
-      ${unreadDot}${swipeOverlay}
+    const approveIcon = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`
+    const denyIcon = `<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+    const planIcon = `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="16" x2="12" y2="16"/></svg>`
+    const cardEl = `<div class="card${isProposal?' proposal-card':''}" data-repo="${esc(e.repo)}" data-cat="${esc(e.category)}" data-status="${esc(e.status||'')}" data-key="${esc(cardKey)}" data-summary="${esc(e.summary||'')}" ${isError?'style="border-left:3px solid var(--error)"':''}>
+      ${unreadDot}
       <div class="card-header">
         <span class="repo-tag">${esc(e.repoName)}</span>
         <span class="cat-tag" style="${catStyle}">${esc(e.category)}</span>
@@ -522,7 +524,14 @@ function render() {
         <span class="time" style="${timeStyle}">${formatEntryTime(e.date, e.time)} · <span style="opacity:0.6">${timeAgo(e.date, e.time)}</span></span>
       </div>
       <div class="card-body">${esc(e.summary||'(no summary)')}${details}</div>
-    </div>`}).join('') : '<div class="empty">No improvements logged yet.</div>'
+    </div>`
+    if (!isProposal) return cardEl
+    return `<div class="swipe-wrap" data-key="${esc(cardKey)}">
+      <div class="swipe-action swipe-action-left" id="action-left-${esc(cardKey)}">${approveIcon}<span class="swipe-action-label">Approve</span></div>
+      <div class="swipe-action swipe-action-right" id="action-right-${esc(cardKey)}">${denyIcon}<span class="swipe-action-label">Deny</span></div>
+      ${cardEl}
+    </div>`
+  }).join('') : '<div class="empty">No improvements logged yet.</div>'
 
   applyFilters()
 }
@@ -923,126 +932,110 @@ function showToast(msg) {
   setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 200) }, 2500)
 }
 
-// ── Swipe gestures for proposal cards ──────────────────────────────────────
+// ── Swipe gestures for proposal cards (Gmail-style) ────────────────────────
 ;(function() {
-  let dragging = false, startX = 0, currentCard = null, cardW = 0
+  let dragging = false, startX = 0, currentCard = null, currentWrap = null, cardW = 0
 
-  function getOverlayState(dx) {
+  function getAction(dx) {
     const pct = Math.abs(dx) / cardW
-    if (dx > 0) return { color: 'rgba(34,197,94,0.18)', icon: '✓', label: 'approve', pct }
-    if (pct >= 0.6) return { color: 'rgba(168,85,247,0.18)', icon: '📋', label: 'plan', pct }
-    return { color: 'rgba(239,68,68,0.18)', icon: '✕', label: 'deny', pct }
+    if (dx > 0) return 'approve'
+    return pct >= 0.55 ? 'plan' : 'deny'
   }
 
-  function updateOverlay(card, dx) {
-    const overlay = card.querySelector('.swipe-overlay')
-    if (!overlay) return
-    const state = getOverlayState(dx)
+  function updateSwipe(card, wrap, dx) {
     const pct = Math.abs(dx) / cardW
-    const opacity = Math.min(pct * 2.5, 1)
-    overlay.style.opacity = opacity
-
-    const hintLeft = overlay.querySelector('.swipe-hint-left')
-    const hintRight = overlay.querySelector('.swipe-hint-right')
+    const action = getAction(dx)
     const committed = pct >= 0.4
 
+    const leftPanel = wrap.querySelector('.swipe-action-left')
+    const rightPanel = wrap.querySelector('.swipe-action-right')
+
     if (dx > 0) {
-      // swiping right — approve
-      overlay.style.background = `rgba(34,197,94,${committed ? 0.2 : 0.12})`
-      if (hintLeft) { hintLeft.style.transform = `scale(${committed ? 1.15 : 1})`; hintLeft.style.opacity = '1' }
-      if (hintRight) hintRight.style.opacity = '0.2'
-      // update right side to plan if deep enough
-      if (hintRight) hintRight.querySelector('.swipe-hint-label').textContent = 'Deny'
+      // swiping right — reveal left (approve) panel
+      if (leftPanel) leftPanel.style.minWidth = Math.abs(dx) + 'px'
+      if (rightPanel) rightPanel.style.minWidth = '0'
     } else {
-      // swiping left — deny or plan (deep)
-      const isDeep = pct >= 0.6
-      overlay.style.background = isDeep ? `rgba(168,85,247,${committed ? 0.2 : 0.12})` : `rgba(239,68,68,${committed ? 0.2 : 0.12})`
-      if (hintRight) {
-        hintRight.querySelector('.swipe-hint-icon').textContent = isDeep ? '📋' : '✕'
-        hintRight.querySelector('.swipe-hint-label').textContent = isDeep ? 'Plan' : 'Deny'
-        hintRight.querySelector('.swipe-hint-label').style.color = isDeep ? '#a855f7' : '#ef4444'
-        hintRight.style.transform = `scale(${committed ? 1.15 : 1})`
-        hintRight.style.opacity = '1'
+      // swiping left — reveal right panel
+      if (rightPanel) {
+        rightPanel.style.minWidth = Math.abs(dx) + 'px'
+        const isDeep = pct >= 0.55
+        rightPanel.className = 'swipe-action swipe-action-right' + (isDeep ? ' plan' : '')
+        rightPanel.querySelector('.swipe-action-label').textContent = isDeep ? 'Plan' : 'Deny'
+        const svg = rightPanel.querySelector('svg')
+        if (isDeep) {
+          svg.innerHTML = '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="16" x2="12" y2="16"/>'
+        } else {
+          svg.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+        }
       }
-      if (hintLeft) hintLeft.style.opacity = '0.2'
+      if (leftPanel) leftPanel.style.minWidth = '0'
     }
 
     card.style.transform = `translateX(${dx}px)`
     card.style.transition = 'none'
+    card.style.zIndex = '2'
   }
 
-  function commitSwipe(card, dx) {
-    const state = getOverlayState(dx)
+  function commitSwipe(card, wrap, dx) {
     const pct = Math.abs(dx) / cardW
+    const action = getAction(dx)
+
     if (pct < 0.4) {
       // snap back
-      card.style.transition = 'transform 200ms ease'
+      card.style.transition = 'transform 220ms cubic-bezier(0.25,0.46,0.45,0.94)'
       card.style.transform = 'translateX(0)'
-      const overlay = card.querySelector('.swipe-overlay')
-      if (overlay) { overlay.style.opacity = 0 }
+      const leftPanel = wrap.querySelector('.swipe-action-left')
+      const rightPanel = wrap.querySelector('.swipe-action-right')
+      if (leftPanel) leftPanel.style.minWidth = '0'
+      if (rightPanel) rightPanel.style.minWidth = '0'
       return
     }
-    // commit: slide off
+
+    // slide off
     const dir = dx > 0 ? 1 : -1
-    card.style.transition = 'transform 300ms ease, opacity 300ms ease'
-    card.style.transform = `translateX(${dir * window.innerWidth}px)`
-    card.style.opacity = '0'
+    card.style.transition = 'transform 280ms ease'
+    card.style.transform = `translateX(${dir * (cardW + 20)}px)`
 
     const key = card.dataset.key
     const repo = card.dataset.repo
     const summary = card.dataset.summary
-
     markCardRead(key)
 
-    if (state.label === 'approve') {
-      saveSwipeAction(key, 'approved')
-      showToast('Approved ✓')
-    } else if (state.label === 'deny') {
-      saveSwipeAction(key, 'denied')
-      showToast('Denied')
-    } else if (state.label === 'plan') {
+    if (action === 'approve') { saveSwipeAction(key, 'approved'); showToast('Approved ✓') }
+    else if (action === 'deny') { saveSwipeAction(key, 'denied'); showToast('Denied') }
+    else if (action === 'plan') {
       saveSwipeAction(key, 'plan_requested')
-      showToast('Plan requested — Ezra will follow up in #ai-devs-zentrix')
-      try {
-        fetch('/api/plan-request', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cardId: key, repo, summary, requestedAt: new Date().toISOString() })
-        }).catch(() => {})
-      } catch(e) {}
+      showToast('Plan requested — Ezra will follow up')
     }
 
-    setTimeout(() => {
-      card.remove()
-      updateUnreadCount()
-    }, 300)
+    setTimeout(() => { wrap.remove(); updateUnreadCount() }, 290)
   }
 
   function onStart(x, target) {
     const card = target.closest('.proposal-card')
     if (!card) return
+    const wrap = card.closest('.swipe-wrap')
+    if (!wrap) return
     dragging = true
     startX = x
     currentCard = card
+    currentWrap = wrap
     cardW = card.offsetWidth
     card.style.userSelect = 'none'
   }
 
   function onMove(x) {
     if (!dragging || !currentCard) return
-    const dx = x - startX
-    updateOverlay(currentCard, dx)
+    updateSwipe(currentCard, currentWrap, x - startX)
   }
 
   function onEnd(x) {
     if (!dragging || !currentCard) return
     dragging = false
-    const dx = x - startX
-    commitSwipe(currentCard, dx)
-    currentCard = null
+    commitSwipe(currentCard, currentWrap, x - startX)
+    currentCard = null; currentWrap = null
   }
 
-  // Touch events
   document.addEventListener('touchstart', e => {
     const t = e.touches[0]
     onStart(t.clientX, e.target)
