@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "prop-test-001",
+    "date": "2026-03-28",
+    "time": "21:01",
+    "repo": "zentrixcrm",
+    "repoName": "Zentrix CRM",
+    "summary": "Add inline deal renaming \u2014 double-tap a deal name to edit it in place instead of opening the full edit modal. Saves ~4 taps per rename, especially useful when cleaning up imported deals.",
+    "category": "UX/UI",
+    "route": "/deals",
+    "status": "proposal"
+  }
+]
