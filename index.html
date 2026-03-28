@@ -630,8 +630,10 @@ function applyFilters() {
 
 function clearAllFilters() {
   activeRepo = null; activeCat = null; activeProposal = false; activeUnread = false
-  const sel = document.getElementById('repo-filter')
-  if (sel) { sel.value = ''; sel.classList.remove('filtered') }
+  const repoSel = document.getElementById('repo-select')
+  if (repoSel) { repoSel.value = ''; repoSel.classList.remove('filtered') }
+  const catSel = document.getElementById('cat-select')
+  if (catSel) { catSel.value = ''; catSel.classList.remove('filtered') }
   const search = document.getElementById('search')
   if (search) search.value = ''
   const pb = document.getElementById('filter-proposals')
