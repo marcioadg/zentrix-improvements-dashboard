@@ -8,9 +8,10 @@ OUTPUT_FILE="/home/ubuntu/zentrix-improvements-dashboard/data/summary.json"
 FORMATTED=$(python3 -c "
 import json, sys
 from datetime import datetime, timedelta, timezone
+import zoneinfo
 
-EST = timezone(timedelta(hours=-5))
-now = datetime.now(EST)
+UTC_TZ = zoneinfo.ZoneInfo('UTC')
+now = datetime.now(UTC_TZ)
 cutoff = now - timedelta(hours=24)
 
 with open('$ENTRIES_FILE') as f:
@@ -19,7 +20,7 @@ with open('$ENTRIES_FILE') as f:
 recent = []
 for e in entries:
     try:
-        entry_dt = datetime.strptime(e['date'] + ' ' + e['time'], '%Y-%m-%d %H:%M').replace(tzinfo=EST)
+        entry_dt = datetime.strptime(e['date'] + ' ' + e['time'], '%Y-%m-%d %H:%M').replace(tzinfo=UTC_TZ)
         if entry_dt >= cutoff:
             summary = (e.get('summary') or '(no summary)')
             recent.append(f\"[{e.get('repoName', e['repo'])}] [{e['category']}]: {summary}\")
