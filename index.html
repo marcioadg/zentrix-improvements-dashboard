@@ -154,6 +154,13 @@
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
+  /* ── Active (pressed) states for tactile feedback ── */
+  .filter-btn:active { background: var(--active); color: var(--text-primary); transform: scale(0.97); }
+  .filter-btn.active:active { background: rgba(94,106,210,0.13); }
+  .view-btn:active { background: var(--active); transform: scale(0.95); }
+  .icon-btn:active { background: var(--active); transform: scale(0.92); }
+  .repo-select:active { border-color: var(--accent); }
+
   /* ── Focus-visible outlines for keyboard navigation ── */
   .filter-btn:focus-visible,
   .view-btn:focus-visible,
