@@ -267,22 +267,20 @@ const SCORE_COLOR = s => s>=80?'#4ade80':s>=60?'#fbbf24':'#f87171'
 
 function formatEntryTime(date, time) {
   // date = "2026-03-27", time = "18:49" (stored in UTC)
-  // Convert to America/New_York and show correct EDT/EST abbreviation
+  // Convert to America/New_York and always label as EST
   try {
     const utcDate = new Date(date + 'T' + time + ':00Z')
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York',
       year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', hour12: false,
-      timeZoneName: 'short'
+      hour: '2-digit', minute: '2-digit', hour12: false
     }).formatToParts(utcDate)
     const get = t => parts.find(p => p.type === t)?.value
-    const tz = get('timeZoneName') // "EDT" or "EST"
     const yr = get('year'), mo = get('month'), dy = get('day')
     const hr = get('hour'), mn = get('minute')
-    return `${yr}-${mo}-${dy} ${hr}:${mn} ${tz}`
+    return `${yr}-${mo}-${dy} ${hr}:${mn} EST`
   } catch(e) {
-    return `${date} ${time} ET`
+    return `${date} ${time} EST`
   }
 }
 const GH_BASE = 'https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/'
@@ -294,7 +292,7 @@ async function loadData() {
     const r = await fetch(GH_BASE + 'entries.json?t=' + Date.now())
     allEntries = await r.json()
     render()
-    document.getElementById('last-updated').textContent = `${allEntries.length} improvements · updated ${new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true,timeZoneName:'short'}).format(new Date()).replace(/,/,'')}`
+    document.getElementById('last-updated').textContent = `${allEntries.length} improvements · updated ${new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date())} EST`
   } catch(e) {
     document.getElementById('entries').innerHTML = '<div class="empty">No data yet — improvements will appear after the next hourly run.</div>'
     document.getElementById('last-updated').textContent = 'No data yet'
@@ -554,7 +552,7 @@ async function loadSummaryContent() {
     textEl.innerHTML = mdToHtml(data.summary || '')
     if (data.generated) {
       const d = new Date(data.generated)
-      genEl.textContent = 'Generated at ' + new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true,timeZoneName:'short'}).format(d).replace(/,/,'')
+      genEl.textContent = 'Generated at ' + new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(d) + ' EST'
     }
   } catch(e) {
     textEl.innerHTML = 'Summary not available yet. It will be generated on the next data update.'
