@@ -51,6 +51,7 @@
     --warning: #b45309;
     --error: #b91c1c;
   }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--page-bg); color: var(--text-primary); font-family: Inter, -apple-system, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; min-height: 100vh; font-feature-settings: "cv01", "cv02", "cv11"; }
   header { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); min-height: 52px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; top: 0; z-index: 10; }
@@ -351,6 +352,8 @@ const GH_BASE = 'https://raw.githubusercontent.com/marcioadg/zentrix-improvement
 let allEntries = [], activeRepo = null, activeCat = null
 
 async function loadData() {
+  const refreshBtn = document.querySelector('.refresh-btn svg')
+  if (refreshBtn) refreshBtn.style.animation = 'spin 0.8s linear infinite'
   try {
     const r = await fetch(GH_BASE + 'entries.json?t=' + Date.now())
     allEntries = (await r.json()).sort((a,b) => {
@@ -365,6 +368,8 @@ async function loadData() {
   } catch(e) {
     document.getElementById('entries').innerHTML = '<div class="empty">No data yet — improvements will appear after the next hourly run.</div>'
     document.getElementById('last-updated').textContent = 'No data yet'
+  } finally {
+    if (refreshBtn) refreshBtn.style.animation = ''
   }
 }
 
