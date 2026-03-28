@@ -265,6 +265,19 @@ const CAT_COLORS = {
 }
 const SCORE_COLOR = s => s>=80?'#4ade80':s>=60?'#fbbf24':'#f87171'
 
+function timeAgo(date, time) {
+  try {
+    const utcDate = new Date(date + 'T' + (time||'00:00') + ':00Z')
+    const diff = Math.floor((Date.now() - utcDate) / 1000)
+    if (diff < 60) return `${diff}s ago`
+    if (diff < 3600) return `${Math.floor(diff/60)}m ago`
+    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`
+    if (diff < 2592000) return `${Math.floor(diff/86400)}d ago`
+    if (diff < 31536000) return `${Math.floor(diff/2592000)}mo ago`
+    return `${Math.floor(diff/31536000)}y ago`
+  } catch(e) { return '' }
+}
+
 function formatEntryTime(date, time) {
   // date = "2026-03-27", time = "18:49" (stored in UTC)
   // Convert to America/New_York — always display as EST
@@ -347,7 +360,7 @@ function render() {
         <span class="repo-tag">${e.repoName}</span>
         <span class="cat-tag" style="${catStyle}">${e.category}</span>
         ${e.score?`<span class="score" style="color:${SCORE_COLOR(e.score)}">${e.score}/100</span>`:''}
-        <span class="time" style="${timeStyle}">${formatEntryTime(e.date, e.time)}</span>
+        <span class="time" style="${timeStyle}">${formatEntryTime(e.date, e.time)} · <span style="opacity:0.6">${timeAgo(e.date, e.time)}</span></span>
       </div>
       <div class="card-body">${e.summary||'(no summary)'}${details}</div>
     </div>`}).join('') : '<div class="empty">No improvements logged yet.</div>'
