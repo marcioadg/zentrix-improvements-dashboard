@@ -254,10 +254,7 @@
       <button class="view-btn" onclick="switchView('analytics',this)" title="Analytics" aria-label="Analytics">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
       </button>
-      <!-- Security -->
-      <button class="view-btn" onclick="switchView('security',this)" title="Security" aria-label="Security">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      </button>
+
     </div>
     <!-- Theme toggle -->
     <button id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark mode" aria-label="Toggle theme" class="icon-btn">
@@ -304,14 +301,11 @@
   <div class="chart-card"><h3>Repo Activity (Top 10)</h3><div class="chart-wrap"><canvas id="chart-repos"></canvas></div></div>
   <div class="chart-card"><h3>Avg Health Score per Repo</h3><div class="chart-wrap"><canvas id="chart-scores"></canvas></div></div>
   <div class="chart-card" id="chart-errors-card" style="display:none"><h3>Build Errors by Repo</h3><div class="chart-wrap"><canvas id="chart-errors"></canvas></div></div>
-</div>
-<div class="security-view" id="security" style="display:none">
-  <div class="security-header">
-    <h2>🔒 Security Scores by Repo</h2>
-    <p>Updated daily · Tap or hover a repo to see top issues · Score 0–100</p>
+  <div class="chart-card"><h3>Test Coverage by App</h3><div class="chart-wrap"><canvas id="chart-coverage"></canvas></div></div>
+  <div class="chart-card" style="grid-column:1/-1"><h3>🔒 Security Scores</h3>
+    <div class="security-stale" id="security-stale" style="display:none;margin-bottom:12px">Security data is more than 25 hours old.</div>
+    <div class="security-grid" id="security-grid" style="margin-top:0"><div class="loading">Loading...</div></div>
   </div>
-  <div class="security-stale" id="security-stale">Security data is more than 25 hours old — scores may be outdated.</div>
-  <div class="security-grid" id="security-grid"><div class="loading">Loading security scores...</div></div>
 </div>
 
 <script>
@@ -522,9 +516,7 @@ function switchView(view, btn) {
   document.getElementById('entries').style.display = view === 'list' ? 'flex' : 'none'
   document.getElementById('filters').style.display = view === 'list' ? 'flex' : 'none'
   document.getElementById('analytics').style.display = view === 'analytics' ? 'grid' : 'none'
-  document.getElementById('security').style.display = view === 'security' ? 'block' : 'none'
-  if (view === 'analytics' && allEntries.length) renderCharts()
-  if (view === 'security') loadSecurityData()
+  if (view === 'analytics') { if (allEntries.length) renderCharts(); loadSecurityData(); renderCoverageChart(); }
 }
 
 // ── Charts ───────────────────────────────────────────────────────────────────
@@ -619,6 +611,74 @@ function renderCharts() {
   errorEntries.forEach(e=>{ errCounts[e.repo]=(errCounts[e.repo]||0)+1; errNames[e.repo]=e.repoName })
   const sortedErr=Object.entries(errCounts).sort((a,b)=>b[1]-a[1])
   drawBarChart('chart-errors', sortedErr.map(s=>errNames[s[0]]||s[0]), sortedErr.map(s=>s[1]), '#f87171')
+}
+
+// ── Test Coverage Chart ──────────────────────────────────────────────────────
+async function renderCoverageChart() {
+  let coverageData
+  try {
+    const data = await fetchFresh('coverage.json')
+    coverageData = data.repos
+  } catch(e) {
+    coverageData = [
+      { repo: 'zentrixcrm', label: 'CRM', pct: 96.96 },
+      { repo: 'wisevasdashboard', label: 'WiseVAs', pct: 98.66 },
+      { repo: 'dietforge', label: 'DietForge', pct: 94.44 },
+      { repo: 'zentrix-insights', label: 'Insights', pct: 10.33 },
+      { repo: 'business-os', label: 'Business OS', pct: 0 },
+    ]
+  }
+  const canvas = document.getElementById('chart-coverage')
+  if (!canvas) return
+  const wrap = canvas.parentElement
+  const dpr = window.devicePixelRatio || 1
+  const w = wrap.clientWidth || 300
+  const BAR_H = 28, GAP = 10, PAD = { top: 8, right: 60, bottom: 8, left: 90 }
+  const h = PAD.top + coverageData.length * (BAR_H + GAP) - GAP + PAD.bottom
+  canvas.style.width = w + 'px'
+  canvas.style.height = h + 'px'
+  canvas.width = w * dpr
+  canvas.height = h * dpr
+  const ctx = canvas.getContext('2d')
+  ctx.scale(dpr, dpr)
+  const isDark = document.body.getAttribute('data-theme') !== 'light'
+  const textColor = isDark ? '#9b9eb6' : '#7c7f96'
+  const textPrimary = isDark ? '#e4e5f0' : '#0d0e14'
+  const barBg = isDark ? '#2a2c3e' : '#eceef6'
+  const TARGET = 90
+  ctx.clearRect(0, 0, w, h)
+  const availW = w - PAD.left - PAD.right
+  coverageData.forEach((d, i) => {
+    const y = PAD.top + i * (BAR_H + GAP)
+    const barW = Math.max(0, (d.pct / 100) * availW)
+    const color = d.pct >= TARGET ? '#22c55e' : d.pct >= 60 ? '#f59e0b' : '#ef4444'
+    // bg track
+    ctx.fillStyle = barBg
+    ctx.beginPath(); ctx.roundRect(PAD.left, y + (BAR_H - 14) / 2, availW, 14, 4); ctx.fill()
+    // filled bar
+    if (barW > 0) {
+      ctx.fillStyle = color
+      ctx.beginPath(); ctx.roundRect(PAD.left, y + (BAR_H - 14) / 2, barW, 14, 4); ctx.fill()
+    }
+    // target line
+    const targetX = PAD.left + (TARGET / 100) * availW
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'
+    ctx.lineWidth = 1; ctx.setLineDash([3, 3])
+    ctx.beginPath(); ctx.moveTo(targetX, y + (BAR_H - 18) / 2); ctx.lineTo(targetX, y + (BAR_H + 18) / 2); ctx.stroke()
+    ctx.setLineDash([])
+    // label
+    ctx.fillStyle = textPrimary; ctx.font = `500 12px Inter, -apple-system, sans-serif`
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
+    ctx.fillText(d.label, PAD.left - 8, y + BAR_H / 2)
+    // pct
+    ctx.fillStyle = d.pct > 0 ? color : textColor
+    ctx.textAlign = 'left'
+    ctx.fillText(d.pct > 0 ? d.pct.toFixed(1) + '%' : 'No data', PAD.left + availW + 8, y + BAR_H / 2)
+  })
+  // target label
+  const targetX = PAD.left + (TARGET / 100) * availW
+  ctx.fillStyle = textColor; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'center'
+  ctx.fillText('90% target', targetX, PAD.top - 2)
 }
 
 // ── Security Dashboard ───────────────────────────────────────────────────────
