@@ -22,6 +22,14 @@ declare -A REPOS=(
   ["zentrix-cyber"]="/home/ubuntu/zentrix-cyber"
   ["zentrix-sign"]="/home/ubuntu/zentrix-sign"
   ["decision-command"]="/home/ubuntu/decision-command"
+  ["zentrixcontent"]="/home/ubuntu/zentrixcontent"
+  ["zentrixcreative"]="/home/ubuntu/zentrixcreative"
+  ["zentrixchat"]="/home/ubuntu/zentrixchat"
+  ["zentrixfinance"]="/home/ubuntu/zentrixfinance"
+  ["zentrixmarketing"]="/home/ubuntu/zentrixmarketing"
+  ["zentrix-email-marketing"]="/home/ubuntu/zentrix-email-marketing"
+  ["zentrixpulse"]="/home/ubuntu/zentrixpulse"
+  ["zentrixprojects"]="/home/ubuntu/zentrixprojects"
 )
 
 declare -A REPO_NAMES=(
@@ -37,11 +45,20 @@ declare -A REPO_NAMES=(
   ["zentrix-cyber"]="Zentrix Cyber"
   ["zentrix-sign"]="Zentrix Sign"
   ["decision-command"]="Decision Command"
+  ["zentrixcontent"]="Zentrix Content"
+  ["zentrixcreative"]="Zentrix Creative"
+  ["zentrixchat"]="Zentrix Chat"
+  ["zentrixfinance"]="Zentrix Finance"
+  ["zentrixmarketing"]="Zentrix Marketing"
+  ["zentrix-email-marketing"]="Zentrix Email Mktg"
+  ["zentrixpulse"]="Zentrix Pulse"
+  ["zentrixprojects"]="Zentrix Projects"
 )
 
 echo "[$TIMESTAMP] Starting daily security scoring"
 
-RESULTS="[]"
+RESULTS_FILE=$(mktemp)
+echo "[]" > "$RESULTS_FILE"
 
 for repo in "${!REPOS[@]}"; do
   path="${REPOS[$repo]}"
@@ -98,41 +115,40 @@ lines = [l.strip() for l in sys.stdin.read().splitlines() if l.strip()]
 print(json.dumps(lines))
 ")
 
-  REPO_JSON=$(python3 -c "
-import json
-obj = {
-  'repo': '$repo',
-  'name': '$name',
-  'score': $SCORE,
-  'updated': '$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S)',
-  'issues': $ISSUES_JSON
-}
-print(json.dumps(obj))
-")
-
-  RESULTS=$(python3 -c "
+  python3 - "$repo" "$name" "$SCORE" "$RESULTS_FILE" <<PYEOF
 import json, sys
-results = json.loads('$RESULTS' if '$RESULTS' != '[]' else '[]')
-new_entry = $REPO_JSON
-results.append(new_entry)
-print(json.dumps(results))
-" 2>/dev/null || echo "$RESULTS")
+repo, name, score_str, results_file = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+issues_raw = """$ISSUES"""
+issues = [l.strip() for l in issues_raw.splitlines() if l.strip()]
+with open(results_file) as f:
+    results = json.load(f)
+results.append({
+    'repo': repo,
+    'name': name,
+    'score': int(score_str),
+    'updated': '$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S)',
+    'issues': issues
+})
+with open(results_file, 'w') as f:
+    json.dump(results, f)
+PYEOF
 
   echo "    $repo: $SCORE/100"
   sleep 30
 done
 
 # Write final JSON
-python3 -c "
-import json
-data = {
-  'generated': '$TIMESTAMP',
-  'repos': $RESULTS
-}
-with open('$OUTPUT', 'w') as f:
+python3 - "$RESULTS_FILE" "$OUTPUT" "$TIMESTAMP" <<PYEOF
+import json, sys
+results_file, output, timestamp = sys.argv[1], sys.argv[2], sys.argv[3]
+with open(results_file) as f:
+    results = json.load(f)
+data = {'generated': timestamp, 'repos': results}
+with open(output, 'w') as f:
     json.dump(data, f, indent=2)
 print('Security JSON written.')
-"
+PYEOF
+rm -f "$RESULTS_FILE"
 
 # Commit and push
 cd "$REPO_DIR"
