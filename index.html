@@ -100,10 +100,10 @@
   .empty { color: var(--text-muted); text-align: center; padding: 64px 24px; font-size: 14px; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 260px); }
   .loading { color: var(--text-muted); text-align: center; padding: 64px; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 260px); }
   .sep { width: 1px; background: var(--border); height: 16px; margin-left: 4px; }
-  .view-toggle { display: flex; gap: 2px; background: var(--active); border-radius: 7px; padding: 3px; }
-  .view-btn { color: var(--text-muted); cursor: pointer; font-size: 11px; font-weight: 500; background: transparent; border: none; border-radius: 5px; padding: 0 12px; height: 28px; min-width: 32px; display: flex; align-items: center; justify-content: center; transition: all 150ms ease; }
-  .view-btn:hover { background: var(--hover-medium); color: var(--text-primary); }
-  .view-btn.active { color: var(--text-primary); background: var(--sidebar-bg); box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04); }
+  .view-toggle { display: flex; gap: 1px; }
+  .view-btn { color: var(--text-muted); cursor: pointer; font-size: 11px; font-weight: 500; background: transparent; border: none; border-radius: 5px; padding: 0 11px; height: 30px; min-width: 30px; display: flex; align-items: center; justify-content: center; transition: color 120ms ease, background 120ms ease; }
+  .view-btn:hover { color: var(--text-primary); background: var(--hover); }
+  .view-btn.active { color: var(--text-primary); font-weight: 600; background: var(--active); }
   /* Analytics */
   .analytics { padding: 16px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 768px) { .analytics { grid-template-columns: 1fr; } }
@@ -139,17 +139,17 @@
   .sec-no-data { font-size: 12px; color: var(--text-muted); font-style: italic; }
   .security-stale { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.2); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: var(--warning); display: none; }
   button, .filter-btn, .view-btn, .refresh-btn { cursor: pointer; }
-  .icon-btn { background: none; border: none; border-radius: 6px; cursor: pointer; padding: 0; width: 32px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 150ms; min-height: unset; flex-shrink: 0; }
-  .icon-btn:hover { color: var(--text-primary); background: var(--hover-medium); }
-  #ai-summary-btn.active { color: var(--accent); background: rgba(94,106,210,0.1); }
+  .icon-btn { background: none; border: none; border-radius: 5px; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: color 120ms, background 120ms; min-height: unset; flex-shrink: 0; }
+  .icon-btn:hover { color: var(--text-primary); background: var(--hover); }
+  #ai-summary-btn.active { color: var(--accent); background: var(--active); }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--page-bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
   /* ── Hamburger menu button ── */
-  .header-controls { display: flex; align-items: center; gap: 6px; }
-  .header-controls .view-toggle { margin-right: 4px; }
+  .header-controls { display: flex; align-items: center; gap: 2px; }
+  .header-controls .view-toggle { margin-right: 6px; padding-right: 6px; border-right: 1px solid var(--border); }
 
   /* ── Mobile responsive ── */
   @media (max-width: 768px) {
