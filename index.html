@@ -224,12 +224,12 @@
       <button class="view-btn active" onclick="switchView('list',this)">List</button>
       <button class="view-btn" onclick="switchView('analytics',this)">Analytics</button>
       <button class="view-btn" onclick="switchView('security',this)">Security</button>
+      <button class="view-btn" onclick="toggleSummary()" id="ai-summary-btn">✦ AI Summary</button>
     </div>
-    <button class="refresh-btn" onclick="toggleSummary()">✨ AI Summary</button>
     <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
   </div>
 </header>
-<div id="summary-card" style="margin:12px 24px 0;padding:20px;position:relative">
+<div id="summary-card" style="margin:12px 24px 0;padding:20px;position:relative;display:none">
   <button onclick="closeSummary()" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1;padding:4px 8px">&times;</button>
   <div class="summary-title" style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:4px"><span class="ai-badge">✦ AI</span> Summary — Last 24 Hours</div>
   <div id="summary-generated" style="font-size:11px;color:var(--text-muted);margin-bottom:14px"></div>
@@ -604,15 +604,21 @@ async function loadSummaryContent() {
 
 async function toggleSummary() {
   const card = document.getElementById('summary-card')
+  const btn = document.getElementById('ai-summary-btn')
   if (card.style.display === 'none') {
     card.style.display = 'block'
+    if (btn) btn.classList.add('active')
     await loadSummaryContent()
   } else {
     closeSummary()
   }
 }
 
-function closeSummary() { document.getElementById('summary-card').style.display = 'none' }
+function closeSummary() {
+  document.getElementById('summary-card').style.display = 'none'
+  const btn = document.getElementById('ai-summary-btn')
+  if (btn) btn.classList.remove('active')
+}
 
 // ── Mobile: toggle tooltips on tap ────────────────────────────────────────────
 document.addEventListener('click', function(e) {
@@ -628,7 +634,6 @@ const origSwitchView = switchView
 switchView = function(view, btn) { closeMenu(); origSwitchView(view, btn) }
 
 loadData()
-loadSummaryContent()
 setInterval(loadData, 60000)
 </script>
 </body>
