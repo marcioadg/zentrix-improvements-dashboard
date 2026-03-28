@@ -2,7 +2,8 @@
 <html lang="en" style="border-top: 2px solid var(--accent)">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090909">
 <title>Zentrix Improvements — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,6 +117,91 @@
   ::-webkit-scrollbar-track { background: var(--page-bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ── Hamburger menu button ── */
+  .menu-toggle { display: none; background: none; border: 1px solid var(--border); color: var(--text-secondary); width: 44px; height: 44px; border-radius: 5px; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; line-height: 1; }
+  .menu-toggle:hover { background: var(--hover); color: var(--text-primary); }
+  .header-controls { display: flex; align-items: center; gap: 16px; }
+
+  /* ── Mobile responsive ── */
+  @media (max-width: 768px) {
+    /* Header: hamburger menu */
+    .menu-toggle { display: flex; }
+    .header-controls { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); padding: 12px 16px; gap: 10px; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .header-controls.open { display: flex; }
+    .header-controls .view-toggle { width: 100%; }
+    .header-controls .view-toggle .view-btn { flex: 1; height: 44px; font-size: 13px; }
+    .header-controls .refresh-btn { width: 100%; height: 44px; font-size: 13px; }
+    .header-controls .meta { order: 10; text-align: center; width: 100%; font-size: 12px; }
+    header { padding: 0 12px; min-height: 48px; position: sticky; }
+    header h1 { font-size: 13px; }
+
+    /* Stats: 3-column grid on mobile */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .stat { padding: 12px; border-right: 1px solid var(--border); text-align: center; }
+    .stat:nth-child(3n) { border-right: none; }
+    .stat:nth-child(n+4) { border-top: 1px solid var(--border); }
+    .stat .val { font-size: 20px; }
+    .stat .lbl { font-size: 10px; }
+
+    /* Filters */
+    .filters { padding: 10px 12px; gap: 6px; }
+    .filters label { width: 100%; margin-top: 4px; }
+    .filters label:first-child { margin-top: 0; }
+    .filter-btn { height: 36px; font-size: 12px; padding: 6px 12px; min-height: 36px; }
+    #search { width: 100%; height: 44px; font-size: 14px; }
+    .sep { display: none; }
+    .filters > div[style*="flex:1"] { display: none; }
+
+    /* Entries / cards */
+    .entries { padding: 12px; gap: 8px; }
+    .card { padding: 14px; }
+    .card-header { gap: 6px; }
+    .repo-tag, .cat-tag { font-size: 12px; padding: 4px 10px; }
+    .score { font-size: 12px; }
+    .time { font-size: 11px; width: 100%; margin-top: 4px; margin-left: 0 !important; }
+    .card-body { font-size: 14px; line-height: 22px; }
+
+    /* Analytics */
+    .analytics { padding: 12px; gap: 12px; grid-template-columns: 1fr; }
+    .chart-card { padding: 14px; }
+    .chart-card h3 { font-size: 14px; }
+
+    /* Security */
+    .security-view { padding: 12px; }
+    .security-grid { grid-template-columns: 1fr; gap: 10px; }
+    .sec-card { padding: 14px; }
+    .sec-repo-name { font-size: 14px; }
+    .sec-score-badge { font-size: 14px; }
+    /* Tooltip: show on tap via focus, position below on mobile */
+    .sec-card:focus-within .sec-tooltip,
+    .sec-card.tooltip-active .sec-tooltip { display: block; }
+    .sec-tooltip { position: relative; bottom: auto; left: auto; right: auto; margin-top: 10px; min-width: 0; width: 100%; }
+    .sec-tooltip ul li { font-size: 13px; }
+    .security-header h2 { font-size: 16px; }
+    .security-header p { font-size: 13px; }
+
+    /* Summary card */
+    #summary-card { margin: 8px 12px 0 !important; }
+    #summary-card button[onclick*="closeSummary"] { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 22px; top: 4px !important; right: 4px !important; }
+
+    /* Empty / loading states */
+    .empty { padding: 32px 16px; font-size: 14px; min-height: calc(100vh - 200px); }
+    .loading { padding: 32px 16px; min-height: calc(100vh - 200px); }
+
+    /* General touch target fix */
+    button { min-height: 44px; }
+  }
+
+  /* Small phones */
+  @media (max-width: 374px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(2n) { border-right: none; }
+    .stat:nth-child(3n) { border-right: 1px solid var(--border); }
+    .stat:nth-child(n+3) { border-top: 1px solid var(--border); }
+    .stat .val { font-size: 18px; }
+    .filter-btn { font-size: 11px; padding: 4px 8px; }
+  }
 </style>
 </head>
 <body>
@@ -126,7 +212,8 @@
     </svg>
     <span class="brand">Zentrix</span><span class="brand-sub"> Improvements</span>
   </h1>
-  <div style="display:flex;align-items:center;gap:16px">
+  <button class="menu-toggle" onclick="document.querySelector('.header-controls').classList.toggle('open')" aria-label="Menu">☰</button>
+  <div class="header-controls">
     <span class="meta" id="last-updated">Loading...</span>
     <div class="view-toggle">
       <button class="view-btn active" onclick="switchView('list',this)">List</button>
@@ -164,7 +251,7 @@
 <div class="security-view" id="security" style="display:none">
   <div class="security-header">
     <h2>🔒 Security Scores by Repo</h2>
-    <p>Updated daily · Hover a repo to see top issues · Score 0–100</p>
+    <p>Updated daily · Tap or hover a repo to see top issues · Score 0–100</p>
   </div>
   <div class="security-stale" id="security-stale">Security data is more than 25 hours old — scores may be outdated.</div>
   <div class="security-grid" id="security-grid"><div class="loading">Loading security scores...</div></div>
@@ -310,7 +397,10 @@ function setupCanvas(id) {
 function drawBarChart(canvasId, labels, values, color, maxOverride) {
   const maxVal = maxOverride || Math.max(...values, 1)
   const barH = 28, gap = 4
-  const padLeft = Math.max(...labels.map(l => l.length)) * 6.5 + 12
+  const isMobile = window.innerWidth <= 768
+  const maxLabelChars = isMobile ? 12 : Infinity
+  const displayLabels = labels.map(l => l.length > maxLabelChars ? l.slice(0, maxLabelChars - 1) + '…' : l)
+  const padLeft = Math.max(...displayLabels.map(l => l.length)) * 6.5 + 12
   const padRight = 48 // enough room for numbers
   const padTop = 8, padBottom = 8
   const h = labels.length * (barH + gap) + padTop + padBottom
@@ -333,7 +423,7 @@ function drawBarChart(canvasId, labels, values, color, maxOverride) {
     ctx.font = '11px Inter, sans-serif'
     ctx.textAlign = 'right'
     ctx.textBaseline = 'middle'
-    ctx.fillText(label, padLeft - 8, y + barH / 2)
+    ctx.fillText(displayLabels[i], padLeft - 8, y + barH / 2)
     // value — always inside padRight so never clips
     ctx.fillStyle = '#e2e3e5'
     ctx.textAlign = 'left'
@@ -469,6 +559,19 @@ async function toggleSummary() {
 }
 
 function closeSummary() { document.getElementById('summary-card').style.display = 'none' }
+
+// ── Mobile: toggle tooltips on tap ────────────────────────────────────────────
+document.addEventListener('click', function(e) {
+  const card = e.target.closest('.sec-card')
+  document.querySelectorAll('.sec-card.tooltip-active').forEach(c => { if (c !== card) c.classList.remove('tooltip-active') })
+  if (card) card.classList.toggle('tooltip-active')
+})
+
+// Close hamburger menu on view switch or resize
+function closeMenu() { const el = document.querySelector('.header-controls'); if (el) el.classList.remove('open') }
+window.addEventListener('resize', closeMenu)
+const origSwitchView = switchView
+switchView = function(view, btn) { closeMenu(); origSwitchView(view, btn) }
 
 loadData()
 setInterval(loadData, 60000)
