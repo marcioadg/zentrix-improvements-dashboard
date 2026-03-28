@@ -1032,10 +1032,9 @@ function showToast(msg) {
     markCardRead(key)
 
     const apiBase = 'https://zentrix-improvements-dashboard.vercel.app'
-    const apiKey = 'c3e403b4008e93cb225ceb884667f4802ecdd1263706ff550d63260217487003'
     const repoName = card.querySelector('.repo-tag')?.textContent || repo
     const payload = { cardId: key, repo, repoName, summary, requestedAt: new Date().toISOString() }
-    const headers = { 'Content-Type': 'application/json', 'x-api-key': apiKey }
+    const headers = { 'Content-Type': 'application/json' }
 
     const actionMap = { approve: 'approved', deny: 'denied', plan: 'plan_requested' }
     const toastMap = { approve: 'Approved ✓', deny: 'Denied', plan: 'Plan requested — posting to Slack…' }
