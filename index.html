@@ -63,8 +63,9 @@
   .stats { display: flex; padding: 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; background: linear-gradient(180deg, rgba(92,132,254,0.04) 0%, transparent 100%); }
   .stat { padding: 16px 24px; border-right: 1px solid var(--border); min-width: 100px; }
   .stat:last-child { border-right: none; }
-  .stat .val { font-size: 24px; font-weight: 600; color: var(--accent); }
+  .stat .val { font-size: 24px; font-weight: 600; color: var(--text-primary); }
   .stat .lbl { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+  [data-theme="light"] .stat .lbl { color: var(--text-secondary); }
   .filters { padding: 10px 24px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; box-shadow: 0 1px 0 var(--border); }
   .filters label { color: var(--text-muted); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
   .filter-btn { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 4px 12px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: 500; height: 28px; transition: all 150ms ease; }
@@ -517,13 +518,14 @@ function drawBarChart(canvasId, labels, values, color, maxOverride) {
     ctx.fillStyle = fill
     ctx.fillRect(padLeft, y, barW, barH)
     // label
-    ctx.fillStyle = '#5e5e5f'
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light'
+    ctx.fillStyle = isLight ? '#3d3f4d' : '#5e5e5f'
     ctx.font = '11px Inter, sans-serif'
     ctx.textAlign = 'right'
     ctx.textBaseline = 'middle'
     ctx.fillText(displayLabels[i], padLeft - 8, y + barH / 2)
     // value — always inside padRight so never clips
-    ctx.fillStyle = '#e2e3e5'
+    ctx.fillStyle = isLight ? '#0d0e14' : '#e2e3e5'
     ctx.textAlign = 'left'
     ctx.fillText(val, padLeft + barW + 6, y + barH / 2)
   })
@@ -556,7 +558,8 @@ function renderCharts() {
     drawBarChart('chart-scores', avgs.map(a=>a.name), avgs.map(a=>a.avg), avgs.map(a=>SCORE_COLOR(a.avg)), 100)
   } else {
     const {ctx,w} = setupCanvas('chart-scores')
-    ctx.fillStyle='#5e5e5f'; ctx.font='12px Inter,sans-serif'; ctx.textAlign='center'
+    const isLightMode = document.documentElement.getAttribute('data-theme') === 'light'
+    ctx.fillStyle= isLightMode ? '#3d3f4d' : '#5e5e5f'; ctx.font='12px Inter,sans-serif'; ctx.textAlign='center'
     ctx.fillText('No health scores available', w/2, 30)
   }
 
