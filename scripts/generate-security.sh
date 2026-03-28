@@ -30,6 +30,7 @@ declare -A REPOS=(
   ["zentrix-email-marketing"]="/home/ubuntu/zentrix-email-marketing"
   ["zentrixpulse"]="/home/ubuntu/zentrixpulse"
   ["zentrixprojects"]="/home/ubuntu/zentrixprojects"
+  ["zentrix-improvements-dashboard"]="/home/ubuntu/zentrix-improvements-dashboard"
 )
 
 declare -A REPO_NAMES=(
@@ -53,6 +54,7 @@ declare -A REPO_NAMES=(
   ["zentrix-email-marketing"]="Zentrix Email Mktg"
   ["zentrixpulse"]="Zentrix Pulse"
   ["zentrixprojects"]="Zentrix Projects"
+  ["zentrix-improvements-dashboard"]="Improvements Dashboard"
 )
 
 echo "[$TIMESTAMP] Starting daily security scoring"
