@@ -230,6 +230,21 @@
     button { min-height: 44px; }
   }
 
+  /* Proposal badge */
+  .proposal-badge { display:inline-block; padding:2px 8px; border-radius:2px; font-size:11px; font-weight:600; color:#fbbf24; background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.3); text-transform:uppercase; letter-spacing:0.04em; }
+  /* Unread dot */
+  .unread-dot { position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; background:var(--accent); pointer-events:none; z-index:2; }
+  .card { position:relative; }
+  /* Swipe overlay */
+  .swipe-overlay { position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; opacity:0; pointer-events:none; z-index:1; transition:opacity 80ms ease; border-radius:5px; }
+  /* Toast */
+  .zentrix-toast { position:fixed; bottom:24px; right:24px; background:var(--card-bg); border:1px solid var(--border); color:var(--text-primary); padding:12px 20px; border-radius:6px; font-size:13px; font-weight:500; z-index:1000; box-shadow:0 4px 16px rgba(0,0,0,0.2); animation:toastIn 200ms ease; }
+  @keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .zentrix-toast.out { animation:toastOut 200ms ease forwards; }
+  @keyframes toastOut { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(12px); } }
+  /* Proposal filter active amber */
+  .filter-btn.active-amber { color:#fbbf24; border-color:#fbbf24; background:rgba(251,191,36,0.1); }
+
   /* Small phones */
   @media (max-width: 374px) {
     .stats { grid-template-columns: repeat(2, 1fr); }
@@ -358,7 +373,13 @@ function formatEntryTime(date, time) {
 const GH_RAW = 'https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/'
 const GH_API = 'https://api.github.com/repos/marcioadg/zentrix-improvements-dashboard/contents/data/'
 
-let allEntries = [], activeRepo = null, activeCat = null
+let allEntries = [], activeRepo = null, activeCat = null, activeProposal = false, activeUnread = false
+
+function getCardKey(e) { return e.id || (e.repo + '|' + e.date + '|' + e.time) }
+function getReadCards() { try { return JSON.parse(localStorage.getItem('zentrix_read_cards') || '{}') } catch(e) { return {} } }
+function markCardRead(key) { const r = getReadCards(); r[key] = true; localStorage.setItem('zentrix_read_cards', JSON.stringify(r)) }
+function getSwipeActions() { try { return JSON.parse(localStorage.getItem('swipe_actions') || '{}') } catch(e) { return {} } }
+function saveSwipeAction(key, action) { const a = getSwipeActions(); a[key] = action; localStorage.setItem('swipe_actions', JSON.stringify(a)) }
 
 async function fetchFresh(filename) {
   // Try GitHub API first (bypasses CDN cache), fall back to raw
@@ -408,6 +429,7 @@ function render() {
   const bugs24 = last24.filter(e=>e.category==='Bug Fix').length
   const ux24 = last24.filter(e=>e.category==='UX/UI').length
   const errors24 = last24.filter(e=>e.category==='Build Error').length
+  const proposals = allEntries.filter(e=>e.status==='proposal').length
   document.getElementById('stats').innerHTML =
     [
       {v:last24.length, l:'Code improvements'},
@@ -415,7 +437,8 @@ function render() {
       {v:'~1.4M',       l:'Lines in codebase'},
       {v:bugs24,        l:'Bugs fixed'},
       {v:ux24,          l:'UX improvements'},
-      {v:errors24,      l:'Build errors'}
+      {v:errors24,      l:'Build errors'},
+      {v:proposals,     l:'Proposals'}
     ].map(s=>`<div class="stat"><div class="val">${s.v}</div><div class="lbl">${s.l}</div></div>`).join('')
 
   const repoStats = {}
@@ -439,6 +462,9 @@ function render() {
       <option value="">All categories</option>
       ${cats.sort().map(c=>{const cnt=allEntries.filter(e=>e.category===c).length; return `<option value="${esc(c)}">${esc(c)} · ${cnt}</option>`}).join('')}
     </select>
+    <div class="sep"></div>
+    <button class="filter-btn${activeProposal?' active-amber':''}" id="filter-proposals" onclick="toggleProposalFilter()">Proposals</button>
+    <button class="filter-btn${activeUnread?' active':''}" id="filter-unread" onclick="toggleUnreadFilter()">Unread</button>
     <div style="flex:1"></div>
     <input id="search" type="text" placeholder="Search..." oninput="applyFilters()">
   `
@@ -451,8 +477,14 @@ function render() {
     if (sel) { sel.value = activeCat; sel.classList.add('filtered') }
   }
 
+  const readCards = getReadCards()
+  const swipedActions = getSwipeActions()
   document.getElementById('entries').innerHTML = allEntries.length ? allEntries.map(e=>{
+    const cardKey = getCardKey(e)
+    if (swipedActions[cardKey]) return '' // hide swiped cards
     const isError = e.category === 'Build Error'
+    const isProposal = e.status === 'proposal'
+    const isRead = !!readCards[cardKey]
     const catStyle = isError
       ? 'background:#f8717122;color:#f87171;border:1px solid #f8717144'
       : `background:${CAT_COLORS[e.category]||'#5e5e5f'}22;color:${CAT_COLORS[e.category]||'#96979a'};border:1px solid ${CAT_COLORS[e.category]||'#25262b'}44`
@@ -460,10 +492,15 @@ function render() {
       ? `<details style="margin-top:6px;font-size:11px;color:#96979a"><summary style="cursor:pointer;color:#f87171">Error details</summary><pre style="margin-top:4px;white-space:pre-wrap;color:#c4c5c7;font-size:11px;background:#0f1011;padding:8px;border-radius:4px;overflow-x:auto">${e.errorDetails.map(l=>l.replace(/</g,'&lt;')).join('\n')}</pre></details>`
       : ''
     const timeStyle = e.score ? '' : 'margin-left:auto'
-    return `<div class="card" data-repo="${esc(e.repo)}" data-cat="${esc(e.category)}" ${isError?'style="border-left:3px solid var(--error)"':''}>
+    const proposalBadge = isProposal ? '<span class="proposal-badge">PROPOSAL</span>' : ''
+    const unreadDot = !isRead ? '<span class="unread-dot"></span>' : ''
+    const swipeOverlay = isProposal ? '<div class="swipe-overlay"></div>' : ''
+    return `<div class="card${isProposal?' proposal-card':''}" data-repo="${esc(e.repo)}" data-cat="${esc(e.category)}" data-status="${esc(e.status||'')}" data-key="${esc(cardKey)}" data-summary="${esc(e.summary||'')}" ${isError?'style="border-left:3px solid var(--error)"':''}>
+      ${unreadDot}${swipeOverlay}
       <div class="card-header">
         <span class="repo-tag">${esc(e.repoName)}</span>
         <span class="cat-tag" style="${catStyle}">${esc(e.category)}</span>
+        ${proposalBadge}
         ${e.route?`<span style="font-size:10px;font-weight:500;color:var(--text-muted);background:var(--active);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:ui-monospace,monospace;letter-spacing:0">${esc(e.route)}</span>`:''}
         ${e.score?`<span class="score" style="color:${SCORE_COLOR(e.score)}">${e.score}/100</span>`:''}
         <span class="time" style="${timeStyle}">${formatEntryTime(e.date, e.time)} · <span style="opacity:0.6">${timeAgo(e.date, e.time)}</span></span>
@@ -490,14 +527,44 @@ function setFilter(type, val, btn) {
   if(type==='cat') { activeCat=val; applyFilters() }
 }
 
+function toggleProposalFilter() {
+  activeProposal = !activeProposal
+  const btn = document.getElementById('filter-proposals')
+  if (btn) btn.classList.toggle('active-amber', activeProposal)
+  applyFilters()
+}
+
+function toggleUnreadFilter() {
+  activeUnread = !activeUnread
+  const btn = document.getElementById('filter-unread')
+  if (btn) btn.classList.toggle('active', activeUnread)
+  applyFilters()
+}
+
+function updateUnreadCount() {
+  const readCards = getReadCards()
+  const unreadCount = document.querySelectorAll('.card[data-key]').length > 0
+    ? [...document.querySelectorAll('.card[data-key]')].filter(c => !readCards[c.dataset.key]).length
+    : 0
+  const btn = document.getElementById('filter-unread')
+  if (btn) btn.textContent = unreadCount > 0 ? `Unread (${unreadCount})` : 'Unread'
+}
+
 function applyFilters() {
   const search = (document.getElementById('search')?.value||'').toLowerCase()
+  const readCards = getReadCards()
   let visibleCount = 0
   document.querySelectorAll('.card').forEach(c=>{
-    const show = (!activeRepo||c.dataset.repo===activeRepo) && (!activeCat||c.dataset.cat===activeCat) && (!search||c.textContent.toLowerCase().includes(search))
+    const matchRepo = !activeRepo || c.dataset.repo===activeRepo
+    const matchCat = !activeCat || c.dataset.cat===activeCat
+    const matchSearch = !search || c.textContent.toLowerCase().includes(search)
+    const matchProposal = !activeProposal || c.dataset.status==='proposal'
+    const matchUnread = !activeUnread || !readCards[c.dataset.key]
+    const show = matchRepo && matchCat && matchSearch && matchProposal && matchUnread
     c.classList.toggle('hidden',!show)
     if (show) visibleCount++
   })
+  updateUnreadCount()
   let noResults = document.getElementById('no-results')
   if (visibleCount === 0 && document.querySelectorAll('.card').length > 0) {
     if (!noResults) {
@@ -816,6 +883,151 @@ function toggleTheme() {
     document.getElementById('theme-icon-dark').style.display = 'none'
     document.getElementById('theme-icon-light').style.display = ''
   }
+})()
+
+// ── Click to mark as read ──────────────────────────────────────────────────
+document.addEventListener('click', function(ev) {
+  const card = ev.target.closest('.card[data-key]')
+  if (!card) return
+  const key = card.dataset.key
+  if (key) {
+    markCardRead(key)
+    const dot = card.querySelector('.unread-dot')
+    if (dot) dot.remove()
+    updateUnreadCount()
+  }
+})
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.createElement('div')
+  t.className = 'zentrix-toast'
+  t.textContent = msg
+  document.body.appendChild(t)
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 200) }, 2500)
+}
+
+// ── Swipe gestures for proposal cards ──────────────────────────────────────
+;(function() {
+  let dragging = false, startX = 0, currentCard = null, cardW = 0
+
+  function getOverlayState(dx) {
+    const pct = Math.abs(dx) / cardW
+    if (dx > 0) return { color: 'rgba(34,197,94,0.18)', icon: '✓', label: 'approve', pct }
+    if (pct >= 0.6) return { color: 'rgba(168,85,247,0.18)', icon: '📋', label: 'plan', pct }
+    return { color: 'rgba(239,68,68,0.18)', icon: '✕', label: 'deny', pct }
+  }
+
+  function updateOverlay(card, dx) {
+    const overlay = card.querySelector('.swipe-overlay')
+    if (!overlay) return
+    const state = getOverlayState(dx)
+    const pct = Math.abs(dx) / cardW
+    overlay.style.background = state.color
+    overlay.style.opacity = Math.min(pct * 2, 1)
+    overlay.innerHTML = `<span style="font-size:32px">${state.icon}</span>`
+    card.style.transform = `translateX(${dx}px)`
+    card.style.transition = 'none'
+  }
+
+  function commitSwipe(card, dx) {
+    const state = getOverlayState(dx)
+    const pct = Math.abs(dx) / cardW
+    if (pct < 0.4) {
+      // snap back
+      card.style.transition = 'transform 200ms ease'
+      card.style.transform = 'translateX(0)'
+      const overlay = card.querySelector('.swipe-overlay')
+      if (overlay) { overlay.style.opacity = 0 }
+      return
+    }
+    // commit: slide off
+    const dir = dx > 0 ? 1 : -1
+    card.style.transition = 'transform 300ms ease, opacity 300ms ease'
+    card.style.transform = `translateX(${dir * window.innerWidth}px)`
+    card.style.opacity = '0'
+
+    const key = card.dataset.key
+    const repo = card.dataset.repo
+    const summary = card.dataset.summary
+
+    markCardRead(key)
+
+    if (state.label === 'approve') {
+      saveSwipeAction(key, 'approved')
+      showToast('Approved ✓')
+    } else if (state.label === 'deny') {
+      saveSwipeAction(key, 'denied')
+      showToast('Denied')
+    } else if (state.label === 'plan') {
+      saveSwipeAction(key, 'plan_requested')
+      showToast('Plan requested — Ezra will follow up in #ai-devs-zentrix')
+      try {
+        fetch('/api/plan-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cardId: key, repo, summary, requestedAt: new Date().toISOString() })
+        }).catch(() => {})
+      } catch(e) {}
+    }
+
+    setTimeout(() => {
+      card.remove()
+      updateUnreadCount()
+    }, 300)
+  }
+
+  function onStart(x, target) {
+    const card = target.closest('.proposal-card')
+    if (!card) return
+    dragging = true
+    startX = x
+    currentCard = card
+    cardW = card.offsetWidth
+    card.style.userSelect = 'none'
+  }
+
+  function onMove(x) {
+    if (!dragging || !currentCard) return
+    const dx = x - startX
+    updateOverlay(currentCard, dx)
+  }
+
+  function onEnd(x) {
+    if (!dragging || !currentCard) return
+    dragging = false
+    const dx = x - startX
+    commitSwipe(currentCard, dx)
+    currentCard = null
+  }
+
+  // Touch events
+  document.addEventListener('touchstart', e => {
+    const t = e.touches[0]
+    onStart(t.clientX, e.target)
+  }, { passive: true })
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return
+    onMove(e.touches[0].clientX)
+  }, { passive: true })
+  document.addEventListener('touchend', e => {
+    if (!dragging) return
+    onEnd(e.changedTouches[0].clientX)
+  }, { passive: true })
+
+  // Mouse events
+  document.addEventListener('mousedown', e => {
+    onStart(e.clientX, e.target)
+  })
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return
+    e.preventDefault()
+    onMove(e.clientX)
+  })
+  document.addEventListener('mouseup', e => {
+    if (!dragging) return
+    onEnd(e.clientX)
+  })
 })()
 
 loadData()
