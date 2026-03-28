@@ -491,10 +491,27 @@ function setFilter(type, val, btn) {
 
 function applyFilters() {
   const search = (document.getElementById('search')?.value||'').toLowerCase()
+  let visibleCount = 0
   document.querySelectorAll('.card').forEach(c=>{
     const show = (!activeRepo||c.dataset.repo===activeRepo) && (!activeCat||c.dataset.cat===activeCat) && (!search||c.textContent.toLowerCase().includes(search))
     c.classList.toggle('hidden',!show)
+    if (show) visibleCount++
   })
+  let noResults = document.getElementById('no-results')
+  if (visibleCount === 0 && document.querySelectorAll('.card').length > 0) {
+    if (!noResults) {
+      noResults = document.createElement('div')
+      noResults.id = 'no-results'
+      noResults.className = 'empty'
+      noResults.style.minHeight = '200px'
+      document.getElementById('entries').appendChild(noResults)
+    }
+    const term = search ? ` matching "${search}"` : ''
+    noResults.innerHTML = `No improvements found${term}.<br><span style="font-size:12px;color:var(--text-muted);margin-top:6px;display:block">Try adjusting your filters or search.</span>`
+    noResults.style.display = 'flex'
+  } else if (noResults) {
+    noResults.style.display = 'none'
+  }
 }
 
 let currentView = 'list'
