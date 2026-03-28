@@ -20,5 +20,16 @@
     "category": "UX/UI",
     "route": "/dashboard",
     "status": "proposal"
+  },
+  {
+    "id": "prop-003",
+    "date": "2026-03-28",
+    "time": "20:00",
+    "repo": "zentrixcrm",
+    "repoName": "Zentrix CRM",
+    "summary": "Add a bulk action toolbar that appears when multiple deals are selected \u2014 lets users assign owner, change stage, or archive in one tap instead of editing each deal individually.",
+    "category": "UX/UI",
+    "route": "/deals",
+    "status": "proposal"
   }
 ]
