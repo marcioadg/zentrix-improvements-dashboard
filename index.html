@@ -984,6 +984,9 @@ function showToast(msg) {
     card.style.transform = `translateX(${dx}px)`
     card.style.transition = 'none'
     card.style.zIndex = '2'
+    // clear panel transitions during drag for instant response
+    if (leftPanel) leftPanel.style.transition = 'none'
+    if (rightPanel) rightPanel.style.transition = 'none'
   }
 
   function commitSwipe(card, wrap, dx) {
@@ -992,18 +995,18 @@ function showToast(msg) {
 
     if (pct < 0.4) {
       // snap back
-      card.style.transition = 'transform 220ms cubic-bezier(0.25,0.46,0.45,0.94)'
+      card.style.transition = 'transform 180ms cubic-bezier(0.25,0.46,0.45,0.94)'
       card.style.transform = 'translateX(0)'
       const leftPanel = wrap.querySelector('.swipe-action-left')
       const rightPanel = wrap.querySelector('.swipe-action-right')
-      if (leftPanel) leftPanel.style.minWidth = '0'
-      if (rightPanel) rightPanel.style.minWidth = '0'
+      if (leftPanel) { leftPanel.style.transition = 'min-width 180ms ease'; leftPanel.style.minWidth = '0' }
+      if (rightPanel) { rightPanel.style.transition = 'min-width 180ms ease'; rightPanel.style.minWidth = '0' }
       return
     }
 
-    // slide off
+    // slide off — snap quickly in swipe direction
     const dir = dx > 0 ? 1 : -1
-    card.style.transition = 'transform 280ms ease'
+    card.style.transition = 'transform 200ms cubic-bezier(0.4,0,1,1)'
     card.style.transform = `translateX(${dir * (cardW + 20)}px)`
 
     const key = card.dataset.key
@@ -1060,8 +1063,9 @@ function showToast(msg) {
   }, { passive: true })
   document.addEventListener('touchmove', e => {
     if (!dragging) return
+    e.preventDefault() // prevent page scroll while swiping
     onMove(e.touches[0].clientX)
-  }, { passive: true })
+  }, { passive: false })
   document.addEventListener('touchend', e => {
     if (!dragging) return
     onEnd(e.changedTouches[0].clientX)
