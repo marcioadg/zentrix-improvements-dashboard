@@ -290,7 +290,11 @@ let allEntries = [], activeRepo = null, activeCat = null
 async function loadData() {
   try {
     const r = await fetch(GH_BASE + 'entries.json?t=' + Date.now())
-    allEntries = await r.json()
+    allEntries = (await r.json()).sort((a,b) => {
+      const da = a.date + 'T' + (a.time||'00:00') + ':00Z'
+      const db = b.date + 'T' + (b.time||'00:00') + ':00Z'
+      return new Date(db) - new Date(da)
+    })
     render()
     document.getElementById('last-updated').textContent = `${allEntries.length} improvements · updated ${new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date())} EST`
   } catch(e) {
