@@ -99,7 +99,8 @@
   .card-body .bullet-list li { margin-top: 4px; position: relative; padding-left: 14px; }
   .card-body .bullet-list li:before { content: '•'; position: absolute; left: 0; color: var(--accent); }
   .empty { color: var(--text-muted); text-align: center; padding: 64px 24px; font-size: 14px; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 260px); }
-  .loading { color: var(--text-muted); text-align: center; padding: 64px; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 260px); }
+  .loading { color: var(--text-muted); text-align: center; padding: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: calc(100vh - 260px); }
+  .loading::before { content: ''; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   .sep { width: 1px; background: var(--border); height: 16px; margin-left: 4px; }
   .view-toggle { display: flex; gap: 1px; }
   .view-btn { color: var(--text-muted); cursor: pointer; font-size: 11px; font-weight: 500; background: transparent; border: none; border-radius: 5px; padding: 0 11px; height: 30px; min-width: 30px; display: flex; align-items: center; justify-content: center; transition: color 120ms ease, background 120ms ease; }
