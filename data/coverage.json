@@ -1,10 +1,30 @@
 {
-  "generated": "2026-03-28T13:00:00",
+  "generated": "2026-03-28T17:20:02",
   "repos": [
-    { "repo": "zentrixcrm", "label": "CRM", "pct": 96.96 },
-    { "repo": "wisevasdashboard", "label": "WiseVAs", "pct": 98.66 },
-    { "repo": "dietforge", "label": "DietForge", "pct": 94.44 },
-    { "repo": "zentrix-insights", "label": "Insights", "pct": 10.33 },
-    { "repo": "business-os", "label": "Business OS", "pct": 0 }
+    {
+      "repo": "zentrixcrm",
+      "label": "CRM",
+      "pct": 96.96
+    },
+    {
+      "repo": "wisevasdashboard",
+      "label": "WiseVAs",
+      "pct": 98.66
+    },
+    {
+      "repo": "dietforge",
+      "label": "DietForge",
+      "pct": 94.44
+    },
+    {
+      "repo": "zentrix-insights",
+      "label": "Insights",
+      "pct": 10.33
+    },
+    {
+      "repo": "business-os",
+      "label": "Business OS",
+      "pct": 0.0
+    }
   ]
 }
