@@ -347,14 +347,20 @@ function render() {
     </select>
     <div class="sep"></div>
     <label>Category</label>
-    <button class="filter-btn active" onclick="setFilter('cat',null,this)">All</button>
-    ${cats.map(c=>`<button class="filter-btn" style="border-color:${CAT_COLORS[c]||'#25262b'}44" onclick="setFilter('cat','${c}',this)">${c}</button>`).join('')}
+    <select class="repo-select" id="cat-select" onchange="setCatFilter(this)">
+      <option value="">All categories</option>
+      ${cats.sort().map(c=>{const cnt=allEntries.filter(e=>e.category===c).length; return `<option value="${c}">${c} · ${cnt}</option>`}).join('')}
+    </select>
     <div style="flex:1"></div>
     <input id="search" type="text" placeholder="Search..." oninput="applyFilters()">
   `
   if (activeRepo) {
     const sel = document.getElementById('repo-select')
     if (sel) { sel.value = activeRepo; sel.classList.add('filtered') }
+  }
+  if (activeCat) {
+    const sel = document.getElementById('cat-select')
+    if (sel) { sel.value = activeCat; sel.classList.add('filtered') }
   }
 
   document.getElementById('entries').innerHTML = allEntries.length ? allEntries.map(e=>{
@@ -385,11 +391,14 @@ function setRepoFilter(sel) {
   applyFilters()
 }
 
-function setFilter(type, val, btn) {
-  if(type==='cat') activeCat=val
-  document.querySelectorAll('.filter-btn').forEach(b=>{ if(b.onclick?.toString().includes("'cat'")) b.classList.remove('active') })
-  btn.classList.add('active')
+function setCatFilter(sel) {
+  activeCat = sel.value || null
+  sel.classList.toggle('filtered', !!activeCat)
   applyFilters()
+}
+
+function setFilter(type, val, btn) {
+  if(type==='cat') { activeCat=val; applyFilters() }
 }
 
 function applyFilters() {
