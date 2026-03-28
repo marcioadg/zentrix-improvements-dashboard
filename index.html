@@ -348,8 +348,8 @@ function render() {
       {v:'~1.4M',       l:'Lines of code'},
       {v:bugs24,        l:'Bugs fixed'},
       {v:ux24,          l:'UX improvements'},
-      {v:errors24,      l:'Build errors', color:'var(--error)'}
-    ].map(s=>`<div class="stat"><div class="val" ${s.color?`style="color:${s.color}"`:''}>${s.v}</div><div class="lbl">${s.l}</div></div>`).join('')
+      {v:errors24,      l:'Build errors'}
+    ].map(s=>`<div class="stat"><div class="val">${s.v}</div><div class="lbl">${s.l}</div></div>`).join('')
 
   const repoStats = {}
   allEntries.forEach(e=>{
