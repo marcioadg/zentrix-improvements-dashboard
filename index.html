@@ -1011,11 +1011,27 @@ function showToast(msg) {
     const summary = card.dataset.summary
     markCardRead(key)
 
-    if (action === 'approve') { saveSwipeAction(key, 'approved'); showToast('Approved ✓') }
-    else if (action === 'deny') { saveSwipeAction(key, 'denied'); showToast('Denied') }
-    else if (action === 'plan') {
+    const apiBase = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+      ? 'http://localhost:3847'
+      : 'http://172.31.39.87:3847'
+    const apiKey = 'c3e403b4008e93cb225ceb884667f4802ecdd1263706ff550d63260217487003'
+    const repo = card.dataset.repo
+    const repoName = card.querySelector('.repo-tag')?.textContent || repo
+    const payload = { cardId: key, repo, repoName, summary, requestedAt: new Date().toISOString() }
+    const headers = { 'Content-Type': 'application/json', 'x-api-key': apiKey }
+
+    if (action === 'approve') {
+      saveSwipeAction(key, 'approved')
+      showToast('Approved ✓')
+      fetch(apiBase + '/api/approve', { method: 'POST', headers, body: JSON.stringify(payload) }).catch(() => {})
+    } else if (action === 'deny') {
+      saveSwipeAction(key, 'denied')
+      showToast('Denied')
+      fetch(apiBase + '/api/deny', { method: 'POST', headers, body: JSON.stringify(payload) }).catch(() => {})
+    } else if (action === 'plan') {
       saveSwipeAction(key, 'plan_requested')
-      showToast('Plan requested — Ezra will follow up')
+      showToast('Plan requested — posting to Slack…')
+      fetch(apiBase + '/api/plan-request', { method: 'POST', headers, body: JSON.stringify(payload) }).catch(() => {})
     }
 
     setTimeout(() => { render(); updateUnreadCount() }, 290)
