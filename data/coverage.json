@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-28T19:30:02",
+  "generated": "2026-03-28T19:40:01",
   "repos": [
     {
       "repo": "zentrixcrm",
@@ -9,7 +9,7 @@
     {
       "repo": "wisevasdashboard",
       "label": "WiseVAs",
-      "pct": 98.66
+      "pct": 2.75
     },
     {
       "repo": "dietforge",
