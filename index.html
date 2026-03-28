@@ -31,25 +31,25 @@
     --error: #f87171;
   }
   [data-theme="light"] {
-    --page-bg: #f5f5f7;
+    --page-bg: #f2f3f7;
     --sidebar-bg: #ffffff;
     --card-bg: #ffffff;
-    --surface-raised: #f0f0f2;
-    --active: #e8e8ec;
-    --hover: #f0f0f4;
-    --hover-medium: #e8e8ee;
-    --border: #e0e0e5;
-    --border-subtle: #ebebef;
-    --text-primary: #111113;
-    --text-secondary: #4a4a50;
-    --text-muted: #8a8a92;
-    --text-disabled: #c0c0c5;
-    --accent: #4070f0;
-    --accent-hover: #2f5edc;
-    --accent-muted: #5065c4;
-    --success: #16a34a;
-    --warning: #d97706;
-    --error: #dc2626;
+    --surface-raised: #f7f8fc;
+    --active: #eceef6;
+    --hover: #f4f5fa;
+    --hover-medium: #eceef6;
+    --border: #e3e5ee;
+    --border-subtle: #eaecf4;
+    --text-primary: #0d0e14;
+    --text-secondary: #3d3f4d;
+    --text-muted: #7c7f96;
+    --text-disabled: #b8bbcc;
+    --accent: #4c6ef5;
+    --accent-hover: #3b5ce0;
+    --accent-muted: #6c82f0;
+    --success: #15803d;
+    --warning: #b45309;
+    --error: #b91c1c;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--page-bg); color: var(--text-primary); font-family: Inter, -apple-system, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; min-height: 100vh; font-feature-settings: "cv01", "cv02", "cv11"; }
@@ -79,7 +79,8 @@
   #search::placeholder { color: var(--text-muted); }
   #search:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(92, 132, 254, 0.25); }
   .entries { padding: 16px 24px; display: flex; flex-direction: column; gap: 6px; }
-  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; transition: all 150ms ease; border-left: 1px solid var(--border); }
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; transition: all 150ms ease; border-left: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  [data-theme="light"] .card { box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03); }
   .card:hover { border-color: rgba(92, 132, 254, 0.2); background: var(--hover-medium); border-left-color: var(--accent); }
   .card.hidden { display: none; }
   .card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
