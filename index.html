@@ -650,8 +650,9 @@ async function renderCoverageChart() {
   const availW = w - PAD.left - PAD.right
   coverageData.forEach((d, i) => {
     const y = PAD.top + i * (BAR_H + GAP)
-    const barW = Math.max(0, (d.pct / 100) * availW)
-    const color = d.pct >= TARGET ? '#22c55e' : d.pct >= 60 ? '#f59e0b' : '#ef4444'
+    const pct = d.pct ?? -1
+    const barW = pct >= 0 ? Math.max(0, (pct / 100) * availW) : 0
+    const color = pct < 0 ? textColor : pct >= TARGET ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444'
     // bg track
     ctx.fillStyle = barBg
     ctx.beginPath(); ctx.roundRect(PAD.left, y + (BAR_H - 14) / 2, availW, 14, 4); ctx.fill()
@@ -671,9 +672,9 @@ async function renderCoverageChart() {
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
     ctx.fillText(d.label, PAD.left - 8, y + BAR_H / 2)
     // pct
-    ctx.fillStyle = d.pct > 0 ? color : textColor
+    ctx.fillStyle = pct >= 0 ? color : textColor
     ctx.textAlign = 'left'
-    ctx.fillText(d.pct > 0 ? d.pct.toFixed(1) + '%' : 'No data', PAD.left + availW + 8, y + BAR_H / 2)
+    ctx.fillText(pct > 0 ? pct.toFixed(1) + '%' : pct === 0 ? '0%' : 'N/A', PAD.left + availW + 8, y + BAR_H / 2)
   })
   // target label
   const targetX = PAD.left + (TARGET / 100) * availW

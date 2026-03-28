@@ -24,7 +24,8 @@
     {
       "repo": "business-os",
       "label": "Business OS",
-      "pct": 0.0
+      "pct": null,
+      "note": "Coverage blocked by Supabase mock issue"
     }
   ]
 }
