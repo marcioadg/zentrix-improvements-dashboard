@@ -321,9 +321,8 @@ function render() {
   const bugs = allEntries.filter(e=>e.category==='Bug Fix').length
   const ux = allEntries.filter(e=>e.category==='UX/UI').length
   const buildErrors = allEntries.filter(e=>e.category==='Build Error').length
-  const days = [...new Set(allEntries.map(e=>e.date))].length
   document.getElementById('stats').innerHTML = [
-    {v:allEntries.length,l:'Total'},{v:repos.length,l:'Repos'},{v:days,l:'Days'},{v:bugs,l:'Bugs Fixed'},{v:ux,l:'UX Improvements'},{v:buildErrors,l:'Build Errors',color:'var(--error)'}
+    {v:allEntries.length,l:'Total'},{v:repos.length,l:'Repos'},{v:'219k',l:'Lines of Code'},{v:bugs,l:'Bugs Fixed'},{v:ux,l:'UX Improvements'},{v:buildErrors,l:'Build Errors',color:'var(--error)'}
   ].map(s=>`<div class="stat"><div class="val" ${s.color?`style="color:${s.color}"`:''}>${s.v}</div><div class="lbl">${s.l}</div></div>`).join('')
 
   const repoStats = {}
