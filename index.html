@@ -647,7 +647,7 @@ async function renderCoverageChart() {
   canvas.height = h * dpr
   const ctx = canvas.getContext('2d')
   ctx.scale(dpr, dpr)
-  const isDark = document.body.getAttribute('data-theme') !== 'light'
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light'
   const textColor = isDark ? '#9b9eb6' : '#7c7f96'
   const textPrimary = isDark ? '#e4e5f0' : '#0d0e14'
   const barBg = isDark ? '#2a2c3e' : '#eceef6'
