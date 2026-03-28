@@ -38,7 +38,6 @@
   header h1 .brand { font-weight: 600; color: var(--text-primary); }
   header h1 .brand-sub { font-weight: 400; color: var(--text-muted); }
   .meta { color: var(--text-muted); font-size: 11px; font-weight: 400; }
-  .refresh-btn { color: var(--text-secondary); cursor: pointer; font-size: 11px; font-weight: 500; background: transparent; border: 1px solid var(--border); padding: 4px 12px; border-radius: 5px; height: 28px; transition: all 150ms ease; }
   .refresh-btn:hover { background: var(--hover); color: var(--text-primary); }
   .stats { display: flex; padding: 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; background: linear-gradient(180deg, rgba(92,132,254,0.04) 0%, transparent 100%); }
   .stat { padding: 16px 24px; border-right: 1px solid var(--border); min-width: 100px; }
@@ -117,7 +116,8 @@
   .sec-no-data { font-size: 12px; color: var(--text-muted); font-style: italic; }
   .security-stale { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.2); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: var(--warning); display: none; }
   button, .filter-btn, .view-btn, .refresh-btn { cursor: pointer; }
-  #ai-summary-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(92,132,254,0.08); }
+  .icon-btn { background: none; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; padding: 5px 7px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); transition: all 150ms; min-height: unset; }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(92,132,254,0.08); }
   #ai-summary-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(92,132,254,0.12); box-shadow: 0 0 0 1px var(--accent); }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--page-bg); }
@@ -125,24 +125,16 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
   /* ── Hamburger menu button ── */
-  .menu-toggle { display: none; background: none; border: 1px solid var(--border); color: var(--text-secondary); width: 44px; height: 44px; border-radius: 5px; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; line-height: 1; }
-  .menu-toggle:hover { background: var(--hover); color: var(--text-primary); }
   .header-controls { display: flex; align-items: center; gap: 16px; }
 
   /* ── Mobile responsive ── */
   @media (max-width: 768px) {
-    /* Header: hamburger menu */
-    .menu-toggle { display: flex; }
-    .header-controls { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); padding: 12px 16px; gap: 10px; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-    .header-controls.open { display: flex; }
-    .header-controls .view-toggle { width: 100%; }
-    .header-controls .view-toggle .view-btn { flex: 1; height: 44px; font-size: 13px; }
-    .header-controls .refresh-btn { width: 100%; height: 44px; font-size: 13px; }
-    .header-controls .meta { order: 10; text-align: center; width: 100%; font-size: 12px; }
     header { padding: 0 12px; min-height: 48px; position: sticky; }
     header h1 { font-size: 13px; }
-    #ai-summary-btn { min-height: unset; padding: 6px 8px; }
-    .ai-btn-label { display: none; }
+    .header-controls { gap: 6px; }
+    .header-controls .meta { display: none; }
+    .view-btn { padding: 5px 7px; }
+    .view-btn svg { width: 14px; height: 14px; }
 
     /* Stats: 3-column grid on mobile */
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); }
@@ -221,21 +213,30 @@
     </svg>
     <span class="brand">Zentrix</span><span class="brand-sub"> Improvements</span>
   </h1>
-  <button id="ai-summary-btn" onclick="toggleSummary()" aria-label="AI Summary" title="AI Summary" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:5px 8px;display:flex;align-items:center;gap:5px;color:var(--text-secondary);font-size:12px;font-weight:500;transition:all 150ms;margin-left:auto">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2L14.5 9.5H22L16 14L18.5 21.5L12 17L5.5 21.5L8 14L2 9.5H9.5L12 2Z" fill="var(--accent)" opacity="0.9"/>
-    </svg>
-    <span class="ai-btn-label">AI Summary</span>
-  </button>
-  <button class="menu-toggle" onclick="document.querySelector('.header-controls').classList.toggle('open')" aria-label="Menu" style="margin-left:8px">☰</button>
-  <div class="header-controls">
+  <div class="header-controls" style="margin-left:auto">
     <span class="meta" id="last-updated">Loading...</span>
     <div class="view-toggle">
-      <button class="view-btn active" onclick="switchView('list',this)">List</button>
-      <button class="view-btn" onclick="switchView('analytics',this)">Analytics</button>
-      <button class="view-btn" onclick="switchView('security',this)">Security</button>
+      <!-- List -->
+      <button class="view-btn active" onclick="switchView('list',this)" title="List view" aria-label="List view">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <!-- Analytics -->
+      <button class="view-btn" onclick="switchView('analytics',this)" title="Analytics" aria-label="Analytics">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+      </button>
+      <!-- Security -->
+      <button class="view-btn" onclick="switchView('security',this)" title="Security" aria-label="Security">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </button>
     </div>
-    <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    <!-- AI Summary -->
+    <button id="ai-summary-btn" onclick="toggleSummary()" title="AI Summary" aria-label="AI Summary" class="icon-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L14.5 9.5H22L16 14L18.5 21.5L12 17L5.5 21.5L8 14L2 9.5H9.5L12 2Z" fill="currentColor"/></svg>
+    </button>
+    <!-- Refresh -->
+    <button onclick="loadData()" title="Refresh" aria-label="Refresh" class="icon-btn refresh-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    </button>
   </div>
 </header>
 <div id="summary-card" style="margin:12px 24px 0;padding:20px;position:relative;display:none">
@@ -648,11 +649,7 @@ document.addEventListener('click', function(e) {
   if (card) card.classList.toggle('tooltip-active')
 })
 
-// Close hamburger menu on view switch or resize
-function closeMenu() { const el = document.querySelector('.header-controls'); if (el) el.classList.remove('open') }
-window.addEventListener('resize', closeMenu)
-const origSwitchView = switchView
-switchView = function(view, btn) { closeMenu(); origSwitchView(view, btn) }
+
 
 loadData()
 setInterval(loadData, 60000)
