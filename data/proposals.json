@@ -9,5 +9,16 @@
     "category": "UX/UI",
     "route": "/deals",
     "status": "proposal"
+  },
+  {
+    "id": "prop-test-002",
+    "date": "2026-03-28",
+    "time": "21:12",
+    "repo": "business-os",
+    "repoName": "Business OS",
+    "summary": "Replace the current week picker with a sticky date range bar that stays visible while scrolling \u2014 users lose context when the date selector scrolls out of view on long metric lists.",
+    "category": "UX/UI",
+    "route": "/metrics",
+    "status": "proposal"
   }
 ]
