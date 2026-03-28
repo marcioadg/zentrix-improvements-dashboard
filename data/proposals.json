@@ -31,5 +31,16 @@
     "category": "UX/UI",
     "route": "/deals",
     "status": "proposal"
+  },
+  {
+    "id": "prop-004",
+    "date": "2026-03-28",
+    "time": "20:08",
+    "repo": "zentrixcrm",
+    "repoName": "Zentrix CRM",
+    "summary": "Add a 'Deals at Risk' smart filter to the pipeline view \u2014 surfaces deals with no activity in 7+ days, overdue tasks, or stalled stages so reps can prioritize follow-ups before deals go cold.",
+    "category": "UX/UI",
+    "route": "/deals",
+    "status": "proposal"
   }
 ]
