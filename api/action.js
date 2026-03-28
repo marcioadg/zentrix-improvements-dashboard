@@ -64,16 +64,7 @@ export default async function handler(req, res) {
     { type: 'section', text: { type: 'mrkdwn', text: `>${summary || '(no summary)'}` } }
   ]
 
-  if (action === 'plan') {
-    // Generate implementation plan
-    const plan = await generatePlan(repoName || repo, summary, route).catch(() => null)
-    if (plan) {
-      blocks.push({
-        type: 'section',
-        text: { type: 'mrkdwn', text: `*Implementation Plan:*\n\`\`\`${plan}\`\`\`` }
-      })
-    }
-  }
+  // Plan generation removed — Ezra will follow up manually
 
   blocks.push({
     type: 'context',
