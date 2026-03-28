@@ -88,7 +88,9 @@
   .cat-tag { padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: 500; }
   .score { font-size: 11px; font-weight: 600; margin-left: auto; }
   .time { color: var(--text-muted); font-size: 11px; font-weight: 400; }
-  .card-body { color: rgba(226,227,229,0.75); font-size: 13px; line-height: 20px; }
+  [data-theme="light"] .time { color: var(--text-secondary); }
+  .card-body { color: var(--text-secondary); font-size: 13px; line-height: 20px; }
+  [data-theme="light"] .card-body { color: var(--text-primary); }
   .card-body strong { color: var(--text-primary); font-weight: 600; }
   .card-body .bullet-list { margin: 6px 0 0 0; padding-left: 0; list-style: none; }
   .card-body .bullet-list li { margin-top: 4px; position: relative; padding-left: 14px; }
