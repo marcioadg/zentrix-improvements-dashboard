@@ -244,6 +244,7 @@
   <div id="summary-generated" style="font-size:11px;color:var(--text-muted);margin-bottom:14px"></div>
   <div id="summary-text" style="font-size:15px;font-weight:400;color:var(--text-secondary);line-height:1.7"></div>
 </div>
+<div id="stats-header" style="padding:6px 16px 0;font-size:10px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;background:var(--sidebar-bg);border-bottom:none">Last 24 hours</div>
 <div class="stats" id="stats"></div>
 <div class="filters" id="filters">
   <label>Repo</label>
@@ -341,7 +342,6 @@ function render() {
   const ux24 = last24.filter(e=>e.category==='UX/UI').length
   const errors24 = last24.filter(e=>e.category==='Build Error').length
   document.getElementById('stats').innerHTML =
-    `<div style="width:100%;padding:4px 16px 0;font-size:10px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Last 24 hours</div>` +
     [
       {v:last24.length, l:'Code improvements'},
       {v:repos.length,  l:'Active repos'},
