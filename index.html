@@ -31,23 +31,23 @@
     --error: #f87171;
   }
   [data-theme="light"] {
-    --page-bg: #f2f3f7;
+    --page-bg: #f5f5f8;
     --sidebar-bg: #ffffff;
     --card-bg: #ffffff;
-    --surface-raised: #f7f8fc;
-    --active: #eceef6;
-    --hover: #f4f5fa;
-    --hover-medium: #eceef6;
-    --border: #e3e5ee;
-    --border-subtle: #eaecf4;
-    --text-primary: #0d0e14;
-    --text-secondary: #3d3f4d;
-    --text-muted: #7c7f96;
-    --text-disabled: #b8bbcc;
-    --accent: #4c6ef5;
-    --accent-hover: #3b5ce0;
-    --accent-muted: #6c82f0;
-    --success: #15803d;
+    --surface-raised: #f8f8fb;
+    --active: #eeeef3;
+    --hover: #f3f3f7;
+    --hover-medium: #eaeaf0;
+    --border: #e2e2e8;
+    --border-subtle: #eaeaf0;
+    --text-primary: #0f0f13;
+    --text-secondary: #3c3c50;
+    --text-muted: #7a7a96;
+    --text-disabled: #b5b5c8;
+    --accent: #5e6ad2;
+    --accent-hover: #4d59c4;
+    --accent-muted: #7880d8;
+    --success: #16a34a;
     --warning: #b45309;
     --error: #b91c1c;
   }
@@ -60,12 +60,12 @@
   header h1 .brand-sub { font-weight: 400; color: var(--text-muted); }
   .meta { color: var(--text-muted); font-size: 11px; font-weight: 400; }
   .refresh-btn:hover { background: var(--hover); color: var(--text-primary); }
-  .stats { display: flex; padding: 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; background: linear-gradient(180deg, rgba(92,132,254,0.04) 0%, transparent 100%); }
-  .stat { padding: 16px 24px; border-right: 1px solid var(--border); min-width: 100px; }
+  .stats { display: flex; padding: 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .stat { padding: 12px 20px; border-right: 1px solid var(--border); min-width: 0; flex: 1; }
   .stat:last-child { border-right: none; }
-  .stat .val { font-size: 24px; font-weight: 600; color: var(--text-primary); }
-  .stat .lbl { font-size: 10px; font-weight: 500; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  [data-theme="light"] .stat .lbl { color: var(--text-secondary); }
+  .stat .val { font-size: 20px; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+  .stat .lbl { font-size: 10px; font-weight: 500; color: var(--text-muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  [data-theme="light"] .stat .lbl { color: var(--text-muted); }
   .filters { padding: 10px 24px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; box-shadow: 0 1px 0 var(--border); }
   .filters label { color: var(--text-muted); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
   .filter-btn { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 4px 12px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: 500; height: 28px; transition: all 150ms ease; }
@@ -120,8 +120,8 @@
   .security-header { margin-bottom: 16px; }
   .security-header h2 { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
   .security-header p { font-size: 12px; color: var(--text-muted); }
-  .security-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-  .sec-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; position: relative; cursor: default; transition: all 150ms ease; }
+  .security-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+  .sec-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; position: relative; cursor: default; transition: all 150ms ease; }
   .sec-card:hover { border-color: rgba(92,132,254,0.3); background: var(--hover-medium); }
   .sec-card:hover .sec-tooltip { display: block; }
   .sec-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -158,13 +158,13 @@
     .view-btn { height: 40px; min-width: 40px; padding: 0 10px; }
     .icon-btn { width: 40px; height: 40px; }
 
-    /* Stats: 3-column grid on mobile */
-    .stats { display: grid; grid-template-columns: repeat(3, 1fr); }
-    .stat { padding: 12px; border-right: 1px solid var(--border); text-align: center; }
-    .stat:nth-child(3n) { border-right: none; }
-    .stat:nth-child(n+4) { border-top: 1px solid var(--border); }
-    .stat .val { font-size: 20px; }
-    .stat .lbl { font-size: 10px; }
+    /* Stats: 2-column grid on mobile for more room */
+    .stats { display: grid; grid-template-columns: repeat(2, 1fr); }
+    .stat { padding: 10px 14px; border-right: 1px solid var(--border); text-align: left; flex: unset; }
+    .stat:nth-child(2n) { border-right: none; }
+    .stat:nth-child(n+3) { border-top: 1px solid var(--border); }
+    .stat .val { font-size: 18px; }
+    .stat .lbl { font-size: 9px; letter-spacing: 0.05em; }
 
     /* Filters */
     .filters { padding: 10px 12px; gap: 6px; }
@@ -272,8 +272,8 @@
   <div id="summary-generated" style="font-size:11px;color:var(--text-muted);margin-bottom:14px"></div>
   <div id="summary-text" style="font-size:15px;font-weight:400;color:var(--text-secondary);line-height:1.7"></div>
 </div>
-<div style="padding:6px 16px 0;display:flex;align-items:center;justify-content:space-between;background:var(--sidebar-bg)">
-  <span id="stats-header" style="font-size:10px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Last 24 hours</span>
+<div style="padding:8px 20px 4px;display:flex;align-items:center;justify-content:space-between;background:var(--sidebar-bg);border-bottom:1px solid var(--border-subtle)">
+  <span id="stats-header" style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Last 24 hours</span>
   <span id="last-updated-bar" style="font-size:10px;color:var(--text-muted)"></span>
 </div>
 <div class="stats" id="stats"></div>
