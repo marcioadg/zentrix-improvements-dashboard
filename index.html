@@ -505,7 +505,7 @@ function render() {
         ${e.score?`<span class="score" style="color:${SCORE_COLOR(e.score)}">${e.score}/100</span>`:''}
         <span class="time" style="${timeStyle}">${formatEntryTime(e.date, e.time)} · <span style="opacity:0.6">${timeAgo(e.date, e.time)}</span></span>
       </div>
-      <div class="card-body">${e.summary||'(no summary)'}${details}</div>
+      <div class="card-body">${esc(e.summary||'(no summary)')}${details}</div>
     </div>`}).join('') : '<div class="empty">No improvements logged yet.</div>'
 
   applyFilters()
@@ -780,7 +780,7 @@ async function loadSecurityData() {
       const color = SCORE_COLOR(repo.score)
       const issues = (repo.issues || []).slice(0, 5)
       const issueHtml = issues.length
-        ? `<ul>${issues.map(i=>`<li>${i.replace(/</g,'&lt;')}</li>`).join('')}</ul>`
+        ? `<ul>${issues.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`
         : `<p class="sec-no-data">No issues found</p>`
       return `<div class="sec-card">
         <div class="sec-card-top">
