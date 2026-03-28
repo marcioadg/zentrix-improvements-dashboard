@@ -45,12 +45,16 @@
   .stat:last-child { border-right: none; }
   .stat .val { font-size: 24px; font-weight: 600; color: var(--accent); }
   .stat .lbl { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .filters { padding: 10px 24px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; box-shadow: 0 1px 0 var(--border); }
-  .filters label { color: var(--text-muted); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .filters { padding: 10px 24px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; box-shadow: 0 1px 0 var(--border); }
+  .filters label { color: var(--text-muted); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
   .filter-btn { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 4px 12px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: 500; height: 28px; transition: all 150ms ease; }
   .filter-btn:hover { background: var(--hover); color: var(--text-primary); }
   .filter-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(92, 132, 254, 0.08); box-shadow: 0 0 0 1px var(--accent); }
   .filter-group-gap { width: 4px; }
+  .repo-select { background: var(--card-bg); border: 1px solid var(--border); color: var(--text-primary); padding: 4px 28px 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 500; height: 28px; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2396979a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; transition: border-color 150ms; min-width: 160px; }
+  .repo-select:hover { border-color: var(--accent); }
+  .repo-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .repo-select.filtered { color: var(--accent); border-color: var(--accent); background-color: rgba(92,132,254,0.08); box-shadow: 0 0 0 1px var(--accent); }
   #search { background: var(--active); border: 1px solid var(--border); color: var(--text-primary); padding: 8px 12px; border-radius: 5px; font-size: 13px; font-weight: 400; width: 180px; height: 32px; outline: none; transition: all 150ms ease; }
   #search::placeholder { color: var(--text-muted); }
   #search:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(92, 132, 254, 0.25); }
@@ -149,6 +153,7 @@
     .filters label { width: 100%; margin-top: 4px; }
     .filters label:first-child { margin-top: 0; }
     .filter-btn { height: 36px; font-size: 12px; padding: 6px 12px; min-height: 36px; }
+    .repo-select { width: 100%; height: 36px; font-size: 13px; }
     #search { width: 100%; height: 44px; font-size: 14px; }
     .sep { display: none; }
     .filters > div[style*="flex:1"] { display: none; }
@@ -333,10 +338,13 @@ function render() {
   })
   const cats = [...new Set(allEntries.map(e=>e.category))]
 
+  const reposSorted = Object.entries(repoStats).sort((a,b)=>b[1].count-a[1].count)
   document.getElementById('filters').innerHTML = `
     <label>Repo</label>
-    <button class="filter-btn active" onclick="setFilter('repo',null,this)">All</button>
-    ${Object.entries(repoStats).map(([r,i])=>`<button class="filter-btn" onclick="setFilter('repo','${r}',this)">${i.name}${i.score?` <span style="color:${SCORE_COLOR(i.score)}">${i.score}</span>`:''}</button>`).join('')}
+    <select class="repo-select" id="repo-select" onchange="setRepoFilter(this)">
+      <option value="">All repos (${reposSorted.length})</option>
+      ${reposSorted.map(([r,i])=>`<option value="${r}">${i.name} · ${i.count}</option>`).join('')}
+    </select>
     <div class="sep"></div>
     <label>Category</label>
     <button class="filter-btn active" onclick="setFilter('cat',null,this)">All</button>
@@ -344,6 +352,10 @@ function render() {
     <div style="flex:1"></div>
     <input id="search" type="text" placeholder="Search..." oninput="applyFilters()">
   `
+  if (activeRepo) {
+    const sel = document.getElementById('repo-select')
+    if (sel) { sel.value = activeRepo; sel.classList.add('filtered') }
+  }
 
   document.getElementById('entries').innerHTML = allEntries.length ? allEntries.map(e=>{
     const isError = e.category === 'Build Error'
@@ -367,9 +379,15 @@ function render() {
   applyFilters()
 }
 
+function setRepoFilter(sel) {
+  activeRepo = sel.value || null
+  sel.classList.toggle('filtered', !!activeRepo)
+  applyFilters()
+}
+
 function setFilter(type, val, btn) {
-  if(type==='repo') activeRepo=val; else activeCat=val
-  document.querySelectorAll('.filter-btn').forEach(b=>{ if((type==='repo'&&!b.onclick?.toString().includes("'cat'"))||(type==='cat'&&b.onclick?.toString().includes("'cat'"))) b.classList.remove('active') })
+  if(type==='cat') activeCat=val
+  document.querySelectorAll('.filter-btn').forEach(b=>{ if(b.onclick?.toString().includes("'cat'")) b.classList.remove('active') })
   btn.classList.add('active')
   applyFilters()
 }
