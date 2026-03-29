@@ -239,8 +239,8 @@
     .empty::before { width: 32px; height: 32px; }
     .loading { padding: 32px 16px; min-height: calc(100vh - 200px); }
 
-    /* General touch target fix */
-    button { min-height: 44px; }
+    /* General touch target fix — scoped to avoid bloating compact controls */
+    button:not(.filter-btn):not(.view-btn):not(.icon-btn) { min-height: 44px; }
   }
 
   /* Proposal badge */
