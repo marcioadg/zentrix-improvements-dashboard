@@ -843,7 +843,7 @@ async function loadSecurityData() {
       const color = SCORE_COLOR(repo.score)
       const issues = (repo.issues || []).slice(0, 5)
       const issueHtml = issues.length
-        ? `<ul>${issues.map((issue,idx)=>`<li>${esc(issue)} <button onclick="requestSecFix(event,'${esc(repo.repo)}','${esc(repo.name)}',${idx},'${esc(issue)}')" style="margin-left:6px;font-size:10px;padding:1px 6px;border-radius:3px;border:1px solid var(--accent);color:var(--accent);background:none;cursor:pointer;vertical-align:middle;white-space:nowrap">Request fix</button></li>`).join('')}</ul>`
+        ? `<ul>${issues.map((issue,idx)=>`<li>${esc(issue)} <button class="sec-fix-btn" data-repo="${esc(repo.repo)}" data-repo-name="${esc(repo.name)}" data-idx="${idx}" data-issue="${esc(issue)}" style="margin-left:6px;font-size:10px;padding:1px 6px;border-radius:3px;border:1px solid var(--accent);color:var(--accent);background:none;cursor:pointer;vertical-align:middle;white-space:nowrap">Request fix</button></li>`).join('')}</ul>`
         : `<p class="sec-no-data">No issues found</p>`
       return `<div class="sec-card">
         <div class="sec-card-top">
@@ -863,10 +863,15 @@ async function loadSecurityData() {
   }
 }
 
-// ── Security fix request ──────────────────────────────────────────────────────
-async function requestSecFix(e, repo, repoName, issueIdx, issue) {
+// ── Security fix request (delegated to avoid inline-handler XSS) ─────────────
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.sec-fix-btn')
+  if (!btn) return
   e.stopPropagation()
-  const btn = e.target
+  requestSecFix(btn, btn.dataset.repo, btn.dataset.repoName, +btn.dataset.idx, btn.dataset.issue)
+})
+
+async function requestSecFix(btn, repo, repoName, issueIdx, issue) {
   btn.textContent = '…'
   btn.disabled = true
   try {
