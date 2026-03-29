@@ -110,4 +110,27 @@ app.post('/api/deny', requireAuth, async (req, res) => {
   }
 })
 
+// Unified action endpoint — matches the Vercel serverless function (api/action.js)
+// The client exclusively calls this route for swipe actions and security fix requests
+app.post('/api/action', requireAuth, async (req, res) => {
+  const { action, cardId, repo, repoName, summary, route } = req.body
+  if (!action || !cardId) return res.status(400).json({ error: 'Missing action or cardId' })
+
+  const labels = { approve: '✅ Approved', deny: '❌ Denied', plan: '📋 Plan Requested', sec_fix: '🔐 Security Fix Requested' }
+  const label = labels[action] || action
+
+  const blocks = [
+    { type: 'section', text: { type: 'mrkdwn', text: `${label} — *${repoName || repo}*${route ? ` \`${route}\`` : ''}` } },
+    { type: 'section', text: { type: 'mrkdwn', text: `>${summary || '(no summary)'}` } },
+    { type: 'context', elements: [{ type: 'mrkdwn', text: `Card: ${cardId} · ${new Date().toISOString().slice(0,16).replace('T',' ')} UTC` }] }
+  ]
+
+  try {
+    const result = await postSlack(`${label} — ${repoName || repo}`, blocks)
+    res.json({ ok: result.ok, ts: result.ts })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 app.listen(PORT, () => console.log(`Dashboard API running on :${PORT}`))
