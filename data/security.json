@@ -1,235 +1,193 @@
 {
-  "generated": "2026-03-28T13:03:09",
+  "generated": "2026-03-29T09:00:01",
   "repos": [
     {
       "repo": "zentrixpulse",
       "name": "Zentrix Pulse",
-      "score": 62,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:00:06",
       "issues": [
-        "`.env` with Supabase key is git-tracked; `.gitignore` only excludes `*.local`",
-        "TURN server credentials hardcoded in iceServers.ts (openrelayproject)",
-        "Metered API key exposed client-side via VITE_ prefix in .env.local"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "dietforge",
       "name": "DietForge",
-      "score": 78,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:00:39",
       "issues": [
-        "`xlsx@0.18.5` has known CVE-2023-30533 (prototype pollution) \u2014 upgrade needed",
-        "Supabase anon key persists in git history despite .gitignore fix (rotate key)",
-        "`apiKeyUtils.ts:49` timing-attack vulnerable: non-constant-time `===` comparison"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "zentrix-insights",
       "name": "Zentrix Insights",
-      "score": 78,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:01:12",
       "issues": [
-        ".env with Supabase key committed to git history (commit b262028b) \u2014 rotate key",
-        "SSO tokens passed via URL hash (AuthContext:303) may leak through Referer headers",
-        "108 console.log calls across 20 files; vite-plugin-remove-console is devDep only"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "zentrixmail",
       "name": "Zentrix Mail",
-      "score": 42,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:01:45",
       "issues": [
-        ".env committed with live Supabase JWT; sanitizeSqlString() is bypassable",
-        "CSP allows 'unsafe-inline'+'unsafe-eval', defeating XSS protection",
-        "Custom HTML sanitizer via dangerouslySetInnerHTML; no DOMPurify"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "lineagevault",
       "name": "Lineage Vault",
-      "score": 62,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:02:18",
       "issues": [
-        "`.env` with Supabase keys not in `.gitignore` \u2014 tracked in repo",
-        "`innerHTML` assignment in BucketListMap.tsx \u2014 potential XSS if data is untrusted",
-        "`dangerouslySetInnerHTML` in chart.tsx without visible sanitization"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "zentrix-cyber",
       "name": "Zentrix Cyber",
-      "score": 82,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:02:52",
       "issues": [
-        "`.env` committed to git history (bed74f4) \u2014 rotate Supabase keys",
-        "`VITE_ZENTRIX_API_KEY` exposed client-side; secret keys must stay server-side",
-        "Client-side role insert on signup \u2014 attacker can escalate via RLS bypass"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "zentrixprojects",
       "name": "Zentrix Projects",
-      "score": 82,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:03:24",
       "issues": [
-        "`.env` with Supabase credentials tracked in git history (even if gitignored now)",
-        "`xlsx` v0.18.5 uses SheetJS CE \u2014 verify no prototype pollution CVEs apply",
-        "No CSP headers configured; relies entirely on Supabase RLS for authorization"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "decision-command",
       "name": "Decision Command",
-      "score": 72,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:03:57",
       "issues": [
-        "`.env` with Supabase anon key committed to git (not gitignored)",
-        "Verbose console.log throughout src/ may leak user IDs and decision data",
-        "No RLS bypass risk but anon key exposure widens attack surface"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "zentrix-improvements-dashboard",
       "name": "Improvements Dashboard",
-      "score": 88,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:04:30",
       "issues": [
-        "No deps listed in package.json; no lockfile for reproducible builds",
-        "Static JSON data served without cache/integrity headers (vercel.json)",
-        "Shell scripts in scripts/ may need input sanitization (unverified)"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "wisevasdashboard",
       "name": "WiseVAs",
-      "score": 82,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:05:03",
       "issues": [
-        "`.env` has hardcoded Sentry DSN; Supabase keys missing but DSN committed",
-        "`candidates/${id}` path interpolation lacks input sanitization",
-        "`.env` gitignored but file exists with real credentials in working tree"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "zentrixcrm",
       "name": "Zentrix CRM",
-      "score": 82,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:05:36",
       "issues": [
-        "`.env` has real Supabase anon key committed to repo (check git history)",
-        "`xlsx` 0.18.5 has known prototype pollution CVE (CVE-2024-22363)",
-        "`ActivityDetailModal` uses `convertTextToHtml` in dangerouslySetInnerHTML unsanitized"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "zentrixcreative",
       "name": "Zentrix Creative",
-      "score": 62,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:06:09",
       "issues": [
-        "`.env` with Supabase credentials is committed to git history",
-        "`dangerouslySetInnerHTML` in chart.tsx \u2014 low risk but review for XSS",
-        "Min password length only 6 chars \u2014 weak for production auth policy"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "business-os",
       "name": "Zentrix OS",
-      "score": 82,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:06:42",
       "issues": [
-        "debugAuth.ts logs userId + session metadata; verify prod logger suppresses",
-        "stripe-config.ts hardcodes pk_live key in source (public by design, but noisy)",
-        "No significant injection or auth bypass risks found in scanned files"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "thoughtline",
       "name": "Thoughtline",
-      "score": 62,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:07:15",
       "issues": [
-        "`.env` with Supabase keys persists in git history (commits fb98cd4, 7b5ccce)",
-        "Edge functions (scrape-instagram, enhance-thought) lack JWT auth checks",
-        "User content interpolated unsanitized into LLM prompt (prompt injection)"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "zentrixmarketing",
       "name": "Zentrix Marketing",
-      "score": 82,
-      "updated": "2026-03-28T12:00:00",
+      "score": 50,
+      "updated": "2026-03-29T09:07:47",
       "issues": [
-        ".env has real Supabase anon key + project ID committed to repo",
-        "dangerouslySetInnerHTML in chart.tsx \u2014 potential XSS if data is untrusted",
-        "No significant auth/injection/CVE issues found beyond the above"
-      ]
-    },
-    {
-      "repo": "zentrixcapture",
-      "name": "Zentrix Capture",
-      "score": 72,
-      "updated": "2026-03-28T13:03:09",
-      "issues": [
-        "Billing edge function CORS allows only localhost; prod domain missing (TODO)",
-        "Anonymous uploads allowed without rate limiting \u2014 abuse vector",
-        "View counter in Watch.tsx does unauthenticated DB update \u2014 inflatable"
-      ]
-    },
-    {
-      "repo": "zentrix-sign",
-      "name": "Zentrix Sign",
-      "score": 82,
-      "updated": "2026-03-28T13:03:09",
-      "issues": [
-        "`.env` with live Supabase credentials on disk (not committed, but no .env.example)",
-        "SignDocument page queries signers table with anon key \u2014 relies solely on RLS",
-        "No rate limiting on public signing endpoint `/sign/:token`"
-      ]
-    },
-    {
-      "repo": "zentrixchat",
-      "name": "Zentrix Chat",
-      "score": 62,
-      "updated": "2026-03-28T13:03:09",
-      "issues": [
-        "`.env` with Supabase keys is tracked in git (committed in repo history)",
-        "Webhook secrets fetched client-side via RPC \u2014 secrets exposed to browser",
-        "`.gitignore` won't prevent `.env` leak; file already committed to history"
-      ]
-    },
-    {
-      "repo": "zentrix-email-marketing",
-      "name": "Zentrix Email Mktg",
-      "score": 38,
-      "updated": "2026-03-28T13:03:09",
-      "issues": [
-        "Supabase credentials hardcoded in .env committed to source control",
-        "5 vulnerable deps (picomatch CVE, esbuild SSRF, yaml stack overflow)",
-        "Auth sessions stored in localStorage, vulnerable to XSS token theft"
+        "Could not complete scan"
       ]
     },
     {
       "repo": "zentrixcontent",
       "name": "Zentrix Content",
-      "score": 72,
-      "updated": "2026-03-28T13:03:09",
+      "score": 50,
+      "updated": "2026-03-29T09:08:20",
       "issues": [
-        "`.env` with Supabase anon key is committed to git (tracked in repo history)",
-        "API key revocation bypasses RLS via client-side `as any` cast on table",
-        "No `.env.example`; real credentials ship as defaults for all clones"
+        "Could not complete scan"
+      ]
+    },
+    {
+      "repo": "zentrix-email-marketing",
+      "name": "Zentrix Email Mktg",
+      "score": 50,
+      "updated": "2026-03-29T09:08:53",
+      "issues": [
+        "Could not complete scan"
+      ]
+    },
+    {
+      "repo": "zentrixchat",
+      "name": "Zentrix Chat",
+      "score": 50,
+      "updated": "2026-03-29T09:09:26",
+      "issues": [
+        "Could not complete scan"
+      ]
+    },
+    {
+      "repo": "zentrix-sign",
+      "name": "Zentrix Sign",
+      "score": 50,
+      "updated": "2026-03-29T09:09:59",
+      "issues": [
+        "Could not complete scan"
       ]
     },
     {
       "repo": "zentrixfinance",
       "name": "Zentrix Finance",
-      "score": 35,
-      "updated": "2026-03-28T13:03:09",
+      "score": 50,
+      "updated": "2026-03-29T09:10:31",
       "issues": [
-        "`.env` tracked in git & not in `.gitignore` \u2014 Supabase keys exposed in repo",
-        "No RLS bypass risk but missing `.gitignore` for `.env*` files is a leak vector",
-        "`dangerouslySetInnerHTML` in chart.tsx \u2014 safe here (static config) but unaudited"
+        "Could not complete scan"
+      ]
+    },
+    {
+      "repo": "zentrixcapture",
+      "name": "Zentrix Capture",
+      "score": 50,
+      "updated": "2026-03-29T09:11:06",
+      "issues": [
+        "Could not complete scan"
       ]
     }
   ]
