@@ -14,7 +14,8 @@ const SLACK_CHANNEL = 'C0ABH17F93L' // #ai-devs-zentrix
 // ── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({ origin: '*' }))
 app.use(express.json())
-app.use(express.static(path.join(__dirname)))
+app.use('/data', express.static(path.join(__dirname, 'data')))
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')))
 
 // ── Auth middleware ──────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
