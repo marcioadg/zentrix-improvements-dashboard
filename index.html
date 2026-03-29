@@ -868,11 +868,9 @@ async function requestSecFix(e, repo, repoName, issueIdx, issue) {
   btn.textContent = '…'
   btn.disabled = true
   try {
-    const apiBase = 'https://zentrix-improvements-dashboard.vercel.app'
-    const apiKey = 'c3e403b4008e93cb225ceb884667f4802ecdd1263706ff550d63260217487003'
-    await fetch(apiBase + '/api/action', {
+    await fetch('/api/action', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'sec_fix',
         cardId: `sec-${repo}-${issueIdx}`,
@@ -1078,7 +1076,6 @@ function showToast(msg) {
     const summary = card.dataset.summary
     markCardRead(key)
 
-    const apiBase = 'https://zentrix-improvements-dashboard.vercel.app'
     const repoName = card.querySelector('.repo-tag')?.textContent || repo
     const payload = { cardId: key, repo, repoName, summary, requestedAt: new Date().toISOString() }
     const headers = { 'Content-Type': 'application/json' }
@@ -1087,7 +1084,7 @@ function showToast(msg) {
     const toastMap = { approve: 'Approved ✓', deny: 'Denied', plan: 'Plan requested — posting to Slack…' }
     saveSwipeAction(key, actionMap[action] || action)
     showToast(toastMap[action] || action)
-    fetch(apiBase + '/api/action', {
+    fetch('/api/action', {
       method: 'POST', headers,
       body: JSON.stringify({ ...payload, action })
     }).catch(() => {})
