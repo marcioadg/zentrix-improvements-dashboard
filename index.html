@@ -969,6 +969,7 @@ function toggleTheme() {
   document.documentElement.setAttribute('data-theme', newTheme)
   document.getElementById('theme-icon-dark').style.display = newTheme === 'light' ? 'none' : ''
   document.getElementById('theme-icon-light').style.display = newTheme === 'light' ? '' : 'none'
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', newTheme === 'light' ? '#f5f5f8' : '#090909')
   localStorage.setItem('zentrix-theme', newTheme)
 }
 // Restore saved theme
@@ -978,6 +979,7 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', 'light')
     document.getElementById('theme-icon-dark').style.display = 'none'
     document.getElementById('theme-icon-light').style.display = ''
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f5f5f8')
   }
 })()
 
