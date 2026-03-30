@@ -1095,7 +1095,8 @@ function showToast(msg) {
     fetch('/api/action', {
       method: 'POST', headers,
       body: JSON.stringify({ ...payload, action })
-    }).catch(() => {})
+    }).then(r => { if (!r.ok) throw new Error(r.status) })
+     .catch(() => showToast('⚠ Action failed to post — check your connection'))
 
     setTimeout(() => { render(); updateUnreadCount() }, 290)
   }
