@@ -82,8 +82,8 @@
   #search::placeholder { color: var(--text-muted); }
   #search:focus { border-color: var(--accent); background: var(--card-bg); }
   .entries { padding: 16px 24px; display: flex; flex-direction: column; gap: 6px; overflow-x: hidden; }
-  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; transition: all 150ms ease; border-left: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; word-break: break-word; width: 100%; box-sizing: border-box; min-width: 0; }
-  [data-theme="light"] .card { box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03); }
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; transition: all 150ms ease; border-left: 1px solid var(--border); box-shadow: inset 2px 0 0 transparent, 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; word-break: break-word; width: 100%; box-sizing: border-box; min-width: 0; }
+  [data-theme="light"] .card { box-shadow: inset 2px 0 0 transparent, 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03); }
   [data-theme="light"] .card:hover { box-shadow: inset 2px 0 0 var(--accent), 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03); }
   .card:hover { border-color: rgba(92, 132, 254, 0.2); background: var(--hover-medium); border-left-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent), 0 1px 3px rgba(0,0,0,0.04); }
   .card.hidden { display: none; }
