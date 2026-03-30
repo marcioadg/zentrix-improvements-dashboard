@@ -1,11 +1,11 @@
 {
-  "generated": "2026-03-29T09:00:01",
+  "generated": "2026-03-30T09:00:01",
   "repos": [
     {
       "repo": "zentrixpulse",
       "name": "Zentrix Pulse",
       "score": 50,
-      "updated": "2026-03-29T09:00:06",
+      "updated": "2026-03-30T09:00:10",
       "issues": [
         "Could not complete scan"
       ]
@@ -14,7 +14,7 @@
       "repo": "dietforge",
       "name": "DietForge",
       "score": 50,
-      "updated": "2026-03-29T09:00:39",
+      "updated": "2026-03-30T09:00:44",
       "issues": [
         "Could not complete scan"
       ]
@@ -23,7 +23,7 @@
       "repo": "zentrix-insights",
       "name": "Zentrix Insights",
       "score": 50,
-      "updated": "2026-03-29T09:01:12",
+      "updated": "2026-03-30T09:01:18",
       "issues": [
         "Could not complete scan"
       ]
@@ -32,7 +32,7 @@
       "repo": "zentrixmail",
       "name": "Zentrix Mail",
       "score": 50,
-      "updated": "2026-03-29T09:01:45",
+      "updated": "2026-03-30T09:01:51",
       "issues": [
         "Could not complete scan"
       ]
@@ -41,7 +41,7 @@
       "repo": "lineagevault",
       "name": "Lineage Vault",
       "score": 50,
-      "updated": "2026-03-29T09:02:18",
+      "updated": "2026-03-30T09:02:25",
       "issues": [
         "Could not complete scan"
       ]
@@ -50,7 +50,7 @@
       "repo": "zentrix-cyber",
       "name": "Zentrix Cyber",
       "score": 50,
-      "updated": "2026-03-29T09:02:52",
+      "updated": "2026-03-30T09:02:59",
       "issues": [
         "Could not complete scan"
       ]
@@ -59,7 +59,7 @@
       "repo": "zentrixprojects",
       "name": "Zentrix Projects",
       "score": 50,
-      "updated": "2026-03-29T09:03:24",
+      "updated": "2026-03-30T09:03:33",
       "issues": [
         "Could not complete scan"
       ]
@@ -68,7 +68,7 @@
       "repo": "decision-command",
       "name": "Decision Command",
       "score": 50,
-      "updated": "2026-03-29T09:03:57",
+      "updated": "2026-03-30T09:04:09",
       "issues": [
         "Could not complete scan"
       ]
@@ -77,7 +77,7 @@
       "repo": "zentrix-improvements-dashboard",
       "name": "Improvements Dashboard",
       "score": 50,
-      "updated": "2026-03-29T09:04:30",
+      "updated": "2026-03-30T09:04:43",
       "issues": [
         "Could not complete scan"
       ]
@@ -86,7 +86,7 @@
       "repo": "wisevasdashboard",
       "name": "WiseVAs",
       "score": 50,
-      "updated": "2026-03-29T09:05:03",
+      "updated": "2026-03-30T09:05:17",
       "issues": [
         "Could not complete scan"
       ]
@@ -95,7 +95,7 @@
       "repo": "zentrixcrm",
       "name": "Zentrix CRM",
       "score": 50,
-      "updated": "2026-03-29T09:05:36",
+      "updated": "2026-03-30T09:05:50",
       "issues": [
         "Could not complete scan"
       ]
@@ -104,7 +104,7 @@
       "repo": "zentrixcreative",
       "name": "Zentrix Creative",
       "score": 50,
-      "updated": "2026-03-29T09:06:09",
+      "updated": "2026-03-30T09:06:26",
       "issues": [
         "Could not complete scan"
       ]
@@ -113,7 +113,7 @@
       "repo": "business-os",
       "name": "Zentrix OS",
       "score": 50,
-      "updated": "2026-03-29T09:06:42",
+      "updated": "2026-03-30T09:07:27",
       "issues": [
         "Could not complete scan"
       ]
@@ -122,7 +122,7 @@
       "repo": "thoughtline",
       "name": "Thoughtline",
       "score": 50,
-      "updated": "2026-03-29T09:07:15",
+      "updated": "2026-03-30T09:08:04",
       "issues": [
         "Could not complete scan"
       ]
@@ -131,7 +131,7 @@
       "repo": "zentrixmarketing",
       "name": "Zentrix Marketing",
       "score": 50,
-      "updated": "2026-03-29T09:07:47",
+      "updated": "2026-03-30T09:08:37",
       "issues": [
         "Could not complete scan"
       ]
@@ -140,7 +140,7 @@
       "repo": "zentrixcontent",
       "name": "Zentrix Content",
       "score": 50,
-      "updated": "2026-03-29T09:08:20",
+      "updated": "2026-03-30T09:09:10",
       "issues": [
         "Could not complete scan"
       ]
@@ -149,7 +149,7 @@
       "repo": "zentrix-email-marketing",
       "name": "Zentrix Email Mktg",
       "score": 50,
-      "updated": "2026-03-29T09:08:53",
+      "updated": "2026-03-30T09:09:44",
       "issues": [
         "Could not complete scan"
       ]
@@ -158,7 +158,7 @@
       "repo": "zentrixchat",
       "name": "Zentrix Chat",
       "score": 50,
-      "updated": "2026-03-29T09:09:26",
+      "updated": "2026-03-30T09:10:17",
       "issues": [
         "Could not complete scan"
       ]
@@ -167,7 +167,7 @@
       "repo": "zentrix-sign",
       "name": "Zentrix Sign",
       "score": 50,
-      "updated": "2026-03-29T09:09:59",
+      "updated": "2026-03-30T09:10:50",
       "issues": [
         "Could not complete scan"
       ]
@@ -176,7 +176,7 @@
       "repo": "zentrixfinance",
       "name": "Zentrix Finance",
       "score": 50,
-      "updated": "2026-03-29T09:10:31",
+      "updated": "2026-03-30T09:11:25",
       "issues": [
         "Could not complete scan"
       ]
@@ -185,7 +185,7 @@
       "repo": "zentrixcapture",
       "name": "Zentrix Capture",
       "score": 50,
-      "updated": "2026-03-29T09:11:06",
+      "updated": "2026-03-30T09:11:59",
       "issues": [
         "Could not complete scan"
       ]
