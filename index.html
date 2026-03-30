@@ -410,13 +410,25 @@ function saveSwipeAction(key, action) { const a = getSwipeActions(); a[key] = ac
 
 async function fetchFresh(filename) {
   // Try GitHub API first (bypasses CDN cache), fall back to raw
+  // Use AbortController to prevent hanging on slow/unresponsive requests
   try {
-    const r = await fetch(GH_API + filename, { headers: { 'Accept': 'application/vnd.github.v3.raw' }, cache: 'no-store' })
+    const ac1 = new AbortController()
+    const t1 = setTimeout(() => ac1.abort(), 8000)
+    const r = await fetch(GH_API + filename, { headers: { 'Accept': 'application/vnd.github.v3.raw' }, cache: 'no-store', signal: ac1.signal })
+    clearTimeout(t1)
     if (r.ok) return r.json()
   } catch(e) {}
-  const r = await fetch(GH_RAW + filename + '?t=' + Date.now(), { cache: 'no-store' })
-  if (!r.ok) throw new Error(`Failed to fetch ${filename}: ${r.status}`)
-  return r.json()
+  const ac2 = new AbortController()
+  const t2 = setTimeout(() => ac2.abort(), 10000)
+  try {
+    const r = await fetch(GH_RAW + filename + '?t=' + Date.now(), { cache: 'no-store', signal: ac2.signal })
+    clearTimeout(t2)
+    if (!r.ok) throw new Error(`Failed to fetch ${filename}: ${r.status}`)
+    return r.json()
+  } catch(e) {
+    clearTimeout(t2)
+    throw e
+  }
 }
 
 async function loadData() {
