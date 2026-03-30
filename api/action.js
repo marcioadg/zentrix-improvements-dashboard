@@ -1,6 +1,5 @@
 const SLACK_TOKEN = process.env.SLACK_TOKEN
 const API_KEY = process.env.API_KEY
-const OPENAI_KEY = process.env.OPENAI_KEY
 const SLACK_CHANNEL = 'C0ABH17F93L'
 
 async function postSlack(text, blocks) {
@@ -12,35 +11,6 @@ async function postSlack(text, blocks) {
     body: JSON.stringify(body)
   })
   return r.json()
-}
-
-async function generatePlan(repoName, summary, route) {
-  if (!OPENAI_KEY) return null
-  const r = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      max_tokens: 400,
-      messages: [{
-        role: 'user',
-        content: `Create a concise implementation plan for this improvement proposal in ${repoName} (route: ${route || 'unknown'}).
-
-Proposal: ${summary}
-
-Reply in this exact format (no markdown headers, plain text):
-EFFORT: [XS/S/M/L]
-STEPS:
-1. [step]
-2. [step]
-3. [step]
-4. [step]
-RISK: [low/medium/high] — [one sentence why]`
-      }]
-    })
-  })
-  const d = await r.json()
-  return d.choices?.[0]?.message?.content || null
 }
 
 export default async function handler(req, res) {
@@ -59,17 +29,11 @@ export default async function handler(req, res) {
   const labels = { approve: '✅ Approved', deny: '❌ Denied', plan: '📋 Plan Requested', sec_fix: '🔐 Security Fix Requested' }
   const label = labels[action] || action
 
-  let blocks = [
+  const blocks = [
     { type: 'section', text: { type: 'mrkdwn', text: `${label} — *${repoName || repo}*${route ? ` \`${route}\`` : ''}` } },
-    { type: 'section', text: { type: 'mrkdwn', text: `>${summary || '(no summary)'}` } }
+    { type: 'section', text: { type: 'mrkdwn', text: `>${summary || '(no summary)'}` } },
+    { type: 'context', elements: [{ type: 'mrkdwn', text: `Card: ${cardId} · ${new Date().toISOString().slice(0,16).replace('T',' ')} UTC` }] }
   ]
-
-  // Plan generation removed — Ezra will follow up manually
-
-  blocks.push({
-    type: 'context',
-    elements: [{ type: 'mrkdwn', text: `Card: ${cardId} · ${new Date().toISOString().slice(0,16).replace('T',' ')} UTC` }]
-  })
 
   try {
     const result = await postSlack(`${label} — ${repoName || repo}`, blocks)
