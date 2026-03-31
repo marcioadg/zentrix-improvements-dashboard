@@ -187,6 +187,14 @@
   .header-controls { display: flex; align-items: center; gap: 2px; }
   .header-controls .view-toggle { margin-right: 6px; padding-right: 6px; border-right: 1px solid var(--border); }
 
+  /* ── Tablet: stats 3-col grid so labels don't truncate ── */
+  @media (max-width: 1024px) and (min-width: 769px) {
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .stat { border-right: 1px solid var(--border); flex: unset; }
+    .stat:nth-child(3n) { border-right: none; }
+    .stat:nth-child(n+4) { border-top: 1px solid var(--border); }
+  }
+
   /* ── Mobile responsive ── */
   @media (max-width: 768px) {
     header { padding: 0 12px; min-height: 48px; position: sticky; }
