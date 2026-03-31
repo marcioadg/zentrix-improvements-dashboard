@@ -86,6 +86,9 @@
   [data-theme="light"] .card { box-shadow: inset 2px 0 0 transparent, 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03); }
   [data-theme="light"] .card:hover { box-shadow: inset 2px 0 0 var(--accent), 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03); }
   .card:hover { border-color: rgba(92, 132, 254, 0.2); background: var(--hover-medium); border-left-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent), 0 1px 3px rgba(0,0,0,0.04); }
+  .card:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-color: rgba(92, 132, 254, 0.2); background: var(--hover-medium); border-left-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent), 0 1px 3px rgba(0,0,0,0.04); }
+  [data-theme="light"] .card:focus-visible { box-shadow: inset 2px 0 0 var(--accent), 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03); }
+  .sec-card:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-color: rgba(92,132,254,0.3); background: var(--hover-medium); }
   .card.hidden { display: none; }
   .card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
   .repo-tag { background: rgba(92,132,254,0.1); color: var(--accent); border: 1px solid rgba(92,132,254,0.25); padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: 500; }
@@ -556,7 +559,7 @@ function render() {
     const approveIcon = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`
     const denyIcon = `<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
     const planIcon = `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="16" x2="12" y2="16"/></svg>`
-    const cardEl = `<div class="card${isProposal?' proposal-card':''}" data-repo="${esc(e.repo)}" data-cat="${esc(e.category)}" data-status="${esc(e.status||'')}" data-key="${esc(cardKey)}" data-summary="${esc(e.summary||'')}" ${isError?'style="border-left:3px solid var(--error)"':''}>
+    const cardEl = `<div class="card${isProposal?' proposal-card':''}" tabindex="0" data-repo="${esc(e.repo)}" data-cat="${esc(e.category)}" data-status="${esc(e.status||'')}" data-key="${esc(cardKey)}" data-summary="${esc(e.summary||'')}" ${isError?'style="border-left:3px solid var(--error)"':''}>
       ${unreadDot}
       <div class="card-header">
         <span class="repo-tag">${esc(e.repoName)}</span>
@@ -870,7 +873,7 @@ async function loadSecurityData() {
       const issueHtml = issues.length
         ? `<ul>${issues.map((issue,idx)=>`<li>${esc(issue)} <button class="sec-fix-btn" data-repo="${esc(repo.repo)}" data-repo-name="${esc(repo.name)}" data-idx="${idx}" data-issue="${esc(issue)}" style="margin-left:6px;font-size:10px;padding:1px 6px;border-radius:3px;border:1px solid var(--accent);color:var(--accent);background:none;cursor:pointer;vertical-align:middle;white-space:nowrap">Request fix</button></li>`).join('')}</ul>`
         : `<p class="sec-no-data">No issues found</p>`
-      return `<div class="sec-card">
+      return `<div class="sec-card" tabindex="0">
         <div class="sec-card-top">
           <span class="sec-repo-name">${esc(repo.name)}</span>
           <span class="sec-score-badge" style="color:${color}">${repo.score}/100</span>
