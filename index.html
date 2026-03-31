@@ -437,6 +437,25 @@ function markCardRead(key) { const r = getReadCards(); r[key] = true; localStora
 function getSwipeActions() { try { return JSON.parse(localStorage.getItem('swipe_actions') || '{}') } catch(e) { return {} } }
 function saveSwipeAction(key, action) { const a = getSwipeActions(); a[key] = action; localStorage.setItem('swipe_actions', JSON.stringify(a)) }
 
+// Prune stale localStorage entries to prevent unbounded growth.
+// Keeps only keys that match current entries. Runs once per load.
+function pruneLocalStorage() {
+  if (!allEntries.length) return
+  const validKeys = new Set(allEntries.map(getCardKey))
+  const MAX_ORPHANS = 200 // allow some buffer for recently removed entries
+  ;['zentrix_read_cards', 'swipe_actions'].forEach(storageKey => {
+    try {
+      const data = JSON.parse(localStorage.getItem(storageKey) || '{}')
+      const keys = Object.keys(data)
+      const orphans = keys.filter(k => !validKeys.has(k))
+      if (orphans.length > MAX_ORPHANS) {
+        orphans.slice(MAX_ORPHANS).forEach(k => delete data[k])
+        localStorage.setItem(storageKey, JSON.stringify(data))
+      }
+    } catch(e) { /* ignore parse errors */ }
+  })
+}
+
 async function fetchFresh(filename) {
   // Try GitHub API first (bypasses CDN cache), fall back to raw
   // Use AbortController to prevent hanging on slow/unresponsive requests
@@ -491,6 +510,7 @@ async function loadData() {
       _lastDataHash = hash
       allEntries = sorted
       render()
+      pruneLocalStorage()
     }
     const _updatedStr = `Updated ${new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date())} ${getETZoneAbbr(new Date())}`
     if (luEl) luEl.textContent = _updatedStr
