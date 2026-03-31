@@ -1028,8 +1028,11 @@ function toggleTheme() {
   document.getElementById('theme-icon-light').style.display = newTheme === 'light' ? '' : 'none'
   document.querySelector('meta[name="theme-color"]').setAttribute('content', newTheme === 'light' ? '#f5f5f8' : '#090909')
   localStorage.setItem('zentrix-theme', newTheme)
-  // Re-render charts so canvas colors match the new theme
-  if (currentView === 'analytics' && allEntries.length) { renderCharts(); renderCoverageChart(); loadSecurityData(); }
+  // Re-render so inline score colors match the new theme
+  if (allEntries.length) {
+    if (currentView === 'list') { render(); }
+    else if (currentView === 'analytics') { renderCharts(); renderCoverageChart(); loadSecurityData(); }
+  }
 }
 // Restore saved theme
 ;(function() {
