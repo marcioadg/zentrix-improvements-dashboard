@@ -714,6 +714,8 @@ function applyFilters() {
     const matchUnread = !activeUnread || !readCards[c.dataset.key]
     const show = matchRepo && matchCat && matchSearch && matchProposal && matchUnread
     c.classList.toggle('hidden',!show)
+    const wrap = c.closest('.swipe-wrap')
+    if (wrap) wrap.style.display = show ? '' : 'none'
     if (show) visibleCount++
   })
   updateUnreadCount()
