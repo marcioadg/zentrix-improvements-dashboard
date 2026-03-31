@@ -477,9 +477,16 @@ async function loadData() {
     if (luEl) luEl.textContent = _updatedStr
     if (luBar) luBar.textContent = _updatedStr
   } catch(e) {
-    document.getElementById('entries').innerHTML = '<div class="empty">No data yet — improvements will appear after the next hourly run.</div>'
-    if (luEl) luEl.textContent = 'No data yet'
-    if (luBar) luBar.textContent = 'No data yet'
+    // Only show empty state on initial load — preserve existing data on transient polling failures
+    if (allEntries.length === 0) {
+      document.getElementById('entries').innerHTML = '<div class="empty">No data yet — improvements will appear after the next hourly run.</div>'
+      if (luEl) luEl.textContent = 'No data yet'
+      if (luBar) luBar.textContent = 'No data yet'
+    } else {
+      const _failStr = `Update failed — showing cached data`
+      if (luEl) luEl.textContent = _failStr
+      if (luBar) luBar.textContent = _failStr
+    }
   } finally {
     if (refreshBtn) refreshBtn.style.animation = ''
   }
