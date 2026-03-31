@@ -504,8 +504,12 @@ function render() {
   const cats = [...new Set(allEntries.map(e=>e.category))]
 
   const reposSorted = Object.entries(repoStats).sort((a,b)=>b[1].count-a[1].count)
-  // Preserve search text across re-renders (polling calls render() every 60s)
-  const prevSearch = document.getElementById('search')?.value || ''
+  // Preserve search text, focus, and cursor across re-renders (polling calls render())
+  const prevSearchEl = document.getElementById('search')
+  const prevSearch = prevSearchEl?.value || ''
+  const searchWasFocused = prevSearchEl && document.activeElement === prevSearchEl
+  const prevSelStart = prevSearchEl?.selectionStart
+  const prevSelEnd = prevSearchEl?.selectionEnd
   document.getElementById('filters').innerHTML = `
     <label>Repo</label>
     <select class="repo-select" id="repo-select" onchange="setRepoFilter(this)">
@@ -531,6 +535,14 @@ function render() {
   if (activeCat) {
     const sel = document.getElementById('cat-select')
     if (sel) { sel.value = activeCat; sel.classList.add('filtered') }
+  }
+  // Restore search focus and cursor position after DOM rebuild
+  if (searchWasFocused) {
+    const newSearch = document.getElementById('search')
+    if (newSearch) {
+      newSearch.focus()
+      if (prevSelStart != null) newSearch.setSelectionRange(prevSelStart, prevSelEnd)
+    }
   }
 
   const readCards = getReadCards()
