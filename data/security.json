@@ -1,29 +1,37 @@
 {
-  "generated": "2026-03-30T09:00:01",
+  "generated": "2026-03-31T09:00:01",
   "repos": [
     {
       "repo": "zentrixpulse",
       "name": "Zentrix Pulse",
-      "score": 50,
-      "updated": "2026-03-30T09:00:10",
+      "score": 62,
+      "updated": "2026-03-31T09:01:47",
       "issues": [
-        "Could not complete scan"
+        "Metered API key hardcoded in .env.local, committed to git history",
+        ".env and .env.local not properly gitignored, secrets in git history",
+        "CORS set to wildcard '*' in Supabase edge functions shared config",
+        "Supabase publishable keys and project URL committed in .env file",
+        "Early migration had permissive RLS policies (mitigated by later migration)"
       ]
     },
     {
       "repo": "dietforge",
       "name": "DietForge",
-      "score": 50,
-      "updated": "2026-03-30T09:00:44",
+      "score": 74,
+      "updated": "2026-03-31T09:04:36",
       "issues": [
-        "Could not complete scan"
+        ".env credentials (Supabase keys) exposed in git history, not yet scrubbed",
+        "5 high-severity npm vulnerabilities (serialize-javascript RCE, xlsx prototype pollution)",
+        "Potential XSS in ForgePediaArticle.tsx custom markdown renderer before DOMPurify pass",
+        "No Content-Security-Policy headers configured in application source",
+        "Console.error calls (~40+) may leak sensitive stack traces in production"
       ]
     },
     {
       "repo": "zentrix-insights",
       "name": "Zentrix Insights",
       "score": 50,
-      "updated": "2026-03-30T09:01:18",
+      "updated": "2026-03-31T09:08:06",
       "issues": [
         "Could not complete scan"
       ]
@@ -31,125 +39,177 @@
     {
       "repo": "zentrixmail",
       "name": "Zentrix Mail",
-      "score": 50,
-      "updated": "2026-03-30T09:01:51",
+      "score": 52,
+      "updated": "2026-03-31T09:10:05",
       "issues": [
-        "Could not complete scan"
+        "Supabase API keys exposed in git history, need rotation and history rewrite",
+        ".env file with credentials exists in working directory despite .gitignore",
+        "Wildcard CORS (Access-Control-Allow-Origin: *) on all 15 Supabase edge functions",
+        "CSP includes 'unsafe-eval' in script-src, weakening XSS protection",
+        "Unauthenticated track-email-open endpoint exposes email open tracking"
       ]
     },
     {
       "repo": "lineagevault",
       "name": "Lineage Vault",
-      "score": 50,
-      "updated": "2026-03-30T09:02:25",
+      "score": 62,
+      "updated": "2026-03-31T09:12:18",
       "issues": [
-        "Could not complete scan"
+        ".env with Supabase credentials committed to git history (commit 6f408e2)",
+        "15 npm vulnerabilities (8 high): react-router XSS, rollup path traversal, yaml DoS",
+        "/design route missing PageGuard authentication check in App.tsx",
+        "innerHTML usage in BucketListMap.tsx without sanitization (low XSS risk)",
+        "63+ files with console.error logging that could leak app internals in production"
       ]
     },
     {
       "repo": "zentrix-cyber",
       "name": "Zentrix Cyber",
-      "score": 50,
-      "updated": "2026-03-30T09:02:59",
+      "score": 52,
+      "updated": "2026-03-31T09:14:07",
       "issues": [
-        "Could not complete scan"
+        "Supabase credentials committed to repo in .env file (critical secret exposure)",
+        "Users can update their own role via RLS policy enabling privilege escalation",
+        "CORS set to wildcard Access-Control-Allow-Origin: * on all edge functions",
+        "JWT verification disabled for threat-ingestion and automation-engine functions",
+        "Server-side functions log user IDs, threat details, and full error stacks"
       ]
     },
     {
       "repo": "zentrixprojects",
       "name": "Zentrix Projects",
-      "score": 50,
-      "updated": "2026-03-30T09:03:33",
+      "score": 62,
+      "updated": "2026-03-31T09:16:16",
       "issues": [
-        "Could not complete scan"
+        "Supabase edge functions (automation-engine, ai-chat) lack auth checks on endpoints",
+        "SSRF risk: automation-engine fetches user-controlled URLs without validation",
+        ".env with Supabase credentials committed to repo despite being in .gitignore",
+        "dangerouslySetInnerHTML usage in chart.tsx without strict sanitization",
+        "Error objects logged to console and raw error.message shown to users in toasts"
       ]
     },
     {
       "repo": "decision-command",
       "name": "Decision Command",
-      "score": 50,
-      "updated": "2026-03-30T09:04:09",
+      "score": 62,
+      "updated": "2026-03-31T09:18:12",
       "issues": [
-        "Could not complete scan"
+        "Supabase API key and JWT token committed in .env file (critical secret exposure)",
+        "Auth/admin checks are client-side only; no server-side route authorization",
+        "Client-side rate limiting on login easily bypassed via localStorage clearing",
+        "console.error not suppressed in production, may leak auth error details",
+        "dangerouslySetInnerHTML used in chart.tsx without strict input validation"
       ]
     },
     {
       "repo": "zentrix-improvements-dashboard",
       "name": "Improvements Dashboard",
-      "score": 50,
-      "updated": "2026-03-30T09:04:43",
+      "score": 35,
+      "updated": "2026-03-31T09:19:21",
       "issues": [
-        "Could not complete scan"
+        ".env contains real Slack token (xoxb-*) and API key on disk, risk of accidental commit",
+        "Auth bypassed when API_KEY env var is unset: `if (!API_KEY || key === API_KEY)` passes all",
+        "CORS allows all origins (`origin: '*'`), any site can call the action endpoint",
+        "innerHTML used with external JSON data (entries, summaries) without sanitization \u2014 XSS risk",
+        "Error internals leaked to clients via `e.message` in 500 responses"
       ]
     },
     {
       "repo": "wisevasdashboard",
       "name": "WiseVAs",
-      "score": 50,
-      "updated": "2026-03-30T09:05:17",
+      "score": 78,
+      "updated": "2026-03-31T09:22:20",
       "issues": [
-        "Could not complete scan"
+        "Hardcoded Supabase anon key as fallback in portal-clients.ts (public but in git)",
+        "dangerouslySetInnerHTML in chart.tsx (mitigated: CSS-only, no user input)",
+        "Potential open redirect via action_url in ContactUs.tsx notifications handler",
+        "Sentry session replay captures unmasked text (maskAllText: false)",
+        "Server-side logs may leak auth context (password update errors in edge functions)"
       ]
     },
     {
       "repo": "zentrixcrm",
       "name": "Zentrix CRM",
-      "score": 50,
-      "updated": "2026-03-30T09:05:50",
+      "score": 62,
+      "updated": "2026-03-31T09:24:33",
       "issues": [
-        "Could not complete scan"
+        ".env with Supabase credentials exposed in git history (committed before .gitignore fix)",
+        "CORS set to Allow-Origin: * on all 43+ Supabase Edge Functions enables CSRF",
+        "ingest-external-lead compares API keys in plaintext, not hashed like other functions",
+        "Any tenant member can create webhook API keys, no role-based restriction",
+        "Platform keys accept events for any tenant with minimal access controls"
       ]
     },
     {
       "repo": "zentrixcreative",
       "name": "Zentrix Creative",
-      "score": 50,
-      "updated": "2026-03-30T09:06:26",
+      "score": 40,
+      "updated": "2026-03-31T09:27:20",
       "issues": [
-        "Could not complete scan"
+        "CRITICAL: edit-concept-image function has no authentication check at all",
+        "CRITICAL: extract-brand-colors has broken authorization (user_id field doesn't exist)",
+        "HIGH: .env file with Supabase credentials committed to git history",
+        "MEDIUM: dangerouslySetInnerHTML usage and token storage in localStorage (XSS risk)",
+        "MEDIUM: Sensitive user data logged to console in multiple edge functions"
       ]
     },
     {
       "repo": "business-os",
       "name": "Zentrix OS",
-      "score": 50,
-      "updated": "2026-03-30T09:07:27",
+      "score": 62,
+      "updated": "2026-03-31T09:29:43",
       "issues": [
-        "Could not complete scan"
+        ".env.local with Supabase JWT tokens committed to git repo",
+        "Hardcoded Bearer tokens in 8+ SQL migration files and docs",
+        "Build artifacts (dist/) contain embedded Supabase credentials",
+        "Stack traces exposed to end users in error boundary components",
+        "6 npm audit vulnerabilities including 1 high-severity (picomatch ReDoS)"
       ]
     },
     {
       "repo": "thoughtline",
       "name": "Thoughtline",
-      "score": 50,
-      "updated": "2026-03-30T09:08:04",
+      "score": 58,
+      "updated": "2026-03-31T09:32:32",
       "issues": [
-        "Could not complete scan"
+        "6 Supabase edge functions lack JWT auth, allowing unauthorized access to user data",
+        "ai-chat and analyze-tag accept client-provided userId without verification (IDOR)",
+        "User thought content and messages logged via console.log in edge functions",
+        "dangerouslySetInnerHTML used in chart.tsx (safe context, but worth noting)",
+        ".env with Supabase anon key exists locally (not git-tracked, but no .env.example)"
       ]
     },
     {
       "repo": "zentrixmarketing",
       "name": "Zentrix Marketing",
-      "score": 50,
-      "updated": "2026-03-30T09:08:37",
+      "score": 52,
+      "updated": "2026-03-31T09:34:40",
       "issues": [
-        "Could not complete scan"
+        ".env with Supabase credentials is tracked by git and committed to repo history",
+        "Supabase JWT anon key exposed in git history (needs rotation if repo was public)",
+        "git rm --cached .env was never completed; .env still in git index",
+        "No pre-commit hook or secret scanning to prevent future credential leaks",
+        "CORS fallback hardcoded to zentrixmarketing.com if ALLOWED_ORIGIN env var unset"
       ]
     },
     {
       "repo": "zentrixcontent",
       "name": "Zentrix Content",
-      "score": 50,
-      "updated": "2026-03-30T09:09:10",
+      "score": 62,
+      "updated": "2026-03-31T09:37:32",
       "issues": [
-        "Could not complete scan"
+        ".env with Supabase credentials committed to git history (should be purged)",
+        "Edge functions advisory-call and rewrite-content lack authentication checks",
+        "execute-chain edge function accepts unauthenticated requests",
+        "All edge functions use wildcard CORS (Access-Control-Allow-Origin: *)",
+        "dangerouslySetInnerHTML in chart.tsx (low risk, static CSS only)"
       ]
     },
     {
       "repo": "zentrix-email-marketing",
       "name": "Zentrix Email Mktg",
       "score": 50,
-      "updated": "2026-03-30T09:09:44",
+      "updated": "2026-03-31T09:41:03",
       "issues": [
         "Could not complete scan"
       ]
@@ -157,37 +217,53 @@
     {
       "repo": "zentrixchat",
       "name": "Zentrix Chat",
-      "score": 50,
-      "updated": "2026-03-30T09:10:17",
+      "score": 62,
+      "updated": "2026-03-31T09:44:19",
       "issues": [
-        "Could not complete scan"
+        ".env file with Supabase JWT committed to git repo and in git history",
+        "Wildcard CORS (Access-Control-Allow-Origin: *) on all edge functions",
+        "PII (user emails) logged in accept-invitation edge function console.log",
+        "Raw error.message returned to clients in multiple edge functions (info leak)",
+        "Invitation accept allows email mismatch - any logged-in user can claim invite"
       ]
     },
     {
       "repo": "zentrix-sign",
       "name": "Zentrix Sign",
-      "score": 50,
-      "updated": "2026-03-30T09:10:50",
+      "score": 35,
+      "updated": "2026-03-31T09:46:35",
       "issues": [
-        "Could not complete scan"
+        ".env with Supabase credentials committed to git history (secret exposure)",
+        "All 6 Edge Functions have verify_jwt=false, allowing unauthenticated access",
+        "Edge Functions use CORS wildcard (*) with no auth, enabling cross-origin abuse",
+        "Edge Functions lack ownership/tenant checks, enabling IDOR on documents",
+        "Edge Functions return raw error.message to clients, leaking internals"
       ]
     },
     {
       "repo": "zentrixfinance",
       "name": "Zentrix Finance",
-      "score": 50,
-      "updated": "2026-03-30T09:11:25",
+      "score": 38,
+      "updated": "2026-03-31T09:48:43",
       "issues": [
-        "Could not complete scan"
+        ".env with Supabase credentials committed to repo; keys in git history",
+        "All 13 edge functions have JWT verification disabled in supabase/config.toml",
+        "Wildcard CORS (Access-Control-Allow-Origin: *) on all edge functions",
+        "Sensitive financial data sent to third-party AI (lovable.dev) without DPA",
+        "delete-user-account function accessible without enforced auth gateway"
       ]
     },
     {
       "repo": "zentrixcapture",
       "name": "Zentrix Capture",
-      "score": 50,
-      "updated": "2026-03-30T09:11:59",
+      "score": 38,
+      "updated": "2026-03-31T09:51:39",
       "issues": [
-        "Could not complete scan"
+        "BillingAdmin page has no role check; any authenticated user can access admin functions",
+        "Billing Edge Functions lack authorization checks for block/unblock/invoice operations",
+        ".env file with Supabase credentials is committed to git history",
+        "CORS fallback defaults to localhost:3000 for unknown origins instead of rejecting",
+        "Anonymous file uploads allowed with no rate limiting or size enforcement"
       ]
     }
   ]
