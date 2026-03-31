@@ -368,7 +368,7 @@ const CAT_COLORS = {
   'Security':'#a78bfa','Dependencies':'#60a5fa','Cleanup':'#96979a','TypeScript':'#34d399','Improvement':'#5e69d1',
   'Build Error':'#f87171'
 }
-const SCORE_COLOR = s => s>=80?'#4ade80':s>=60?'#fbbf24':'#f87171'
+const SCORE_COLOR = s => { const l = document.documentElement.getAttribute('data-theme')==='light'; return s>=80?(l?'#16a34a':'#4ade80'):s>=60?(l?'#b45309':'#fbbf24'):(l?'#b91c1c':'#f87171') }
 const esc = s => typeof s === 'string' ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;') : s
 
 function timeAgo(date, time) {
