@@ -863,13 +863,21 @@ async function renderCoverageChart() {
     const data = await fetchFresh('coverage.json')
     coverageData = data.repos
   } catch(e) {
-    coverageData = [
-      { repo: 'zentrixcrm', label: 'CRM', pct: 96.96 },
-      { repo: 'wisevasdashboard', label: 'WiseVAs', pct: 98.66 },
-      { repo: 'dietforge', label: 'DietForge', pct: 94.44 },
-      { repo: 'zentrix-insights', label: 'Insights', pct: 10.33 },
-      { repo: 'business-os', label: 'Business OS', pct: 0 },
-    ]
+    const canvas = document.getElementById('chart-coverage')
+    if (canvas) {
+      const wrap = canvas.parentElement
+      const dpr = window.devicePixelRatio || 1
+      const w = wrap.clientWidth || 300
+      canvas.style.width = w + 'px'; canvas.style.height = '60px'
+      canvas.width = w * dpr; canvas.height = 60 * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+      const isDark = document.documentElement.getAttribute('data-theme') !== 'light'
+      ctx.fillStyle = isDark ? '#b0b3cc' : '#7c7f96'
+      ctx.font = '12px Inter, sans-serif'; ctx.textAlign = 'center'
+      ctx.fillText('Coverage data not available yet', w / 2, 30)
+    }
+    return
   }
   const canvas = document.getElementById('chart-coverage')
   if (!canvas) return
