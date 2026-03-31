@@ -408,7 +408,7 @@ function formatEntryTime(date, time) {
 const GH_RAW = 'https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/'
 const GH_API = 'https://api.github.com/repos/marcioadg/zentrix-improvements-dashboard/contents/data/'
 
-let allEntries = [], activeRepo = null, activeCat = null, activeProposal = false, activeUnread = false
+let allEntries = [], activeRepo = null, activeCat = null, activeProposal = false, activeUnread = false, _lastDataHash = ''
 
 function getCardKey(e) { return e.id || (e.repo + '|' + e.date + '|' + e.time) }
 function getReadCards() { try { return JSON.parse(localStorage.getItem('zentrix_read_cards') || '{}') } catch(e) { return {} } }
@@ -454,7 +454,7 @@ async function loadData() {
       fetchFresh('proposals.json').catch(() => [])
     ])
     const proposals = Array.isArray(proposalsData) ? proposalsData : []
-    allEntries = [...proposals, ...data].sort((a,b) => {
+    const sorted = [...proposals, ...data].sort((a,b) => {
       // proposals always float to top
       if (a.status === 'proposal' && b.status !== 'proposal') return -1
       if (b.status === 'proposal' && a.status !== 'proposal') return 1
@@ -462,7 +462,15 @@ async function loadData() {
       const db = b.date + 'T' + (b.time||'00:00') + ':00Z'
       return new Date(db) - new Date(da)
     })
-    render()
+    // Skip expensive DOM rebuild if data hasn't changed (polling every 5 min)
+    const hash = JSON.stringify(sorted)
+    if (hash === _lastDataHash && allEntries.length > 0) {
+      // Data unchanged — just update the timestamp, skip re-render
+    } else {
+      _lastDataHash = hash
+      allEntries = sorted
+      render()
+    }
     const _updatedStr = `Updated ${new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date())} EST`
     if (luEl) luEl.textContent = _updatedStr
     if (luBar) luBar.textContent = _updatedStr
