@@ -379,6 +379,23 @@
 </div>
 
 <script>
+// Polyfill CanvasRenderingContext2D.roundRect for older browsers (Safari <16, Chrome <99)
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, radii) {
+    const r = typeof radii === 'number' ? radii : (Array.isArray(radii) ? radii[0] : 0) || 0
+    this.moveTo(x + r, y)
+    this.lineTo(x + w - r, y)
+    this.arcTo(x + w, y, x + w, y + r, r)
+    this.lineTo(x + w, y + h - r)
+    this.arcTo(x + w, y + h, x + w - r, y + h, r)
+    this.lineTo(x + r, y + h)
+    this.arcTo(x, y + h, x, y + h - r, r)
+    this.lineTo(x, y + r)
+    this.arcTo(x, y, x + r, y, r)
+    return this
+  }
+}
+
 const CAT_COLORS = {
   'UX/UI':'#5c84fe','Bug Fix':'#f87171','Tests':'#4ade80','Performance':'#fbbf24',
   'Security':'#a78bfa','Dependencies':'#60a5fa','Cleanup':'#96979a','TypeScript':'#34d399','Improvement':'#5e69d1',
