@@ -501,6 +501,8 @@ function render() {
   const cats = [...new Set(allEntries.map(e=>e.category))]
 
   const reposSorted = Object.entries(repoStats).sort((a,b)=>b[1].count-a[1].count)
+  // Preserve search text across re-renders (polling calls render() every 60s)
+  const prevSearch = document.getElementById('search')?.value || ''
   document.getElementById('filters').innerHTML = `
     <label>Repo</label>
     <select class="repo-select" id="repo-select" onchange="setRepoFilter(this)">
@@ -517,7 +519,7 @@ function render() {
     <button class="filter-btn${activeProposal?' active-amber':''}" id="filter-proposals" onclick="toggleProposalFilter()">Proposals</button>
     <button class="filter-btn${activeUnread?' active':''}" id="filter-unread" onclick="toggleUnreadFilter()">Unread</button>
     <div style="flex:1"></div>
-    <input id="search" type="text" placeholder="Search..." oninput="debouncedSearch()">
+    <input id="search" type="text" placeholder="Search..." oninput="debouncedSearch()" value="${esc(prevSearch)}">
   `
   if (activeRepo) {
     const sel = document.getElementById('repo-select')
