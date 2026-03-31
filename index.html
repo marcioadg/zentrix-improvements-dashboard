@@ -1252,6 +1252,20 @@ document.addEventListener('visibilitychange', () => {
   }
 })
 
+// ── Resize handler — re-render canvas charts on window resize ────────────────
+;(function() {
+  let resizeTimer = null
+  window.addEventListener('resize', function() {
+    if (resizeTimer) clearTimeout(resizeTimer)
+    resizeTimer = setTimeout(function() {
+      if (currentView === 'analytics' && allEntries.length) {
+        renderCharts()
+        renderCoverageChart()
+      }
+    }, 250)
+  })
+})()
+
 // ── Collapsible chart cards ───────────────────────────────────────────────────
 function toggleCard(h3) {
   h3.closest('.chart-card').classList.toggle('collapsed')
