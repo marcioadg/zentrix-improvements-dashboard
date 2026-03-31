@@ -1188,7 +1188,7 @@ function showToast(msg) {
 
 loadData()
 // Visibility-aware polling: pause when tab is hidden to save GitHub API rate limits
-let pollTimer = setInterval(loadData, 60000)
+let pollTimer = setInterval(loadData, 300000) // 5 min — data updates hourly, 60s was exceeding GitHub API rate limits (60 req/hr)
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     clearInterval(pollTimer)
@@ -1196,7 +1196,7 @@ document.addEventListener('visibilitychange', () => {
   } else {
     if (pollTimer) clearInterval(pollTimer)
     loadData()
-    pollTimer = setInterval(loadData, 60000)
+    pollTimer = setInterval(loadData, 300000)
   }
 })
 
