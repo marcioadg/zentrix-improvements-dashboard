@@ -389,9 +389,20 @@ function timeAgo(date, time) {
   } catch(e) { return '' }
 }
 
+function getETZoneAbbr(d) {
+  // Return "EST" or "EDT" based on whether the date falls in Eastern Daylight Time
+  const jan = new Date(d.getFullYear(), 0, 1).getTimezoneOffset()
+  const jul = new Date(d.getFullYear(), 6, 1).getTimezoneOffset()
+  // Format with timeZoneName to get the actual abbreviation
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' }).formatToParts(d)
+    const tz = parts.find(p => p.type === 'timeZoneName')
+    return tz ? tz.value : 'ET'
+  } catch(e) { return 'ET' }
+}
 function formatEntryTime(date, time) {
   // date = "2026-03-27", time = "18:49" (stored in UTC)
-  // Convert to America/New_York — always display as EST
+  // Convert to America/New_York — display correct EST/EDT label
   try {
     const utcDate = new Date(date + 'T' + time + ':00Z')
     const parts = new Intl.DateTimeFormat('en-US', {
@@ -402,9 +413,9 @@ function formatEntryTime(date, time) {
     const get = t => parts.find(p => p.type === t)?.value
     const yr = get('year'), mo = get('month'), dy = get('day')
     const hr = get('hour'), mn = get('minute')
-    return `${yr}-${mo}-${dy} ${hr}:${mn} EST`
+    return `${yr}-${mo}-${dy} ${hr}:${mn} ${getETZoneAbbr(utcDate)}`
   } catch(e) {
-    return `${date} ${time} EST`
+    return `${date} ${time} ET`
   }
 }
 const GH_RAW = 'https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/'
@@ -473,7 +484,7 @@ async function loadData() {
       allEntries = sorted
       render()
     }
-    const _updatedStr = `Updated ${new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date())} EST`
+    const _updatedStr = `Updated ${new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date())} ${getETZoneAbbr(new Date())}`
     if (luEl) luEl.textContent = _updatedStr
     if (luBar) luBar.textContent = _updatedStr
   } catch(e) {
@@ -986,7 +997,7 @@ async function loadSummaryContent() {
     textEl.innerHTML = mdToHtml(data.summary || '')
     if (data.generated) {
       const d = new Date(data.generated)
-      genEl.textContent = 'Generated at ' + new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(d) + ' EST'
+      genEl.textContent = 'Generated at ' + new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(d) + ' ' + getETZoneAbbr(d)
     }
   } catch(e) {
     textEl.innerHTML = 'Summary not available yet. It will be generated on the next data update.'
