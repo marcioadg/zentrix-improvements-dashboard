@@ -479,7 +479,10 @@ async function fetchFresh(filename) {
   }
 }
 
+let _loadInFlight = false
 async function loadData() {
+  if (_loadInFlight) return          // prevent concurrent fetches (saves GitHub API rate budget)
+  _loadInFlight = true
   const refreshBtn = document.querySelector('.refresh-btn svg')
   if (refreshBtn) refreshBtn.style.animation = 'spin 0.8s linear infinite'
   // Optimistic: update timestamp immediately so user knows fetch started
@@ -527,6 +530,7 @@ async function loadData() {
       if (luBar) luBar.textContent = _failStr
     }
   } finally {
+    _loadInFlight = false
     if (refreshBtn) refreshBtn.style.animation = ''
   }
 }
