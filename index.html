@@ -477,6 +477,7 @@ async function loadData() {
   } catch(e) {
     document.getElementById('entries').innerHTML = '<div class="empty">No data yet — improvements will appear after the next hourly run.</div>'
     if (luEl) luEl.textContent = 'No data yet'
+    if (luBar) luBar.textContent = 'No data yet'
   } finally {
     if (refreshBtn) refreshBtn.style.animation = ''
   }
