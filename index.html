@@ -557,7 +557,7 @@ function render() {
       ? 'background:#f8717122;color:#f87171;border:1px solid #f8717144'
       : `background:${CAT_COLORS[e.category]||'#5e5e5f'}22;color:${CAT_COLORS[e.category]||'#96979a'};border:1px solid ${CAT_COLORS[e.category]||'#25262b'}44`
     const details = (e.errorDetails && e.errorDetails.length)
-      ? `<details style="margin-top:6px;font-size:11px;color:#96979a"><summary style="cursor:pointer;color:#f87171">Error details</summary><pre style="margin-top:4px;white-space:pre-wrap;color:#c4c5c7;font-size:11px;background:#0f1011;padding:8px;border-radius:4px;overflow-x:auto">${e.errorDetails.map(l=>esc(l)).join('\n')}</pre></details>`
+      ? `<details style="margin-top:6px;font-size:11px;color:var(--text-muted)"><summary style="cursor:pointer;color:var(--error)">Error details</summary><pre style="margin-top:4px;white-space:pre-wrap;color:var(--text-secondary);font-size:11px;background:var(--surface-raised);padding:8px;border-radius:4px;overflow-x:auto;border:1px solid var(--border-subtle)">${e.errorDetails.map(l=>esc(l)).join('\n')}</pre></details>`
       : ''
     const timeStyle = e.score ? '' : 'margin-left:auto'
     const decisionLabels = { approved: '✓ Approved', denied: '✕ Denied', plan_requested: '📋 Plan Requested' }
