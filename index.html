@@ -587,7 +587,7 @@ function render() {
         ${proposalBadge}
         ${e.route?`<span style="font-size:10px;font-weight:500;color:var(--text-muted);background:var(--active);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:ui-monospace,monospace;letter-spacing:0">${esc(e.route)}</span>`:''}
         ${e.score?`<span class="score" style="color:${SCORE_COLOR(e.score)}">${e.score}/100</span>`:''}
-        <span class="time" style="${timeStyle}">${formatEntryTime(e.date, e.time)} · <span style="color:var(--text-disabled)">${timeAgo(e.date, e.time)}</span></span>
+        <span class="time" style="${timeStyle}">${formatEntryTime(e.date, e.time)} · <span style="color:var(--text-muted)">${timeAgo(e.date, e.time)}</span></span>
       </div>
       <div class="card-body">${esc(e.summary||'(no summary)')}${details}</div>
     </div>`
