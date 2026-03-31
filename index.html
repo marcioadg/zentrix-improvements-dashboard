@@ -80,6 +80,7 @@
   .repo-select.filtered { color: var(--accent); border-color: var(--accent); background-color: rgba(94,106,210,0.07); }
   #search { background: transparent; border: 1px solid var(--border); color: var(--text-primary); padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 400; width: 160px; height: 26px; outline: none; transition: all 150ms ease; }
   #search::placeholder { color: var(--text-muted); }
+  #search:hover { border-color: var(--text-muted); background: var(--hover); }
   #search:focus { border-color: var(--accent); background: var(--card-bg); }
   .entries { padding: 16px 24px; display: flex; flex-direction: column; gap: 6px; overflow-x: hidden; }
   .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; transition: all 150ms ease; border-left: 1px solid var(--border); box-shadow: inset 2px 0 0 transparent, 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; word-break: break-word; width: 100%; box-sizing: border-box; min-width: 0; }
@@ -172,6 +173,7 @@
   .view-btn:active { background: var(--active); transform: scale(0.95); }
   .icon-btn:active { background: var(--active); transform: scale(0.92); }
   .repo-select:active { border-color: var(--accent); }
+  #search:active { border-color: var(--accent); }
 
   /* ── Focus-visible outlines for keyboard navigation ── */
   .filter-btn:focus-visible,
