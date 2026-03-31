@@ -340,7 +340,7 @@
   <label>Category</label>
   <button class="filter-btn active" onclick="setFilter('cat',null,this)">All</button>
   <div style="flex:1"></div>
-  <input id="search" type="text" placeholder="Search..." oninput="applyFilters()">
+  <input id="search" type="text" placeholder="Search..." oninput="debouncedSearch()">
 </div>
 <div class="entries" id="entries"><div class="loading">Loading improvements...</div></div>
 <div class="analytics" id="analytics" style="display:none">
@@ -512,7 +512,7 @@ function render() {
     <button class="filter-btn${activeProposal?' active-amber':''}" id="filter-proposals" onclick="toggleProposalFilter()">Proposals</button>
     <button class="filter-btn${activeUnread?' active':''}" id="filter-unread" onclick="toggleUnreadFilter()">Unread</button>
     <div style="flex:1"></div>
-    <input id="search" type="text" placeholder="Search..." oninput="applyFilters()">
+    <input id="search" type="text" placeholder="Search..." oninput="debouncedSearch()">
   `
   if (activeRepo) {
     const sel = document.getElementById('repo-select')
@@ -611,6 +611,11 @@ function updateUnreadCount() {
   if (btn) btn.textContent = unreadCount > 0 ? `Unread (${unreadCount})` : 'Unread'
 }
 
+let _searchTimer = null
+function debouncedSearch() {
+  if (_searchTimer) clearTimeout(_searchTimer)
+  _searchTimer = setTimeout(applyFilters, 150)
+}
 function applyFilters() {
   const search = (document.getElementById('search')?.value||'').toLowerCase()
   const readCards = getReadCards()
