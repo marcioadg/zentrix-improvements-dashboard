@@ -526,9 +526,10 @@ async function loadData() {
       return new Date(db) - new Date(da)
     })
     // Skip expensive DOM rebuild if data hasn't changed (polling every 5 min)
-    // Use a lightweight fingerprint instead of JSON.stringify to avoid large temp strings
-    const first = sorted[0], last = sorted[sorted.length - 1]
-    const hash = sorted.length + ':' + (first ? first.date + first.time + (first.summary||'').length : '') + ':' + (last ? last.date + last.time + (last.summary||'').length : '')
+    // Sample multiple entries across the array for a robust fingerprint
+    const _sampleIdxs = [0, Math.floor(sorted.length * 0.25), Math.floor(sorted.length * 0.5), Math.floor(sorted.length * 0.75), sorted.length - 1]
+    const _sampleParts = [...new Set(_sampleIdxs)].map(i => { const e = sorted[i]; return e ? e.date + e.time + (e.summary||'') + (e.status||'') + (e.score||'') : '' })
+    const hash = sorted.length + ':' + _sampleParts.join('|')
     if (hash === _lastDataHash && allEntries.length > 0) {
       // Data unchanged — just update the timestamp, skip re-render
     } else {
