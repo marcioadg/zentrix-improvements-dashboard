@@ -936,46 +936,52 @@ function drawBarChart(canvasId, labels, values, color, maxOverride) {
 }
 
 function renderCharts() {
-  // Timeline
-  const dateCounts = {}
-  allEntries.forEach(e => { dateCounts[e.date] = (dateCounts[e.date] || 0) + 1 })
-  const dates = Object.keys(dateCounts).sort()
-  drawBarChart('chart-timeline', dates, dates.map(d=>dateCounts[d]), '#5c84fe')
+  // Each chart is isolated so a single failure doesn't break the rest
+  try {
+    const dateCounts = {}
+    allEntries.forEach(e => { dateCounts[e.date] = (dateCounts[e.date] || 0) + 1 })
+    const dates = Object.keys(dateCounts).sort()
+    drawBarChart('chart-timeline', dates, dates.map(d=>dateCounts[d]), '#5c84fe')
+  } catch(e) { console.warn('Timeline chart error:', e) }
 
-  // Categories
-  const catCounts = {}
-  allEntries.forEach(e => { catCounts[e.category] = (catCounts[e.category] || 0) + 1 })
-  const sortedCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1])
-  drawBarChart('chart-categories', sortedCats.map(s=>s[0]), sortedCats.map(s=>s[1]), sortedCats.map(s=>getCatColor(s[0])||'#5e5e5f'))
+  try {
+    const catCounts = {}
+    allEntries.forEach(e => { catCounts[e.category] = (catCounts[e.category] || 0) + 1 })
+    const sortedCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1])
+    drawBarChart('chart-categories', sortedCats.map(s=>s[0]), sortedCats.map(s=>s[1]), sortedCats.map(s=>getCatColor(s[0])||'#5e5e5f'))
+  } catch(e) { console.warn('Categories chart error:', e) }
 
-  // Repos
-  const repoCounts = {}, repoNames = {}
-  allEntries.forEach(e => { repoCounts[e.repo]=(repoCounts[e.repo]||0)+1; repoNames[e.repo]=e.repoName })
-  const sortedRepos = Object.entries(repoCounts).sort((a,b)=>b[1]-a[1]).slice(0,10)
-  drawBarChart('chart-repos', sortedRepos.map(s=>repoNames[s[0]]||s[0]), sortedRepos.map(s=>s[1]), '#5c84fe')
+  try {
+    const repoCounts = {}, repoNames = {}
+    allEntries.forEach(e => { repoCounts[e.repo]=(repoCounts[e.repo]||0)+1; repoNames[e.repo]=e.repoName })
+    const sortedRepos = Object.entries(repoCounts).sort((a,b)=>b[1]-a[1]).slice(0,10)
+    drawBarChart('chart-repos', sortedRepos.map(s=>repoNames[s[0]]||s[0]), sortedRepos.map(s=>s[1]), '#5c84fe')
+  } catch(e) { console.warn('Repos chart error:', e) }
 
-  // Health scores
-  const repoScoresMap = {}
-  allEntries.forEach(e => { if(e.score){ if(!repoScoresMap[e.repo]) repoScoresMap[e.repo]={scores:[],name:e.repoName}; repoScoresMap[e.repo].scores.push(e.score) } })
-  const avgs = Object.entries(repoScoresMap).map(([r,d])=>({name:d.name,avg:Math.round(d.scores.reduce((a,b)=>a+b,0)/d.scores.length)})).sort((a,b)=>b.avg-a.avg)
-  if (avgs.length) {
-    drawBarChart('chart-scores', avgs.map(a=>a.name), avgs.map(a=>a.avg), avgs.map(a=>SCORE_COLOR(a.avg)), 100)
-  } else {
-    const {ctx,w} = setupCanvas('chart-scores')
-    const isLightMode = document.documentElement.getAttribute('data-theme') === 'light'
-    ctx.fillStyle= isLightMode ? '#3d3f4d' : '#b0b3cc'; ctx.font='12px Inter,sans-serif'; ctx.textAlign='center'
-    ctx.fillText('No health scores available', w/2, 30)
-  }
+  try {
+    const repoScoresMap = {}
+    allEntries.forEach(e => { if(e.score){ if(!repoScoresMap[e.repo]) repoScoresMap[e.repo]={scores:[],name:e.repoName}; repoScoresMap[e.repo].scores.push(e.score) } })
+    const avgs = Object.entries(repoScoresMap).map(([r,d])=>({name:d.name,avg:Math.round(d.scores.reduce((a,b)=>a+b,0)/d.scores.length)})).sort((a,b)=>b.avg-a.avg)
+    if (avgs.length) {
+      drawBarChart('chart-scores', avgs.map(a=>a.name), avgs.map(a=>a.avg), avgs.map(a=>SCORE_COLOR(a.avg)), 100)
+    } else {
+      const {ctx,w} = setupCanvas('chart-scores')
+      const isLightMode = document.documentElement.getAttribute('data-theme') === 'light'
+      ctx.fillStyle= isLightMode ? '#3d3f4d' : '#b0b3cc'; ctx.font='12px Inter,sans-serif'; ctx.textAlign='center'
+      ctx.fillText('No health scores available', w/2, 30)
+    }
+  } catch(e) { console.warn('Scores chart error:', e) }
 
-  // Errors
-  const errorEntries = allEntries.filter(e=>e.category==='Build Error')
-  const card = document.getElementById('chart-errors-card')
-  if (!errorEntries.length) { card.style.display='none'; return }
-  card.style.display=''
-  const errCounts={}, errNames={}
-  errorEntries.forEach(e=>{ errCounts[e.repo]=(errCounts[e.repo]||0)+1; errNames[e.repo]=e.repoName })
-  const sortedErr=Object.entries(errCounts).sort((a,b)=>b[1]-a[1])
-  drawBarChart('chart-errors', sortedErr.map(s=>errNames[s[0]]||s[0]), sortedErr.map(s=>s[1]), '#f87171')
+  try {
+    const errorEntries = allEntries.filter(e=>e.category==='Build Error')
+    const card = document.getElementById('chart-errors-card')
+    if (!errorEntries.length) { card.style.display='none'; return }
+    card.style.display=''
+    const errCounts={}, errNames={}
+    errorEntries.forEach(e=>{ errCounts[e.repo]=(errCounts[e.repo]||0)+1; errNames[e.repo]=e.repoName })
+    const sortedErr=Object.entries(errCounts).sort((a,b)=>b[1]-a[1])
+    drawBarChart('chart-errors', sortedErr.map(s=>errNames[s[0]]||s[0]), sortedErr.map(s=>s[1]), '#f87171')
+  } catch(e) { console.warn('Errors chart error:', e) }
 }
 
 // ── Test Coverage Chart ──────────────────────────────────────────────────────
