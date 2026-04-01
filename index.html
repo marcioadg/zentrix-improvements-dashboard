@@ -182,6 +182,8 @@
   .sec-fix-btn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   @media (max-width:768px) { .sec-fix-btn { font-size:12px; padding:6px 12px; min-height:32px; } }
   .security-stale { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.2); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: var(--warning); display: none; }
+  .feed-stale { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.2); border-radius: 6px; padding: 10px 14px; margin: 0 24px 0; font-size: 12px; color: var(--warning); display: none; align-items: center; gap: 6px; }
+  @media (max-width: 768px) { .feed-stale { margin: 0 12px; } }
   button, .filter-btn, .view-btn, .refresh-btn { cursor: pointer; }
   .icon-btn { background: none; border: none; border-radius: 5px; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: color 120ms, background 120ms, transform 120ms; min-height: unset; flex-shrink: 0; }
   .icon-btn:hover { color: var(--text-primary); background: var(--hover); }
@@ -408,6 +410,7 @@
   <div style="flex:1"></div>
   <input id="search" type="search" placeholder="Search..." oninput="debouncedSearch()">
 </div>
+<div class="feed-stale" id="feed-stale">⚠ Data feed appears stale — last improvement was logged more than 2 hours ago. The pipeline may need attention.</div>
 <div class="entries" id="entries"><div class="loading">Loading improvements...</div></div>
 <div class="analytics" id="analytics" style="display:none">
   <div class="chart-card"><h3 tabindex="0" role="button" aria-expanded="true" onclick="toggleCard(this)">Improvements Over Time<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-timeline"></canvas></div></div></div>
@@ -631,6 +634,19 @@ function render() {
       {v:ux24,          p:prevUx24,           l:'UX improvements'},
       {v:errors24,      p:prevErrors24,       l:'Build errors'}
     ].map(s=>`<div class="stat"><div class="val">${s.v}${s.p!=null?deltaHtml(s.v,s.p):''}</div><div class="lbl">${s.l}</div></div>`).join('')
+
+  // Stale feed detection — warn if newest entry is >2 hours old
+  const feedStaleEl = document.getElementById('feed-stale')
+  if (feedStaleEl && allEntries.length) {
+    const newest = allEntries.reduce((a, b) => {
+      const da = a.date + 'T' + (a.time||'00:00') + ':00Z'
+      const db = b.date + 'T' + (b.time||'00:00') + ':00Z'
+      return new Date(da) > new Date(db) ? a : b
+    })
+    const newestDate = new Date(newest.date + 'T' + (newest.time||'00:00') + ':00Z')
+    const ageHours = (Date.now() - newestDate.getTime()) / 3600000
+    feedStaleEl.style.display = ageHours > 2 ? 'flex' : 'none'
+  }
 
   const repoStats = {}
   allEntries.forEach(e=>{
