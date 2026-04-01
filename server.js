@@ -25,7 +25,12 @@ app.use((req, res, next) => {
   res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com https://slack.com; img-src 'self' data:; frame-ancestors 'none'")
   next()
 })
-app.use('/data', express.static(path.join(__dirname, 'data')))
+app.use('/data', express.static(path.join(__dirname, 'data'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    res.setHeader('Pragma', 'no-cache')
+  }
+}))
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')))
 
 // ── Auth middleware ──────────────────────────────────────────────────────────
