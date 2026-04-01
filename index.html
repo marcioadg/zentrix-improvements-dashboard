@@ -217,9 +217,12 @@
 
   /* Scroll-fade hint on filter bar when horizontally scrollable */
   .filters { position: relative; }
-  .filters::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 32px; background: linear-gradient(to right, transparent, var(--page-bg)); pointer-events: none; opacity: 0; transition: opacity 200ms ease; }
+  .filters::before, .filters::after { content: ''; position: absolute; top: 0; bottom: 0; width: 32px; pointer-events: none; opacity: 0; transition: opacity 200ms ease; z-index: 1; }
+  .filters::before { left: 0; background: linear-gradient(to left, transparent, var(--page-bg)); }
+  .filters::after { right: 0; background: linear-gradient(to right, transparent, var(--page-bg)); }
   .filters.has-overflow::after { opacity: 1; }
   .filters.scrolled-end::after { opacity: 0; }
+  .filters.scrolled-start::before { opacity: 1; }
 
   /* ── Mobile responsive ── */
   @media (max-width: 768px) {
@@ -673,6 +676,7 @@ function render() {
     const el = filtersEl; if (!el) return
     el.classList.toggle('has-overflow', el.scrollWidth > el.clientWidth + 2)
     el.classList.toggle('scrolled-end', el.scrollLeft + el.clientWidth >= el.scrollWidth - 2)
+    el.classList.toggle('scrolled-start', el.scrollLeft > 2)
   }
   // Remove previous listeners to prevent accumulation across render() calls
   if (window._filtersFadeCleanup) window._filtersFadeCleanup()
