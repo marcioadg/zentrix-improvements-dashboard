@@ -322,6 +322,18 @@
   @keyframes toastOut { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(12px); } }
   /* Proposal filter active amber */
   .filter-btn.active-amber { color:#fbbf24; border-color:#fbbf24; background:rgba(251,191,36,0.1); }
+  /* Proposal action buttons */
+  .proposal-actions { display:flex; gap:6px; margin-top:10px; }
+  .proposal-actions button { font-size:11px; font-weight:500; padding:4px 12px; border-radius:4px; border:1px solid; cursor:pointer; background:none; transition:all 150ms ease; }
+  .proposal-actions button:active { transform:scale(0.95); }
+  .proposal-actions button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .proposal-actions .btn-approve { color:#22c55e; border-color:rgba(34,197,94,0.3); }
+  .proposal-actions .btn-approve:hover { background:rgba(34,197,94,0.1); border-color:rgba(34,197,94,0.5); }
+  .proposal-actions .btn-deny { color:#ef4444; border-color:rgba(239,68,68,0.3); }
+  .proposal-actions .btn-deny:hover { background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.5); }
+  .proposal-actions .btn-plan { color:#a855f7; border-color:rgba(168,85,247,0.3); }
+  .proposal-actions .btn-plan:hover { background:rgba(168,85,247,0.1); border-color:rgba(168,85,247,0.5); }
+  @media (max-width:768px) { .proposal-actions button { font-size:12px; padding:8px 14px; min-height:36px; } }
 
   /* Small phones */
   @media (max-width: 374px) {
@@ -727,6 +739,11 @@ function render() {
         <span class="time" style="${timeStyle}">${formatEntryTime(e.date, e.time)} · <span style="color:var(--text-muted)">${timeAgo(e.date, e.time)}</span></span>
       </div>
       <div class="card-body">${esc(e.summary||'(no summary)')}${details}</div>
+      ${(isProposal && !decisionAction) ? `<div class="proposal-actions">
+        <button class="btn-approve" data-action="approve" data-key="${esc(cardKey)}" data-repo="${esc(e.repo)}" data-repo-name="${esc(e.repoName)}" data-summary="${esc(e.summary||'')}">&#10003; Approve</button>
+        <button class="btn-deny" data-action="deny" data-key="${esc(cardKey)}" data-repo="${esc(e.repo)}" data-repo-name="${esc(e.repoName)}" data-summary="${esc(e.summary||'')}">&#10005; Deny</button>
+        <button class="btn-plan" data-action="plan" data-key="${esc(cardKey)}" data-repo="${esc(e.repo)}" data-repo-name="${esc(e.repoName)}" data-summary="${esc(e.summary||'')}">&#128203; Plan</button>
+      </div>` : ''}
     </div>`
     if (!isProposal || decisionAction) return cardEl
     return `<div class="swipe-wrap" data-key="${esc(cardKey)}">
@@ -1090,6 +1107,33 @@ async function requestSecFix(btn, repo, repoName, issueIdx, issue) {
     btn.disabled = false
   }
 }
+
+// ── Proposal action buttons (click handler) ─────────────────────────────────
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.proposal-actions button')
+  if (!btn) return
+  e.stopPropagation()
+  const action = btn.dataset.action
+  const key = btn.dataset.key
+  const repo = btn.dataset.repo
+  const repoName = btn.dataset.repoName
+  const summary = btn.dataset.summary
+
+  const actionMap = { approve: 'approved', deny: 'denied', plan: 'plan_requested' }
+  const toastMap = { approve: 'Approved ✓', deny: 'Denied', plan: 'Plan requested — posting to Slack…' }
+
+  saveSwipeAction(key, actionMap[action])
+  markCardRead(key)
+  showToast(toastMap[action])
+
+  fetch('/api/action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, cardId: key, repo, repoName, summary, requestedAt: new Date().toISOString() })
+  }).catch(() => showToast('⚠ Action failed to post — check your connection'))
+
+  setTimeout(() => { render(); updateUnreadCount() }, 200)
+})
 
 // ── Markdown → HTML (lightweight) ────────────────────────────────────────────
 function mdToHtml(md) {
