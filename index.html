@@ -66,6 +66,10 @@
   .stat:last-child { border-right: none; }
   .stat .val { font-size: 20px; font-weight: 600; color: var(--text-primary); line-height: 1.2; font-variant-numeric: tabular-nums; }
   .stat .lbl { font-size: 10px; font-weight: 500; color: var(--text-muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat .delta { font-size: 10px; font-weight: 500; margin-left: 6px; font-variant-numeric: tabular-nums; }
+  .stat .delta.up { color: var(--success); }
+  .stat .delta.down { color: var(--error); }
+  .stat .delta.flat { color: var(--text-muted); }
   [data-theme="light"] .stat .lbl { color: var(--text-muted); }
   .filters { padding: 7px 24px; background: var(--page-bg); border-bottom: 1px solid var(--border-subtle); display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .filters::-webkit-scrollbar { display: none; }
@@ -575,21 +579,34 @@ function render() {
   const ux = allEntries.filter(e=>e.category==='UX/UI').length
   const buildErrors = allEntries.filter(e=>e.category==='Build Error').length
   const cutoff24h = new Date(Date.now() - 86400000)
+  const cutoff48h = new Date(Date.now() - 2 * 86400000)
   const last24 = allEntries.filter(e => new Date(e.date+'T'+(e.time||'00:00')+':00Z') >= cutoff24h)
+  const prev24 = allEntries.filter(e => { const d = new Date(e.date+'T'+(e.time||'00:00')+':00Z'); return d >= cutoff48h && d < cutoff24h })
   const repos24 = [...new Set(last24.map(e=>e.repo))].length
   const bugs24 = last24.filter(e=>e.category==='Bug Fix').length
   const ux24 = last24.filter(e=>e.category==='UX/UI').length
   const errors24 = last24.filter(e=>e.category==='Build Error').length
+  const prevRepos24 = [...new Set(prev24.map(e=>e.repo))].length
+  const prevBugs24 = prev24.filter(e=>e.category==='Bug Fix').length
+  const prevUx24 = prev24.filter(e=>e.category==='UX/UI').length
+  const prevErrors24 = prev24.filter(e=>e.category==='Build Error').length
   const proposals = allEntries.filter(e=>e.status==='proposal').length
+  function deltaHtml(cur, prev) {
+    const d = cur - prev
+    if (d === 0) return ''
+    const cls = d > 0 ? 'up' : 'down'
+    const arrow = d > 0 ? '↑' : '↓'
+    return `<span class="delta ${cls}">${arrow}${Math.abs(d)}</span>`
+  }
   document.getElementById('stats').innerHTML =
     [
-      {v:last24.length, l:'Code improvements'},
-      {v:repos24,       l:'Active repos'},
-      {v:repos.length,  l:'Total repos'},
-      {v:bugs24,        l:'Bugs fixed'},
-      {v:ux24,          l:'UX improvements'},
-      {v:errors24,      l:'Build errors'}
-    ].map(s=>`<div class="stat"><div class="val">${s.v}</div><div class="lbl">${s.l}</div></div>`).join('')
+      {v:last24.length, p:prev24.length,     l:'Code improvements'},
+      {v:repos24,       p:prevRepos24,        l:'Active repos'},
+      {v:repos.length,  p:null,               l:'Total repos'},
+      {v:bugs24,        p:prevBugs24,         l:'Bugs fixed'},
+      {v:ux24,          p:prevUx24,           l:'UX improvements'},
+      {v:errors24,      p:prevErrors24,       l:'Build errors'}
+    ].map(s=>`<div class="stat"><div class="val">${s.v}${s.p!=null?deltaHtml(s.v,s.p):''}</div><div class="lbl">${s.l}</div></div>`).join('')
 
   const repoStats = {}
   allEntries.forEach(e=>{
