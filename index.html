@@ -398,11 +398,9 @@ if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D
   }
 }
 
-const CAT_COLORS = {
-  'UX/UI':'#5c84fe','Bug Fix':'#f87171','Tests':'#4ade80','Performance':'#fbbf24',
-  'Security':'#a78bfa','Dependencies':'#60a5fa','Cleanup':'#96979a','TypeScript':'#34d399','Improvement':'#5e69d1',
-  'Build Error':'#f87171'
-}
+const _CAT_DARK = {'UX/UI':'#5c84fe','Bug Fix':'#f87171','Tests':'#4ade80','Performance':'#fbbf24','Security':'#a78bfa','Dependencies':'#60a5fa','Cleanup':'#96979a','TypeScript':'#34d399','Improvement':'#5e69d1','Build Error':'#f87171'}
+const _CAT_LIGHT = {'UX/UI':'#4d59c4','Bug Fix':'#b91c1c','Tests':'#16a34a','Performance':'#b45309','Security':'#7c3aed','Dependencies':'#2563eb','Cleanup':'#6b7280','TypeScript':'#059669','Improvement':'#4d59c4','Build Error':'#b91c1c'}
+function getCatColor(cat) { const l = document.documentElement.getAttribute('data-theme')==='light'; return (l?_CAT_LIGHT:_CAT_DARK)[cat] }
 const SCORE_COLOR = s => { const l = document.documentElement.getAttribute('data-theme')==='light'; return s>=80?(l?'#16a34a':'#4ade80'):s>=60?(l?'#b45309':'#fbbf24'):(l?'#b91c1c':'#f87171') }
 const esc = s => typeof s === 'string' ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;') : s
 
@@ -639,7 +637,7 @@ function render() {
     const isRead = !!readCards[cardKey]
     const catStyle = isError
       ? 'background:#f8717122;color:#f87171;border:1px solid #f8717144'
-      : `background:${CAT_COLORS[e.category]||'#5e5e5f'}22;color:${CAT_COLORS[e.category]||'#96979a'};border:1px solid ${CAT_COLORS[e.category]||'#25262b'}44`
+      : `background:${getCatColor(e.category)||'#5e5e5f'}22;color:${getCatColor(e.category)||'#96979a'};border:1px solid ${getCatColor(e.category)||'#25262b'}44`
     const details = (e.errorDetails && e.errorDetails.length)
       ? `<details style="margin-top:6px;font-size:11px;color:var(--text-muted)"><summary style="cursor:pointer;color:var(--error)">Error details</summary><pre style="margin-top:4px;white-space:pre-wrap;color:var(--text-secondary);font-size:11px;background:var(--surface-raised);padding:8px;border-radius:4px;overflow-x:auto;border:1px solid var(--border-subtle)">${e.errorDetails.map(l=>esc(l)).join('\n')}</pre></details>`
       : ''
@@ -844,7 +842,7 @@ function renderCharts() {
   const catCounts = {}
   allEntries.forEach(e => { catCounts[e.category] = (catCounts[e.category] || 0) + 1 })
   const sortedCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1])
-  drawBarChart('chart-categories', sortedCats.map(s=>s[0]), sortedCats.map(s=>s[1]), sortedCats.map(s=>CAT_COLORS[s[0]]||'#5e5e5f'))
+  drawBarChart('chart-categories', sortedCats.map(s=>s[0]), sortedCats.map(s=>s[1]), sortedCats.map(s=>getCatColor(s[0])||'#5e5e5f'))
 
   // Repos
   const repoCounts = {}, repoNames = {}
