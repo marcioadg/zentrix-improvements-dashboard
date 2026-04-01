@@ -201,6 +201,12 @@
     .stat:nth-child(n+4) { border-top: 1px solid var(--border); }
   }
 
+  /* Scroll-fade hint on filter bar when horizontally scrollable */
+  .filters { position: relative; }
+  .filters::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 32px; background: linear-gradient(to right, transparent, var(--page-bg)); pointer-events: none; opacity: 0; transition: opacity 200ms ease; }
+  .filters.has-overflow::after { opacity: 1; }
+  .filters.scrolled-end::after { opacity: 0; }
+
   /* ── Mobile responsive ── */
   @media (max-width: 768px) {
     header { padding: 0 12px; min-height: 48px; position: sticky; }
@@ -631,6 +637,17 @@ function render() {
       if (prevSelStart != null) newSearch.setSelectionRange(prevSelStart, prevSelEnd)
     }
   }
+
+  // Scroll-fade hint: detect overflow & scroll position on filter bar
+  const filtersEl = document.getElementById('filters')
+  function updateFiltersFade() {
+    const el = filtersEl; if (!el) return
+    el.classList.toggle('has-overflow', el.scrollWidth > el.clientWidth + 2)
+    el.classList.toggle('scrolled-end', el.scrollLeft + el.clientWidth >= el.scrollWidth - 2)
+  }
+  filtersEl.addEventListener('scroll', updateFiltersFade, {passive:true})
+  window.addEventListener('resize', updateFiltersFade, {passive:true})
+  updateFiltersFade()
 
   const readCards = getReadCards()
   const swipedActions = getSwipeActions()
