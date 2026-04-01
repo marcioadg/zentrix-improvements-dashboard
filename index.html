@@ -341,6 +341,14 @@
   .proposal-actions .btn-plan:hover { background:rgba(168,85,247,0.1); border-color:rgba(168,85,247,0.5); }
   @media (max-width:768px) { .proposal-actions button { font-size:12px; padding:8px 14px; min-height:36px; } }
 
+  /* Smooth theme transition — applied briefly during toggle to avoid jarring flash */
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition: background-color 250ms ease, color 250ms ease, border-color 250ms ease, box-shadow 250ms ease !important;
+  }
+
   /* Small phones */
   @media (max-width: 374px) {
     .stats { grid-template-columns: repeat(2, 1fr); }
@@ -1221,11 +1229,13 @@ document.addEventListener('click', function(e) {
 function toggleTheme() {
   const isLight = document.documentElement.getAttribute('data-theme') === 'light'
   const newTheme = isLight ? 'dark' : 'light'
+  document.documentElement.classList.add('theme-transition')
   document.documentElement.setAttribute('data-theme', newTheme)
   document.getElementById('theme-icon-dark').style.display = newTheme === 'light' ? 'none' : ''
   document.getElementById('theme-icon-light').style.display = newTheme === 'light' ? '' : 'none'
   document.querySelector('meta[name="theme-color"]').setAttribute('content', newTheme === 'light' ? '#f5f5f8' : '#090909')
   localStorage.setItem('zentrix-theme', newTheme)
+  setTimeout(() => document.documentElement.classList.remove('theme-transition'), 300)
   // Re-render so inline score colors match the new theme
   if (allEntries.length) {
     if (currentView === 'list') { render(); }
