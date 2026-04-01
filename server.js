@@ -12,7 +12,18 @@ const API_KEY = process.env.API_KEY || ''
 const SLACK_CHANNEL = 'C0ABH17F93L' // #ai-devs-zentrix
 
 // ── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors({ origin: '*' }))
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow same-origin requests (no Origin header) and requests from the deployment itself
+    if (!origin) return callback(null, true)
+    const allowed = [
+      'http://localhost:' + PORT,
+      'https://zentrix-improvements-dashboard.vercel.app'
+    ]
+    if (allowed.includes(origin)) return callback(null, true)
+    callback(new Error('Not allowed by CORS'))
+  }
+}))
 app.use(express.json())
 
 // Security headers
