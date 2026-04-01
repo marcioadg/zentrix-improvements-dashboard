@@ -645,8 +645,16 @@ function render() {
     el.classList.toggle('has-overflow', el.scrollWidth > el.clientWidth + 2)
     el.classList.toggle('scrolled-end', el.scrollLeft + el.clientWidth >= el.scrollWidth - 2)
   }
-  filtersEl.addEventListener('scroll', updateFiltersFade, {passive:true})
-  window.addEventListener('resize', updateFiltersFade, {passive:true})
+  // Remove previous listeners to prevent accumulation across render() calls
+  if (window._filtersFadeCleanup) window._filtersFadeCleanup()
+  const _scrollHandler = () => updateFiltersFade()
+  const _resizeHandler = () => updateFiltersFade()
+  filtersEl.addEventListener('scroll', _scrollHandler, {passive:true})
+  window.addEventListener('resize', _resizeHandler, {passive:true})
+  window._filtersFadeCleanup = () => {
+    filtersEl.removeEventListener('scroll', _scrollHandler)
+    window.removeEventListener('resize', _resizeHandler)
+  }
   updateFiltersFade()
 
   const readCards = getReadCards()
