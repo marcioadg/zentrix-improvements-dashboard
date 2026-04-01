@@ -1296,7 +1296,19 @@ function showToast(msg) {
   })
 })()
 
-loadData()
+// Initial load with auto-retry on failure (handles transient GitHub API outages)
+;(function initialLoad() {
+  const retryDelays = [10000, 30000] // retry after 10s, then 30s
+  let attempt = 0
+  function tryLoad() {
+    loadData().then(() => {
+      if (!allEntries.length && attempt < retryDelays.length) {
+        setTimeout(tryLoad, retryDelays[attempt++])
+      }
+    })
+  }
+  tryLoad()
+})()
 // Visibility-aware polling: pause when tab is hidden to save GitHub API rate limits
 let pollTimer = setInterval(loadData, 300000) // 5 min — data updates hourly, 60s was exceeding GitHub API rate limits (60 req/hr)
 document.addEventListener('visibilitychange', () => {
