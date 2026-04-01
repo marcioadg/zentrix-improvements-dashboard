@@ -408,13 +408,13 @@
 </div>
 <div class="entries" id="entries"><div class="loading">Loading improvements...</div></div>
 <div class="analytics" id="analytics" style="display:none">
-  <div class="chart-card"><h3 tabindex="0" role="button" onclick="toggleCard(this)">Improvements Over Time<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-timeline"></canvas></div></div></div>
-  <div class="chart-card"><h3 tabindex="0" role="button" onclick="toggleCard(this)">Category Breakdown<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-categories"></canvas></div></div></div>
-  <div class="chart-card"><h3 tabindex="0" role="button" onclick="toggleCard(this)">Repo Activity (Top 10)<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-repos"></canvas></div></div></div>
-  <div class="chart-card"><h3 tabindex="0" role="button" onclick="toggleCard(this)">Avg Health Score per Repo<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-scores"></canvas></div></div></div>
-  <div class="chart-card" id="chart-errors-card" style="display:none"><h3 tabindex="0" role="button" onclick="toggleCard(this)">Build Errors by Repo<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-errors"></canvas></div></div></div>
-  <div class="chart-card"><h3 tabindex="0" role="button" onclick="toggleCard(this)">Test Coverage by App<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-coverage"></canvas></div></div></div>
-  <div class="chart-card" style="grid-column:1/-1"><h3 tabindex="0" role="button" onclick="toggleCard(this)">🔒 Security Scores<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3>
+  <div class="chart-card"><h3 tabindex="0" role="button" aria-expanded="true" onclick="toggleCard(this)">Improvements Over Time<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-timeline"></canvas></div></div></div>
+  <div class="chart-card"><h3 tabindex="0" role="button" aria-expanded="true" onclick="toggleCard(this)">Category Breakdown<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-categories"></canvas></div></div></div>
+  <div class="chart-card"><h3 tabindex="0" role="button" aria-expanded="true" onclick="toggleCard(this)">Repo Activity (Top 10)<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-repos"></canvas></div></div></div>
+  <div class="chart-card"><h3 tabindex="0" role="button" aria-expanded="true" onclick="toggleCard(this)">Avg Health Score per Repo<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-scores"></canvas></div></div></div>
+  <div class="chart-card" id="chart-errors-card" style="display:none"><h3 tabindex="0" role="button" aria-expanded="true" onclick="toggleCard(this)">Build Errors by Repo<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-errors"></canvas></div></div></div>
+  <div class="chart-card"><h3 tabindex="0" role="button" aria-expanded="true" onclick="toggleCard(this)">Test Coverage by App<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-coverage"></canvas></div></div></div>
+  <div class="chart-card" style="grid-column:1/-1"><h3 tabindex="0" role="button" aria-expanded="true" onclick="toggleCard(this)">🔒 Security Scores<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3>
   <div class="chart-body">
     <div class="security-stale" id="security-stale" style="display:none;margin-bottom:12px">Security data is more than 25 hours old.</div>
     <div class="security-grid" id="security-grid" style="margin-top:0"><div class="loading">Loading...</div></div>
@@ -459,10 +459,6 @@ function timeAgo(date, time) {
 }
 
 function getETZoneAbbr(d) {
-  // Return "EST" or "EDT" based on whether the date falls in Eastern Daylight Time
-  const jan = new Date(d.getFullYear(), 0, 1).getTimezoneOffset()
-  const jul = new Date(d.getFullYear(), 6, 1).getTimezoneOffset()
-  // Format with timeZoneName to get the actual abbreviation
   try {
     const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' }).formatToParts(d)
     const tz = parts.find(p => p.type === 'timeZoneName')
@@ -1445,7 +1441,9 @@ document.addEventListener('visibilitychange', () => {
 
 // ── Collapsible chart cards ───────────────────────────────────────────────────
 function toggleCard(h3) {
-  h3.closest('.chart-card').classList.toggle('collapsed')
+  const card = h3.closest('.chart-card')
+  card.classList.toggle('collapsed')
+  h3.setAttribute('aria-expanded', !card.classList.contains('collapsed'))
 }
 // Keyboard support for chart card toggles (Enter/Space)
 document.addEventListener('keydown', function(e) {
