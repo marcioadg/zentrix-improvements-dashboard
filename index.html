@@ -526,7 +526,9 @@ async function loadData() {
       return new Date(db) - new Date(da)
     })
     // Skip expensive DOM rebuild if data hasn't changed (polling every 5 min)
-    const hash = JSON.stringify(sorted)
+    // Use a lightweight fingerprint instead of JSON.stringify to avoid large temp strings
+    const first = sorted[0], last = sorted[sorted.length - 1]
+    const hash = sorted.length + ':' + (first ? first.date + first.time + (first.summary||'').length : '') + ':' + (last ? last.date + last.time + (last.summary||'').length : '')
     if (hash === _lastDataHash && allEntries.length > 0) {
       // Data unchanged — just update the timestamp, skip re-render
     } else {
