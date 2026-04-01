@@ -7,7 +7,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="/home/ubuntu/zentrix-improvements-dashboard"
 OUTPUT="$REPO_DIR/data/security.json"
 CLAUDE="/home/ubuntu/.npm-global/bin/claude"
-TIMESTAMP=$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S)
+TIMESTAMP=$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S%z)
 
 declare -A REPOS=(
   ["zentrix-insights"]="/home/ubuntu/zentrix-insights"
@@ -119,7 +119,7 @@ print(json.dumps(lines))
 
   ISSUES_FILE=$(mktemp)
   echo "$ISSUES_JSON" > "$ISSUES_FILE"
-  UPDATED=$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S)
+  UPDATED=$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S%z)
   python3 - "$repo" "$name" "$SCORE" "$RESULTS_FILE" "$ISSUES_FILE" "$UPDATED" <<'PYEOF'
 import json, sys
 repo, name, score_str, results_file, issues_file, updated = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
