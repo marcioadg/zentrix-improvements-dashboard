@@ -224,6 +224,9 @@
     .stat .val { font-size: 18px; }
     .stat .lbl { font-size: 10px; letter-spacing: 0.05em; }
 
+    /* Stats bar */
+    .stats-bar { padding: 8px 12px 4px !important; }
+
     /* Filters */
     .filters { padding: 6px 12px; gap: 6px; flex-wrap: nowrap; }
     .filters label { display: none; }
@@ -359,7 +362,7 @@
   <div id="summary-generated" style="font-size:11px;color:var(--text-muted);margin-bottom:14px"></div>
   <div id="summary-text" style="font-size:15px;font-weight:400;color:var(--text-secondary);line-height:1.7"></div>
 </div>
-<div style="padding:8px 24px 4px;display:flex;align-items:center;justify-content:space-between;background:var(--sidebar-bg);border-bottom:1px solid var(--border-subtle)">
+<div class="stats-bar" style="padding:8px 24px 4px;display:flex;align-items:center;justify-content:space-between;background:var(--sidebar-bg);border-bottom:1px solid var(--border-subtle)">
   <span id="stats-header" style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Last 24 hours</span>
   <span id="last-updated-bar" style="font-size:10px;color:var(--text-muted)"></span>
 </div>
