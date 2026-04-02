@@ -643,7 +643,8 @@ async function loadData() {
     const _sampleParts = [...new Set(_sampleIdxs)].map(i => { const e = sorted[i]; return e ? e.date + e.time + (e.summary||'') + (e.status||'') + (e.score||'') : '' })
     const hash = sorted.length + ':' + _sampleParts.join('|')
     if (hash === _lastDataHash && allEntries.length > 0) {
-      // Data unchanged — just update the timestamp, skip re-render
+      // Data unchanged — re-check stale status (feed age grows even when data hasn't changed)
+      updateFeedStale()
     } else {
       _lastDataHash = hash
       allEntries = sorted
@@ -673,6 +674,21 @@ async function loadData() {
     _loadInFlight = false
     if (refreshBtn) refreshBtn.style.animation = ''
   }
+}
+
+// Stale feed detection — separated so it can run on every poll, not just on data change
+function updateFeedStale() {
+  const feedStaleEl = document.getElementById('feed-stale')
+  if (!feedStaleEl || !allEntries.length) return
+  const newest = allEntries.reduce((a, b) => {
+    const da = a.date + 'T' + (a.time||'00:00') + ':00Z'
+    const db = b.date + 'T' + (b.time||'00:00') + ':00Z'
+    return new Date(da) > new Date(db) ? a : b
+  })
+  const newestDate = new Date(newest.date + 'T' + (newest.time||'00:00') + ':00Z')
+  const ageHours = (Date.now() - newestDate.getTime()) / 3600000
+  _feedStale = ageHours > 2
+  feedStaleEl.style.display = _feedStale && currentView === 'list' ? 'flex' : 'none'
 }
 
 function render() {
@@ -710,19 +726,8 @@ function render() {
       {v:errors24,      p:prevErrors24,       l:'Build errors'}
     ].map(s=>`<div class="stat"><div class="val">${s.v}${s.p!=null?deltaHtml(s.v,s.p):''}</div><div class="lbl">${s.l}</div></div>`).join('')
 
-  // Stale feed detection — warn if newest entry is >2 hours old
-  const feedStaleEl = document.getElementById('feed-stale')
-  if (feedStaleEl && allEntries.length) {
-    const newest = allEntries.reduce((a, b) => {
-      const da = a.date + 'T' + (a.time||'00:00') + ':00Z'
-      const db = b.date + 'T' + (b.time||'00:00') + ':00Z'
-      return new Date(da) > new Date(db) ? a : b
-    })
-    const newestDate = new Date(newest.date + 'T' + (newest.time||'00:00') + ':00Z')
-    const ageHours = (Date.now() - newestDate.getTime()) / 3600000
-    _feedStale = ageHours > 2
-    feedStaleEl.style.display = _feedStale && currentView === 'list' ? 'flex' : 'none'
-  }
+  // Stale feed detection — evaluated here and also on every poll tick
+  updateFeedStale()
 
   const repoStats = {}
   allEntries.forEach(e=>{
