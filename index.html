@@ -1580,6 +1580,11 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault()
     toggleCard(e.target)
   }
+  // Keyboard activation for improvement cards (tabindex="0" implies keyboard support)
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.card[data-key]')) {
+    e.preventDefault()
+    e.target.click()
+  }
 })
 
 // Pull-to-refresh
