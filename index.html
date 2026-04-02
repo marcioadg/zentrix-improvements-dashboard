@@ -331,6 +331,8 @@
   @keyframes toastOut { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(12px); } }
   /* Proposal filter active amber */
   .filter-btn.active-amber { color:#fbbf24; border-color:#fbbf24; background:rgba(251,191,36,0.1); }
+  .filter-btn.active-amber:hover { background:rgba(251,191,36,0.18); border-color:#e5ab1c; }
+  .filter-btn.active-amber:active { background:rgba(251,191,36,0.18); transform:scale(0.97); }
   /* Proposal action buttons */
   .proposal-actions { display:flex; gap:6px; margin-top:10px; }
   .proposal-actions button { font-size:11px; font-weight:500; padding:5px 14px; border-radius:4px; border:1px solid; cursor:pointer; background:none; transition:all 150ms ease; min-height:28px; display:inline-flex; align-items:center; }
@@ -347,6 +349,7 @@
   /* ── Light-mode badge & action-button contrast fixes ── */
   [data-theme="light"] .proposal-badge { color:#92400e; background:rgba(146,64,14,0.08); border-color:rgba(146,64,14,0.2); }
   [data-theme="light"] .filter-btn.active-amber { color:#92400e; border-color:#b45309; background:rgba(180,83,9,0.08); }
+  [data-theme="light"] .filter-btn.active-amber:hover { background:rgba(180,83,9,0.14); border-color:#92400e; }
   [data-theme="light"] .decision-badge.approved { color:#15803d; background:rgba(21,128,61,0.08); border-color:rgba(21,128,61,0.2); }
   [data-theme="light"] .decision-badge.denied { color:#b91c1c; background:rgba(185,28,28,0.08); border-color:rgba(185,28,28,0.2); }
   [data-theme="light"] .decision-badge.plan { color:#7c3aed; background:rgba(124,58,237,0.08); border-color:rgba(124,58,237,0.2); }
