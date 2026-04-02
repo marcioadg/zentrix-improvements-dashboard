@@ -368,6 +368,14 @@
     transition: background-color 250ms ease, color 250ms ease, border-color 250ms ease, box-shadow 250ms ease !important;
   }
 
+  /* Prevent sticky hover highlights on touch-only devices */
+  @media (hover: none) {
+    .card:hover { border-color: var(--border); background: var(--card-bg); border-left-color: var(--border); box-shadow: inset 2px 0 0 transparent, 0 1px 3px rgba(0,0,0,0.04); }
+    [data-theme="light"] .card:hover { box-shadow: inset 2px 0 0 transparent, 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03); }
+    .sec-card:hover { border-color: var(--border); background: var(--card-bg); }
+    .chart-card:hover { border-color: var(--border); border-top-color: rgba(92,132,254,0.3); }
+  }
+
   /* Small phones */
   @media (max-width: 374px) {
     .stats { grid-template-columns: repeat(2, 1fr); }
