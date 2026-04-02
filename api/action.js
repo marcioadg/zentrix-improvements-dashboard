@@ -52,6 +52,7 @@ export default async function handler(req, res) {
   if (!action || !cardId) return res.status(400).json({ error: 'Missing action or cardId' })
 
   const labels = { approve: '✅ Approved', deny: '❌ Denied', plan: '📋 Plan Requested', sec_fix: '🔐 Security Fix Requested' }
+  if (!labels[action]) return res.status(400).json({ error: 'Invalid action' })
   const label = labels[action] || action
 
   const blocks = [
