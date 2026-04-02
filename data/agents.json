@@ -3,6 +3,7 @@
     {
       "id": "wisenetix",
       "name": "Wisenetix",
+      "aiStatus": "on_track",
       "agents": [
         {
           "id": "cole-raines",
@@ -87,6 +88,7 @@
     {
       "id": "wisevas",
       "name": "WiseVAs",
+      "aiStatus": "on_track",
       "agents": [
         {
           "id": "ivy-bennett",
@@ -160,6 +162,7 @@
     {
       "id": "zentrix",
       "name": "Zentrix",
+      "aiStatus": "on_track",
       "agents": [
         {
           "id": "ezra-stone",
