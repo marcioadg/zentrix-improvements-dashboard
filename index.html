@@ -646,6 +646,8 @@ async function loadData() {
       // Invalidate analytics cache so security/coverage data refreshes on next view
       _analyticsCache.security.ts = 0
       _analyticsCache.coverage.ts = 0
+      // Reset summary flag so the AI summary reloads with fresh data
+      summaryLoaded = false
       render()
       pruneLocalStorage()
     }
