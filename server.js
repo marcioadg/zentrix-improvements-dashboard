@@ -2,6 +2,7 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const path = require('path')
+const fs = require('fs')
 
 const app = express()
 const PORT = process.env.PORT || 3847
@@ -100,7 +101,6 @@ app.get('/api/health', (req, res) => {
 
 // Agents data — read/write
 app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
-  const fs = require('fs')
   const filePath = path.join(__dirname, 'data', 'agents.json')
   try {
     fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2))
