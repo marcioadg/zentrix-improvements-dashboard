@@ -475,12 +475,13 @@ const _CAT_DARK = {'UX/UI':'#5c84fe','Bug Fix':'#f87171','Tests':'#4ade80','Perf
 const _CAT_LIGHT = {'UX/UI':'#4d59c4','Bug Fix':'#b91c1c','Tests':'#16a34a','Performance':'#b45309','Security':'#7c3aed','Dependencies':'#2563eb','Cleanup':'#6b7280','TypeScript':'#059669','Improvement':'#4d59c4','Build Error':'#b91c1c'}
 function getCatColor(cat) { const l = document.documentElement.getAttribute('data-theme')==='light'; return (l?_CAT_LIGHT:_CAT_DARK)[cat] }
 const SCORE_COLOR = s => { const l = document.documentElement.getAttribute('data-theme')==='light'; return s>=80?(l?'#16a34a':'#4ade80'):s>=60?(l?'#b45309':'#fbbf24'):(l?'#b91c1c':'#f87171') }
-const esc = s => typeof s === 'string' ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;') : s
+const esc = s => typeof s === 'string' ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;') : (s ?? '')
 
 function timeAgo(date, time) {
   try {
     const utcDate = new Date(date + 'T' + (time||'00:00') + ':00Z')
     const diff = Math.floor((Date.now() - utcDate) / 1000)
+    if (isNaN(diff) || diff < 0) return ''
     if (diff < 60) return `${diff}s ago`
     if (diff < 3600) return `${Math.floor(diff/60)}m ago`
     if (diff < 86400) return `${Math.floor(diff/3600)}h ago`
