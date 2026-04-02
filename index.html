@@ -605,10 +605,12 @@ async function loadData() {
   if (luEl) luEl.textContent = fetchingStr
   if (luBar) luBar.textContent = fetchingStr
   try {
-    const [data, proposalsData] = await Promise.all([
+    const [data, proposalsData, agentsRaw] = await Promise.all([
       fetchFresh('entries.json'),
-      fetchFresh('proposals.json').catch(() => [])
+      fetchFresh('proposals.json').catch(() => []),
+      fetch('/data/agents.json?t=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)
     ])
+    if (agentsRaw) { agentsData = agentsRaw; }
     const proposals = Array.isArray(proposalsData) ? proposalsData : []
     const _swipeActions = getSwipeActions()
     const sorted = [...proposals, ...data].sort((a,b) => {
