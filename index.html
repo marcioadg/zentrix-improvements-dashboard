@@ -456,7 +456,7 @@
   <label>Category</label>
   <button class="filter-btn active" onclick="setFilter('cat',null,this)">All</button>
   <div style="flex:1"></div>
-  <input id="search" type="search" placeholder="Search..." oninput="debouncedSearch()">
+  <input id="search" type="search" placeholder="Search..." aria-label="Search improvements" oninput="debouncedSearch()">
 </div>
 <div class="feed-stale" id="feed-stale">⚠ Data feed appears stale — last improvement was logged more than 2 hours ago. The pipeline may need attention.</div>
 <div class="entries" id="entries"><div class="loading">Loading improvements...</div></div>
