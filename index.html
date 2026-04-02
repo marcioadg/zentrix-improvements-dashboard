@@ -1519,8 +1519,9 @@ document.addEventListener('keydown', function(e) {
   }, { passive: true })
 
   document.addEventListener('touchend', e => {
-    if (!pulling || !ptr) return
+    if (!pulling) return
     pulling = false
+    if (!ptr) return
     const dy = e.changedTouches[0].clientY - startY
     if (dy > THRESHOLD) {
       const svg = ptr.querySelector('svg')
