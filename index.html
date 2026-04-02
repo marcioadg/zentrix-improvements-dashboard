@@ -690,7 +690,7 @@ function render() {
     [
       {v:last24.length, p:prev24.length,     l:'Code improvements'},
       {v:repos24,       p:prevRepos24,        l:'Active repos'},
-      {v:repos.length,  p:null,               l:'Total repos'},
+      {v:(()=>{ if(agentsData&&agentsData.companies){ const agents=agentsData.companies.flatMap(c=>c.agents); const avg=agents.length?Math.round(agents.reduce((s,a)=>s+(a.completion||0),0)/agents.length):0; return avg+'%'; } return '—'; })(), p:null, l:'AI Implementation'},
       {v:bugs24,        p:prevBugs24,         l:'Bugs fixed'},
       {v:ux24,          p:prevUx24,           l:'UX improvements'},
       {v:errors24,      p:prevErrors24,       l:'Build errors'}
