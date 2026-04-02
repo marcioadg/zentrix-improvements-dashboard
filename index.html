@@ -405,6 +405,9 @@
       <button class="view-btn" onclick="switchView('analytics',this)" title="Analytics" aria-label="Analytics">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
       </button>
+      <button class="view-btn" onclick="switchView('agents',this)" title="AI Agents" aria-label="AI Agents">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </button>
 
     </div>
     <!-- Theme toggle -->
@@ -459,6 +462,14 @@
     <div class="security-stale" id="security-stale" style="display:none;margin-bottom:12px">Security data is more than 25 hours old.</div>
     <div class="security-grid" id="security-grid" style="margin-top:0"><div class="loading">Loading...</div></div>
   </div></div>
+</div>
+
+<div id="agents-view" style="display:none; padding:16px 24px; flex-direction:column; gap:16px;">
+  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <div id="agents-company-tabs" style="display:flex; gap:6px; flex-wrap:wrap; flex:1;"></div>
+    <button onclick="openAddCompany()" style="background:var(--accent);color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:11px;font-weight:500;cursor:pointer;height:26px;">+ Company</button>
+  </div>
+  <div id="agents-content"></div>
 </div>
 
 <script>
@@ -923,7 +934,9 @@ function switchView(view, btn) {
   document.getElementById('entries').style.display = view === 'list' ? 'flex' : 'none'
   document.getElementById('filters').style.display = view === 'list' ? 'flex' : 'none'
   document.getElementById('analytics').style.display = view === 'analytics' ? 'grid' : 'none'
+  document.getElementById('agents-view').style.display = view === 'agents' ? 'flex' : 'none'
   if (view === 'analytics') { if (allEntries.length) renderCharts(); loadSecurityData(); renderCoverageChart(); }
+  if (view === 'agents') { loadAgentsView(); }
 }
 
 // ── Charts ───────────────────────────────────────────────────────────────────
@@ -1597,6 +1610,273 @@ document.addEventListener('keydown', function(e) {
     }
   }, { passive: true })
 })()
+</script>
+
+<script>
+// ── AI Agents View ────────────────────────────────────────────────────────────
+var agentsData = null;
+var activeCompanyId = null;
+
+async function loadAgentsView() {
+  if (!agentsData) {
+    try {
+      var res = await fetch('/data/agents.json?t=' + Date.now());
+      if (res.ok) { agentsData = await res.json(); }
+      else { throw new Error('fetch failed'); }
+    } catch(e) {
+      var saved = localStorage.getItem('zentrix_agents_data');
+      if (saved) { try { agentsData = JSON.parse(saved); } catch(e2) {} }
+    }
+  }
+  if (!agentsData) {
+    document.getElementById('agents-content').innerHTML = '<div style="color:var(--error);padding:16px;">Failed to load agents data.</div>';
+    return;
+  }
+  if (!activeCompanyId && agentsData.companies.length) {
+    activeCompanyId = agentsData.companies[0].id;
+  }
+  renderCompanyTabs();
+  renderAgentsContent();
+}
+
+function renderCompanyTabs() {
+  var tabs = document.getElementById('agents-company-tabs');
+  tabs.innerHTML = agentsData.companies.map(function(c) {
+    return '<button class="filter-btn ' + (c.id === activeCompanyId ? 'active' : '') + '" onclick="setActiveCompany(\'' + c.id + '\')">' + escHtml(c.name) + '</button>';
+  }).join('');
+}
+
+function setActiveCompany(id) {
+  activeCompanyId = id;
+  renderCompanyTabs();
+  renderAgentsContent();
+}
+
+function getAgentStatusStyle(status) {
+  var map = {
+    'on_track': { bg: 'rgba(74,222,128,0.1)', color: '#4ade80', label: 'On Track' },
+    'working_on_track': { bg: 'rgba(251,191,36,0.1)', color: '#fbbf24', label: 'Working \u00b7 On Track' },
+    'off_track': { bg: 'rgba(248,113,113,0.1)', color: '#f87171', label: 'Off Track' },
+    'not_started': { bg: 'rgba(94,94,95,0.1)', color: '#5e5e5f', label: 'Not Started' },
+    'not_working': { bg: 'rgba(248,113,113,0.12)', color: '#f87171', label: 'Not Working' },
+    'working_with_locks': { bg: 'rgba(251,191,36,0.08)', color: '#fbbf24', label: 'Working \u00b7 Locked' }
+  };
+  return map[status] || { bg: 'rgba(94,94,95,0.1)', color: '#5e5e5f', label: status };
+}
+
+function getAgentCompletionColor(pct) {
+  if (pct >= 90) return '#4ade80';
+  if (pct >= 60) return '#fbbf24';
+  if (pct >= 30) return '#fb923c';
+  return '#f87171';
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderAgentsContent() {
+  var company = agentsData.companies.find(function(c) { return c.id === activeCompanyId; });
+  if (!company) return;
+  var container = document.getElementById('agents-content');
+
+  var agentCards = company.agents.map(function(agent) {
+    var color = getAgentCompletionColor(agent.completion);
+    var channelRows = agent.channels.map(function(ch) {
+      var st = getAgentStatusStyle(ch.status);
+      return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-subtle);">' +
+        '<div style="flex:0 0 auto;font-size:11px;font-weight:500;color:var(--accent);min-width:130px;word-break:break-word;">' + escHtml(ch.name) + '</div>' +
+        '<div style="flex:1;font-size:11px;color:var(--text-secondary);line-height:16px;">' + escHtml(ch.activity) + '</div>' +
+        '<div style="flex-shrink:0;font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px;white-space:nowrap;background:' + st.bg + ';color:' + st.color + ';">' + st.label + '</div>' +
+        '</div>';
+    }).join('');
+
+    return '<div class="card" style="padding:0;overflow:hidden;">' +
+      '<div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">' +
+        '<div style="font-size:18px;line-height:1;">' + escHtml(agent.emoji || '\u{1F916}') + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:13px;font-weight:600;color:var(--text-primary);">' + escHtml(agent.name) + '</div>' +
+          '<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">' + escHtml(agent.role) + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0;">' +
+          '<div style="font-size:16px;font-weight:700;color:' + color + ';font-variant-numeric:tabular-nums;">' + agent.completion + '%</div>' +
+          '<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">completion</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="width:100%;height:3px;background:var(--border);">' +
+        '<div style="height:3px;width:' + agent.completion + '%;background:' + color + ';transition:width 600ms ease;"></div>' +
+      '</div>' +
+      '<div style="padding:0 16px 4px;">' +
+        channelRows +
+        '<div style="display:flex;gap:6px;padding:10px 0 6px;justify-content:flex-end;">' +
+          '<button onclick="openAddChannel(\'' + company.id + '\',\'' + agent.id + '\')" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;">+ Channel</button>' +
+          '<button onclick="openAddResponsibility(\'' + company.id + '\',\'' + agent.id + '\')" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;">+ Responsibility</button>' +
+          '<button onclick="openEditAgent(\'' + company.id + '\',\'' + agent.id + '\')" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:4px;padding:3px 10px;font-size:10px;cursor:pointer;">Edit</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;">' +
+    agentCards +
+    '<div class="card" style="display:flex;align-items:center;justify-content:center;min-height:120px;cursor:pointer;border-style:dashed;opacity:0.6;" onclick="openAddAgent(\'' + company.id + '\')">' +
+      '<span style="font-size:12px;color:var(--text-muted);">+ Add Agent</span>' +
+    '</div>' +
+  '</div>';
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────────
+function showAgentModal(html) {
+  var m = document.getElementById('agents-modal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'agents-modal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;';
+    m.onclick = function(e) { if (e.target === m) closeAgentModal(); };
+    document.body.appendChild(m);
+  }
+  m.innerHTML = '<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:20px;min-width:320px;max-width:480px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.4);">' + html + '</div>';
+  m.style.display = 'flex';
+}
+
+function closeAgentModal() {
+  var m = document.getElementById('agents-modal');
+  if (m) m.style.display = 'none';
+}
+
+var _IS = 'style="background:var(--surface-raised);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-size:12px;color:var(--text-primary);width:100%;outline:none;font-family:inherit;box-sizing:border-box;"';
+
+function _mTitle(t) { return '<div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:14px;">' + t + '</div>'; }
+function _mField(label, input) { return '<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">' + label + '</div>' + input + '</div>'; }
+function _mBtns(label, fn) {
+  return '<div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">' +
+    '<button onclick="closeAgentModal()" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:4px;padding:6px 14px;font-size:12px;cursor:pointer;">Cancel</button>' +
+    '<button onclick="' + fn + '" style="background:var(--accent);color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;">' + label + '</button>' +
+  '</div>';
+}
+function _statusOpts(sel) {
+  return ['on_track','working_on_track','off_track','not_started','not_working','working_with_locks'].map(function(s) {
+    return '<option value="' + s + '"' + (s===sel?' selected':'') + '>' + getAgentStatusStyle(s).label + '</option>';
+  }).join('');
+}
+
+function openAddCompany() {
+  showAgentModal(_mTitle('Add Company') + _mField('Company Name', '<input id="m-co-name" ' + _IS + ' placeholder="e.g. Acme Corp" />') + _mBtns('Add Company', 'submitAddCompany()'));
+}
+function submitAddCompany() {
+  var name = document.getElementById('m-co-name').value.trim();
+  if (!name) return;
+  var id = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  agentsData.companies.push({ id: id, name: name, agents: [] });
+  activeCompanyId = id;
+  saveAgentsData();
+  closeAgentModal();
+  renderCompanyTabs();
+  renderAgentsContent();
+}
+
+function openAddAgent(companyId) {
+  showAgentModal(_mTitle('Add Agent') +
+    _mField('Name', '<input id="m-ag-name" ' + _IS + ' placeholder="e.g. Jordan Lee" />') +
+    _mField('Role', '<input id="m-ag-role" ' + _IS + ' placeholder="e.g. Sales, Marketing, Ops" />') +
+    _mField('Emoji', '<input id="m-ag-emoji" ' + _IS + ' placeholder="🤖" />') +
+    _mField('Completion %', '<input id="m-ag-pct" ' + _IS + ' type="number" min="0" max="100" placeholder="0-100" />') +
+    _mBtns('Add Agent', 'submitAddAgent(\'' + companyId + '\')'));
+}
+function submitAddAgent(companyId) {
+  var name = document.getElementById('m-ag-name').value.trim();
+  var role = document.getElementById('m-ag-role').value.trim();
+  var emoji = document.getElementById('m-ag-emoji').value.trim();
+  var pct = parseFloat(document.getElementById('m-ag-pct').value) || 0;
+  if (!name) return;
+  var company = agentsData.companies.find(function(c) { return c.id === companyId; });
+  if (!company) return;
+  var id = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  company.agents.push({ id: id, name: name, role: role, emoji: emoji, completion: pct, channels: [] });
+  saveAgentsData();
+  closeAgentModal();
+  renderAgentsContent();
+}
+
+function openEditAgent(companyId, agentId) {
+  var company = agentsData.companies.find(function(c) { return c.id === companyId; });
+  var agent = company && company.agents.find(function(a) { return a.id === agentId; });
+  if (!agent) return;
+  showAgentModal(_mTitle('Edit Agent') +
+    _mField('Name', '<input id="m-ed-name" ' + _IS + ' value="' + escHtml(agent.name) + '" />') +
+    _mField('Role', '<input id="m-ed-role" ' + _IS + ' value="' + escHtml(agent.role) + '" />') +
+    _mField('Emoji', '<input id="m-ed-emoji" ' + _IS + ' value="' + escHtml(agent.emoji || '') + '" />') +
+    _mField('Completion %', '<input id="m-ed-pct" ' + _IS + ' type="number" min="0" max="100" value="' + agent.completion + '" />') +
+    _mBtns('Save', 'submitEditAgent(\'' + companyId + '\',\'' + agentId + '\')'));
+}
+function submitEditAgent(companyId, agentId) {
+  var company = agentsData.companies.find(function(c) { return c.id === companyId; });
+  var agent = company && company.agents.find(function(a) { return a.id === agentId; });
+  if (!agent) return;
+  agent.name = document.getElementById('m-ed-name').value.trim() || agent.name;
+  agent.role = document.getElementById('m-ed-role').value.trim() || agent.role;
+  agent.emoji = document.getElementById('m-ed-emoji').value.trim();
+  agent.completion = parseFloat(document.getElementById('m-ed-pct').value) || 0;
+  saveAgentsData();
+  closeAgentModal();
+  renderAgentsContent();
+}
+
+function openAddChannel(companyId, agentId) {
+  showAgentModal(_mTitle('Add Channel') +
+    _mField('Channel Name', '<input id="m-ch-name" ' + _IS + ' placeholder="#channel-name or Telegram" />') +
+    _mField('Activity / Description', '<input id="m-ch-act" ' + _IS + ' placeholder="What does this agent do here?" />') +
+    _mField('Status', '<select id="m-ch-st" ' + _IS + '>' + _statusOpts('on_track') + '</select>') +
+    _mBtns('Add Channel', 'submitAddChannel(\'' + companyId + '\',\'' + agentId + '\')'));
+}
+function submitAddChannel(companyId, agentId) {
+  var name = document.getElementById('m-ch-name').value.trim();
+  var activity = document.getElementById('m-ch-act').value.trim();
+  var status = document.getElementById('m-ch-st').value;
+  if (!name) return;
+  var company = agentsData.companies.find(function(c) { return c.id === companyId; });
+  var agent = company && company.agents.find(function(a) { return a.id === agentId; });
+  if (!agent) return;
+  agent.channels.push({ name: name, activity: activity, status: status });
+  saveAgentsData();
+  closeAgentModal();
+  renderAgentsContent();
+}
+
+function openAddResponsibility(companyId, agentId) {
+  showAgentModal(_mTitle('Add Responsibility') +
+    _mField('Channel / Area', '<input id="m-rs-name" ' + _IS + ' placeholder="#channel-name or area" />') +
+    _mField('Responsibility', '<input id="m-rs-act" ' + _IS + ' placeholder="What does this agent do?" />') +
+    _mField('Status', '<select id="m-rs-st" ' + _IS + '>' + _statusOpts('on_track') + '</select>') +
+    _mBtns('Add', 'submitAddResponsibility(\'' + companyId + '\',\'' + agentId + '\')'));
+}
+function submitAddResponsibility(companyId, agentId) {
+  var name = document.getElementById('m-rs-name').value.trim();
+  var activity = document.getElementById('m-rs-act').value.trim();
+  var status = document.getElementById('m-rs-st').value;
+  if (!name) return;
+  var company = agentsData.companies.find(function(c) { return c.id === companyId; });
+  var agent = company && company.agents.find(function(a) { return a.id === agentId; });
+  if (!agent) return;
+  agent.channels.push({ name: name, activity: activity, status: status });
+  saveAgentsData();
+  closeAgentModal();
+  renderAgentsContent();
+}
+
+async function saveAgentsData() {
+  try {
+    var res = await fetch('/api/agents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(agentsData)
+    });
+    if (!res.ok) throw new Error('save failed');
+  } catch(e) {
+    localStorage.setItem('zentrix_agents_data', JSON.stringify(agentsData));
+  }
+}
 </script>
 </body>
 </html>

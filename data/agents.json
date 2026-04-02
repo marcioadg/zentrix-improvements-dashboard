@@ -1,0 +1,234 @@
+{
+  "companies": [
+    {
+      "id": "wisenetix",
+      "name": "Wisenetix",
+      "agents": [
+        {
+          "id": "cole-raines",
+          "name": "Cole Raines",
+          "role": "Ops",
+          "emoji": "🔧",
+          "completion": 79.17,
+          "channels": [
+            { "name": "#ai-email-marketing", "activity": "Email marketing, newsletters, Kajabi emails", "status": "working_on_track" },
+            { "name": "#ai-software-dev", "activity": "Codigo, scripts, bugs", "status": "working_with_locks" },
+            { "name": "#ai-content-creator", "activity": "Criacao de conteudo", "status": "working_with_locks" },
+            { "name": "#ai-content-clips", "activity": "Clips de video, shorts", "status": "working_with_locks" },
+            { "name": "#ai-invite-guests", "activity": "Busca de guests para podcast", "status": "working_with_locks" },
+            { "name": "#daily-crm", "activity": "CRM diario, updates de deals", "status": "working_with_locks" },
+            { "name": "#token", "activity": "Monitoramento de tokens/custos", "status": "working_with_locks" }
+          ]
+        },
+        {
+          "id": "zara-flynn",
+          "name": "Zara Flynn",
+          "role": "Marketing",
+          "emoji": "📣",
+          "completion": 91.67,
+          "channels": [
+            { "name": "#ai-social-media", "activity": "Posts (IG, LinkedIn, TikTok, YouTube, X), calendario social", "status": "working_on_track" },
+            { "name": "#ai-design", "activity": "Artes, banners, thumbnails, identidade visual", "status": "working_on_track" },
+            { "name": "#ai-audience-profile", "activity": "Pesquisa/enriquecimento de leads", "status": "working_on_track" },
+            { "name": "#ai-growth", "activity": "Estrategias de crescimento, growth hacking + Paid ads", "status": "working_on_track" },
+            { "name": "#ai-marcio-social", "activity": "Social pessoal do Marcio", "status": "working_on_track" },
+            { "name": "#proj-cases", "activity": "Cases de projetos, estudos de caso", "status": "working_on_track" }
+          ]
+        },
+        {
+          "id": "rex-dolan",
+          "name": "Rex Dolan",
+          "role": "Sales",
+          "emoji": "🎯",
+          "completion": 100,
+          "channels": [
+            { "name": "#ai-sdr-agent", "activity": "SDR, prospeccao, outbound, qualificacao", "status": "on_track" },
+            { "name": "#ai-disco-review", "activity": "Revisao de discovery calls, coaching", "status": "on_track" },
+            { "name": "#ai-disco-review-team", "activity": "Leaderboards, scores de calls", "status": "on_track" },
+            { "name": "#ai-team-sales-ops", "activity": "Sales ops, pipeline, CRM", "status": "on_track" },
+            { "name": "#ai-customer-success", "activity": "Retencao, onboarding, health score", "status": "on_track" }
+          ]
+        },
+        {
+          "id": "lena-park",
+          "name": "Lena Park",
+          "role": "Finance",
+          "emoji": "💰",
+          "completion": 80,
+          "channels": [
+            { "name": "#ai-team-finance", "activity": "QBO, pagamentos, relatorios financeiros", "status": "on_track" },
+            { "name": "#ai-people-admin", "activity": "RH, contratos, folha, beneficios", "status": "on_track" }
+          ]
+        },
+        {
+          "id": "taylor-morgan",
+          "name": "Taylor Morgan",
+          "role": "PM",
+          "emoji": "📋",
+          "completion": 25,
+          "channels": [
+            { "name": "#ai-reports", "activity": "Status updates, relatorios de progresso", "status": "working_on_track" },
+            { "name": "#ai-project-management", "activity": "Gestao de projetos, sprints, deadlines", "status": "on_track" }
+          ]
+        },
+        {
+          "id": "jasper-vex",
+          "name": "Jasper Vex",
+          "role": "Chief of Staff",
+          "emoji": "🧭",
+          "completion": 100,
+          "channels": [
+            { "name": "Telegram + Slack", "activity": "Daily Agent Report", "status": "working_on_track" },
+            { "name": "Telegram", "activity": "Evening Memory Update, Memory Maintenance, Weekly Benchmark, Token Audit, Security Audit", "status": "working_on_track" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wisevas",
+      "name": "WiseVAs",
+      "agents": [
+        {
+          "id": "ivy-bennett",
+          "name": "Ivy Bennett",
+          "role": "Marketing",
+          "emoji": "🌿",
+          "completion": 91.67,
+          "channels": [
+            { "name": "#ai-social-media", "activity": "Conteudo Instagram/TikTok/YouTube, memes, agenda", "status": "working_on_track" },
+            { "name": "#ai-design", "activity": "Assets visuais, imagens, marca", "status": "working_on_track" },
+            { "name": "#ai-growth", "activity": "Estrategias de crescimento, growth hacking + Paid ads", "status": "working_on_track" },
+            { "name": "#ai-kelli-linkedin", "activity": "Conteudo e publicacao no linkedin da Kelli", "status": "on_track" },
+            { "name": "#ai-linkedin-vagas", "activity": "Criar posts e publicar sobre vagas", "status": "working_on_track" },
+            { "name": "#ai-email-marketing", "activity": "Campanhas email, newsletters", "status": "working_on_track" },
+            { "name": "#ai-blog", "activity": "Drafts blog WiseVAs, SEO", "status": "on_track" }
+          ]
+        },
+        {
+          "id": "atlas-greyson",
+          "name": "Atlas Greyson",
+          "role": "Finance",
+          "emoji": "📊",
+          "completion": 75,
+          "channels": [
+            { "name": "#ai-team-finance", "activity": "QBO dados, categorizacao transacoes, relatorios", "status": "on_track" },
+            { "name": "#general", "activity": "Surveys", "status": "on_track" }
+          ]
+        },
+        {
+          "id": "theo-grant",
+          "name": "Theo Grant",
+          "role": "Chief of Staff",
+          "emoji": "🧩",
+          "completion": 100,
+          "channels": [
+            { "name": "#leadership", "activity": "Briefing estrategico diario, ideias anti-churn", "status": "working_on_track" },
+            { "name": "#ai-agents-deployment", "activity": "Relatorio diario agentes (PDF)", "status": "working_on_track" },
+            { "name": "#ai-ops", "activity": "Relatorio velocidade resposta email", "status": "working_on_track" },
+            { "name": "Telegram (Marcio)", "activity": "Benchmark, seguranca, token report, memory", "status": "working_on_track" }
+          ]
+        },
+        {
+          "id": "nova-sinclair",
+          "name": "Nova Sinclair",
+          "role": "Ops",
+          "emoji": "⚡",
+          "completion": 83.33,
+          "channels": [
+            { "name": "#ai-agents-deployment", "activity": "Relatorio diario agentes (PDF)", "status": "working_on_track" },
+            { "name": "#ai-ops", "activity": "Relatorio velocidade resposta email", "status": "working_on_track" },
+            { "name": "#ai-candidates-approval", "activity": "Avaliacao de candidatos, analise de video/ingles", "status": "working_on_track" },
+            { "name": "#ai-canva", "activity": "PDF candidatos", "status": "working_on_track" },
+            { "name": "#ai-linkedin-messages", "activity": "Outreach LinkedIn (CLI), mensagens candidatos", "status": "working_on_track" },
+            { "name": "#crm-bugs", "activity": "Triagem de bugs CRM", "status": "working_on_track" }
+          ]
+        },
+        {
+          "id": "maya-parker",
+          "name": "Maya Parker",
+          "role": "Sales",
+          "emoji": "💼",
+          "completion": 100,
+          "channels": [
+            { "name": "#ai-operations", "activity": "Relatorio semanal ops, metricas funil", "status": "working_on_track" },
+            { "name": "#ai-sales", "activity": "Sequencias email, pipeline vendas, campanhas AI", "status": "working_on_track" },
+            { "name": "#ai-discovery-call-notes", "activity": "Notas de calls, coaching via TL;DV", "status": "working_on_track" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zentrix",
+      "name": "Zentrix",
+      "agents": [
+        {
+          "id": "ezra-stone",
+          "name": "Ezra Stone",
+          "role": "Ops/Dev",
+          "emoji": "⚙️",
+          "completion": 100,
+          "channels": [
+            { "name": "#zentrix-os", "activity": "Manutencao horaria: bug scan, UX, higiene, testes", "status": "working_on_track" },
+            { "name": "#zentrix-insights", "activity": "Manutencao horaria — zentrix-insights", "status": "working_on_track" },
+            { "name": "#dietforge", "activity": "Manutencao horaria — dietforge", "status": "working_on_track" },
+            { "name": "#zentrix-crm", "activity": "Manutencao horaria — zentrixcrm", "status": "working_on_track" },
+            { "name": "#wisevas-app", "activity": "Manutencao horaria — wisevasdashboard", "status": "working_on_track" },
+            { "name": "#zentrix-mail", "activity": "Manutencao horaria — zentrixmail (50% mobile / 50% desktop)", "status": "working_on_track" },
+            { "name": "#zentrixcapture", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#lineagevault", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#zentrixcontent", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#zentrixcreative", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#zentrixchat", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#zentrixfinance", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#thoughtline", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#zentrixmarketing", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#zentrix-cyber", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#zentrix-email-marketing", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#zentrixpulse", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#zentrix-sign", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#zentrixprojects", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#decision-command", "activity": "Manutencao horaria", "status": "working_on_track" },
+            { "name": "#ai-devs-zentrix", "activity": "Manutencao horaria — zentrix-improvements-dashboard", "status": "working_on_track" }
+          ]
+        },
+        {
+          "id": "iris-chen",
+          "name": "Iris Chen",
+          "role": "Finance/Admin",
+          "emoji": "📊",
+          "completion": 0,
+          "channels": [
+            { "name": "#zentrixfinance", "activity": "Revisao financeira, categorizacao, relatorios QBO", "status": "not_started" },
+            { "name": "#ai-operations", "activity": "Admin geral, compliance, contratos", "status": "not_started" }
+          ]
+        },
+        {
+          "id": "leo-kane",
+          "name": "Leo Kane",
+          "role": "Sales",
+          "emoji": "🎯",
+          "completion": 100,
+          "channels": [
+            { "name": "#ai-sales", "activity": "Pipeline vendas, prospeccao, outreach, CRM", "status": "working_on_track" },
+            { "name": "#ai-discovery-call-notes", "activity": "Notas de calls, qualificacao prospects", "status": "on_track" }
+          ]
+        },
+        {
+          "id": "sienna-rove",
+          "name": "Sienna Rove",
+          "role": "Marketing",
+          "emoji": "✨",
+          "completion": 33.33,
+          "channels": [
+            { "name": "#zentrixmarketing", "activity": "Estrategia de conteudo, campanhas, brand", "status": "working_on_track" },
+            { "name": "#ai-social-media", "activity": "Conteudo redes sociais, copywriting", "status": "working_on_track" },
+            { "name": "#ai-email-marketing", "activity": "Campanhas email, newsletters", "status": "working_on_track" },
+            { "name": "#ai-design", "activity": "Assets visuais, briefings criativos", "status": "working_on_track" },
+            { "name": "#ai-blog", "activity": "Drafts blog Zentrix, SEO", "status": "working_on_track" },
+            { "name": "#ai-linkedin-livia", "activity": "Assets visuais, briefings criativos", "status": "working_on_track" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -98,6 +98,18 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() })
 })
 
+// Agents data — read/write
+app.post('/api/agents', (req, res) => {
+  const fs = require('fs')
+  const filePath = path.join(__dirname, 'data', 'agents.json')
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2))
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 // Unified action endpoint — matches the Vercel serverless function (api/action.js)
 // The client exclusively calls this route for swipe actions and security fix requests
 app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
