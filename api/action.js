@@ -2,6 +2,11 @@ const SLACK_TOKEN = process.env.SLACK_TOKEN
 const API_KEY = process.env.API_KEY
 const SLACK_CHANNEL = 'C0ABH17F93L'
 
+// In-memory rate limiting (per-IP, resets on cold start — acceptable for serverless)
+const _rateLimitMap = new Map()
+const RATE_LIMIT_WINDOW = 60000
+const RATE_LIMIT_MAX = 10
+
 async function postSlack(text, blocks) {
   const body = { channel: SLACK_CHANNEL, text }
   if (blocks) body.blocks = blocks
@@ -26,6 +31,19 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-api-key')
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  // Rate limiting
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown'
+  const now = Date.now()
+  const entry = _rateLimitMap.get(ip)
+  if (entry && now - entry.start <= RATE_LIMIT_WINDOW) {
+    entry.count++
+    if (entry.count > RATE_LIMIT_MAX) {
+      return res.status(429).json({ error: 'Too many requests — try again in a minute' })
+    }
+  } else {
+    _rateLimitMap.set(ip, { start: now, count: 1 })
+  }
 
   const key = req.headers['x-api-key']
   if (API_KEY && key !== API_KEY) return res.status(401).json({ error: 'Unauthorized' })
