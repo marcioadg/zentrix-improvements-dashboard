@@ -344,6 +344,19 @@
   .proposal-actions .btn-plan:hover { background:rgba(168,85,247,0.1); border-color:rgba(168,85,247,0.5); }
   @media (max-width:768px) { .proposal-actions button { font-size:12px; padding:8px 14px; min-height:36px; } }
 
+  /* ── Light-mode badge & action-button contrast fixes ── */
+  [data-theme="light"] .proposal-badge { color:#92400e; background:rgba(146,64,14,0.08); border-color:rgba(146,64,14,0.2); }
+  [data-theme="light"] .filter-btn.active-amber { color:#92400e; border-color:#b45309; background:rgba(180,83,9,0.08); }
+  [data-theme="light"] .decision-badge.approved { color:#15803d; background:rgba(21,128,61,0.08); border-color:rgba(21,128,61,0.2); }
+  [data-theme="light"] .decision-badge.denied { color:#b91c1c; background:rgba(185,28,28,0.08); border-color:rgba(185,28,28,0.2); }
+  [data-theme="light"] .decision-badge.plan { color:#7c3aed; background:rgba(124,58,237,0.08); border-color:rgba(124,58,237,0.2); }
+  [data-theme="light"] .proposal-actions .btn-approve { color:#15803d; border-color:rgba(21,128,61,0.3); }
+  [data-theme="light"] .proposal-actions .btn-approve:hover { background:rgba(21,128,61,0.08); border-color:rgba(21,128,61,0.5); }
+  [data-theme="light"] .proposal-actions .btn-deny { color:#b91c1c; border-color:rgba(185,28,28,0.3); }
+  [data-theme="light"] .proposal-actions .btn-deny:hover { background:rgba(185,28,28,0.08); border-color:rgba(185,28,28,0.5); }
+  [data-theme="light"] .proposal-actions .btn-plan { color:#7c3aed; border-color:rgba(124,58,237,0.3); }
+  [data-theme="light"] .proposal-actions .btn-plan:hover { background:rgba(124,58,237,0.08); border-color:rgba(124,58,237,0.5); }
+
   /* Smooth theme transition — applied briefly during toggle to avoid jarring flash */
   .theme-transition,
   .theme-transition *,
