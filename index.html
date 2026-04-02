@@ -1731,7 +1731,7 @@ function renderAgentsContent() {
   if (!company) return;
   var container = document.getElementById('agents-content');
 
-  var agentCards = company.agents.map(function(agent) {
+  var agentCards = company.agents.slice().sort(function(a,b){ return (b.completion||0)-(a.completion||0); }).map(function(agent) {
     var color = getAgentCompletionColor(agent.completion);
     var channelRows = agent.channels.map(function(ch) {
       var st = getAgentStatusStyle(ch.status);
