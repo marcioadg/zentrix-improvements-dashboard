@@ -1142,8 +1142,12 @@ async function requestSecFix(btn, repo, repoName, issueIdx, issue) {
 // ── Proposal action buttons (click handler) ─────────────────────────────────
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('.proposal-actions button')
-  if (!btn) return
+  if (!btn || btn.disabled) return
   e.stopPropagation()
+
+  // Disable all sibling action buttons immediately to prevent duplicate Slack posts
+  btn.closest('.proposal-actions').querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '0.5'; b.style.pointerEvents = 'none' })
+
   const action = btn.dataset.action
   const key = btn.dataset.key
   const repo = btn.dataset.repo
