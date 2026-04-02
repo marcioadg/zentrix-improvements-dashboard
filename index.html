@@ -1842,6 +1842,13 @@ function closeAgentModal() {
   if (m) m.style.display = 'none';
 }
 
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var m = document.getElementById('agents-modal');
+    if (m && m.style.display !== 'none') closeAgentModal();
+  }
+});
+
 function showAgentOverview(agentId) {
   if (!agentsData) return;
   // Find all companies this agent appears in
