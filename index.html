@@ -517,6 +517,10 @@ const GH_API = 'https://api.github.com/repos/marcioadg/zentrix-improvements-dash
 
 let allEntries = [], activeRepo = null, activeCat = null, activeProposal = false, activeUnread = false, _lastDataHash = ''
 
+// Cache for analytics data — avoids refetching security/coverage on every tab switch
+const _analyticsCache = { security: { data: null, ts: 0 }, coverage: { data: null, ts: 0 } }
+const ANALYTICS_CACHE_TTL = 300000 // 5 minutes (matches polling interval)
+
 function getCardKey(e) { return e.id || (e.repo + '|' + e.date + '|' + e.time) }
 function getReadCards() { try { return JSON.parse(localStorage.getItem('zentrix_read_cards') || '{}') } catch(e) { return {} } }
 function markCardRead(key) { const r = getReadCards(); r[key] = true; localStorage.setItem('zentrix_read_cards', JSON.stringify(r)) }
@@ -601,6 +605,9 @@ async function loadData() {
     } else {
       _lastDataHash = hash
       allEntries = sorted
+      // Invalidate analytics cache so security/coverage data refreshes on next view
+      _analyticsCache.security.ts = 0
+      _analyticsCache.coverage.ts = 0
       render()
       pruneLocalStorage()
     }
@@ -1001,10 +1008,17 @@ function renderCharts() {
 }
 
 // ── Test Coverage Chart ──────────────────────────────────────────────────────
-async function renderCoverageChart() {
+async function renderCoverageChart(forceRefresh) {
   let coverageData
   try {
-    const data = await fetchFresh('coverage.json')
+    let data
+    const cached = _analyticsCache.coverage
+    if (!forceRefresh && cached.data && Date.now() - cached.ts < ANALYTICS_CACHE_TTL) {
+      data = cached.data
+    } else {
+      data = await fetchFresh('coverage.json')
+      _analyticsCache.coverage = { data, ts: Date.now() }
+    }
     coverageData = data.repos
   } catch(e) {
     const canvas = document.getElementById('chart-coverage')
@@ -1078,10 +1092,17 @@ async function renderCoverageChart() {
 }
 
 // ── Security Dashboard ───────────────────────────────────────────────────────
-async function loadSecurityData() {
+async function loadSecurityData(forceRefresh) {
   const grid = document.getElementById('security-grid')
   try {
-    const data = await fetchFresh('security.json')
+    let data
+    const cached = _analyticsCache.security
+    if (!forceRefresh && cached.data && Date.now() - cached.ts < ANALYTICS_CACHE_TTL) {
+      data = cached.data
+    } else {
+      data = await fetchFresh('security.json')
+      _analyticsCache.security = { data, ts: Date.now() }
+    }
 
     // Check staleness
     const staleEl = document.getElementById('security-stale')
