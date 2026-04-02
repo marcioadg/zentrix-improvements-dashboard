@@ -99,7 +99,7 @@ app.get('/api/health', (req, res) => {
 })
 
 // Agents data — read/write
-app.post('/api/agents', (req, res) => {
+app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
   const fs = require('fs')
   const filePath = path.join(__dirname, 'data', 'agents.json')
   try {
