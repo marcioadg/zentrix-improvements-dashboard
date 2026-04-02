@@ -548,7 +548,7 @@ function formatEntryTime(date, time) {
 const GH_RAW = 'https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/'
 const GH_API = 'https://api.github.com/repos/marcioadg/zentrix-improvements-dashboard/contents/data/'
 
-let allEntries = [], activeRepo = null, activeCat = null, activeProposal = false, activeUnread = false, _lastDataHash = ''
+let allEntries = [], activeRepo = null, activeCat = null, activeProposal = false, activeUnread = false, _lastDataHash = '', _feedStale = false
 
 // Cache for analytics data — avoids refetching security/coverage on every tab switch
 const _analyticsCache = { security: { data: null, ts: 0 }, coverage: { data: null, ts: 0 } }
@@ -720,7 +720,8 @@ function render() {
     })
     const newestDate = new Date(newest.date + 'T' + (newest.time||'00:00') + ':00Z')
     const ageHours = (Date.now() - newestDate.getTime()) / 3600000
-    feedStaleEl.style.display = ageHours > 2 ? 'flex' : 'none'
+    _feedStale = ageHours > 2
+    feedStaleEl.style.display = _feedStale && currentView === 'list' ? 'flex' : 'none'
   }
 
   const repoStats = {}
@@ -947,6 +948,8 @@ function switchView(view, btn) {
   btn.classList.add('active')
   document.getElementById('entries').style.display = view === 'list' ? 'flex' : 'none'
   document.getElementById('filters').style.display = view === 'list' ? 'flex' : 'none'
+  const _feedStaleEl = document.getElementById('feed-stale')
+  if (_feedStaleEl) _feedStaleEl.style.display = _feedStale && view === 'list' ? 'flex' : 'none'
   document.getElementById('analytics').style.display = view === 'analytics' ? 'grid' : 'none'
   document.getElementById('agents-view').style.display = view === 'agents' ? 'flex' : 'none'
   if (view === 'analytics') { if (allEntries.length) renderCharts(); loadSecurityData(); renderCoverageChart(); }
