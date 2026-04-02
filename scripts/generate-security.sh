@@ -73,22 +73,57 @@ for repo in "${!REPOS[@]}"; do
 
   echo "  Scoring $repo..."
 
-  OUTPUT_RAW=$(cd "$path" && timeout 180 $CLAUDE --permission-mode bypassPermissions --print "
-You are running a fast security audit of the $repo repo (read-only, no changes).
+  # Pre-extract risky patterns so Claude doesn't need to explore the full repo
+  SECRETS_SCAN=$(grep -r --include="*.ts" --include="*.tsx" --include="*.js" --include="*.env*" -n \
+    -e "api_key\s*=" -e "apiKey\s*=" -e "secret\s*=" -e "password\s*=" \
+    -e "API_KEY\s*=" -e "AUTH_TOKEN\s*=" -e "\"sk-" -e "'sk-" -e "pk_live" -e "rk_live" \
+    -e "PRIVATE_KEY\s*=" -e "CLIENT_SECRET\s*=" \
+    --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=dist --exclude-dir=build \
+    "$path" 2>/dev/null | head -50 || echo "(none found)")
 
-Scan for these risks:
-1. Hardcoded secrets, API keys, tokens, passwords in source code
-2. Missing authentication/authorization checks on sensitive routes
-3. SQL injection, XSS, or command injection vulnerabilities
-4. Sensitive data exposed in logs, responses, or error messages
-5. Outdated dependencies with known CVEs (check package.json/package-lock.json)
+  ROUTES_SCAN=$(grep -r --include="*.ts" --include="*.tsx" --include="*.js" -n \
+    -e "app\.get\b" -e "app\.post\b" -e "app\.put\b" -e "app\.delete\b" \
+    -e "router\.get\b" -e "router\.post\b" -e "router\.put\b" -e "router\.delete\b" \
+    -e "export.*GET\b" -e "export.*POST\b" -e "export.*PUT\b" -e "export.*DELETE\b" \
+    --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=dist \
+    "$path" 2>/dev/null | head -30 || echo "(none found)")
 
-Give a security score from 0 to 100:
+  PACKAGE_JSON=$(cat "$path/package.json" 2>/dev/null | head -80 || echo "(no package.json)")
+
+  ENV_IN_GIT=$(git -C "$path" ls-files 2>/dev/null | grep -E "\.env$|\.env\.local$|\.env\.production$|\.env\.staging$" || echo "(none)")
+
+  OUTPUT_RAW=$(timeout 300 $CLAUDE --permission-mode bypassPermissions --print "
+You are a security auditor. DO NOT explore the filesystem. Score ONLY based on the pre-extracted data below.
+
+## Repo: $repo
+
+## 1. Hardcoded Secrets Scan (grep output — matched patterns in source files):
+$SECRETS_SCAN
+
+## 2. API Route Definitions (grep output — route handlers found):
+$ROUTES_SCAN
+
+## 3. package.json dependencies:
+$PACKAGE_JSON
+
+## 4. .env files tracked in git (should be empty for secure repos):
+$ENV_IN_GIT
+
+---
+
+Based ONLY on the above data, give a security score from 0 to 100:
 - 90-100: Very secure, minor issues only
 - 70-89: Generally solid with some gaps
 - 50-69: Moderate risks present
 - 30-49: Significant vulnerabilities
 - 0-29: Critical issues found
+
+List up to 5 specific security issues found in the data above. Focus on:
+1. Any hardcoded secrets or API keys visible in the grep output
+2. Routes that appear unprotected (no auth middleware visible)
+3. Outdated dependencies with known CVEs (from package.json)
+4. .env files committed to git
+5. Any other clear risks visible in the provided data
 
 Output EXACTLY this format (no extra text):
 SCORE: [number]
