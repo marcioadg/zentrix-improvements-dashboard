@@ -915,6 +915,12 @@ function applyFilters() {
     if (show) visibleCount++
   })
   updateUnreadCount()
+  const _statsHeader = document.getElementById('stats-header')
+  if (_statsHeader && currentView === 'list') {
+    const _totalCards = document.querySelectorAll('.card').length
+    const _hasFilters = activeRepo || activeCat || activeProposal || activeUnread || (document.getElementById('search')?.value||'')
+    _statsHeader.textContent = (_hasFilters && _totalCards > 0) ? `Showing ${visibleCount} of ${_totalCards}` : 'Last 24 hours'
+  }
   let noResults = document.getElementById('no-results')
   if (visibleCount === 0 && document.querySelectorAll('.card').length > 0) {
     if (!noResults) {
