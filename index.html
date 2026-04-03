@@ -1341,6 +1341,7 @@ function toggleTheme() {
   if (allEntries.length) {
     if (currentView === 'list') { render(); }
     else if (currentView === 'analytics') { renderCharts(); renderCoverageChart(); loadSecurityData(); }
+    else if (currentView === 'agents' && agentsData) { renderAgentsContent(); }
   }
 }
 // Restore saved theme
@@ -1691,10 +1692,11 @@ function getAgentStatusStyle(status) {
 }
 
 function getAgentCompletionColor(pct) {
-  if (pct >= 90) return '#4ade80';
-  if (pct >= 60) return '#fbbf24';
-  if (pct >= 30) return '#fb923c';
-  return '#f87171';
+  const l = document.documentElement.getAttribute('data-theme') === 'light'
+  if (pct >= 90) return l ? '#16a34a' : '#4ade80'
+  if (pct >= 60) return l ? '#b45309' : '#fbbf24'
+  if (pct >= 30) return l ? '#ea580c' : '#fb923c'
+  return l ? '#b91c1c' : '#f87171'
 }
 
 
