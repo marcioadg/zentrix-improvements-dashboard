@@ -924,7 +924,7 @@ function applyFilters() {
       noResults.style.minHeight = '200px'
       document.getElementById('entries').appendChild(noResults)
     }
-    const term = search ? ` matching "${search}"` : ''
+    const term = search ? ` matching "${esc(search)}"` : ''
     noResults.innerHTML = `<span>No improvements found${term}.</span><span style="font-size:12px;color:var(--text-muted)">Try adjusting your filters or search.</span><button onclick="clearAllFilters()" style="background:transparent;border:1px solid var(--border);color:var(--accent);padding:6px 16px;border-radius:4px;font-size:12px;font-weight:500;cursor:pointer;transition:all 150ms ease">Clear all filters</button>`
     noResults.style.display = 'flex'
   } else if (noResults) {
