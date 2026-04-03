@@ -970,13 +970,17 @@ function switchView(view, btn) {
 }
 
 // ── Charts ───────────────────────────────────────────────────────────────────
-function setupCanvas(id) {
+function setupCanvas(id, height) {
   const canvas = document.getElementById(id)
   const wrap = canvas.parentElement
   const dpr = window.devicePixelRatio || 1
   const w = wrap.clientWidth
   canvas.style.width = w + 'px'
   canvas.width = w * dpr
+  if (height != null) {
+    canvas.style.height = height + 'px'
+    canvas.height = height * dpr
+  }
   const ctx = canvas.getContext('2d')
   ctx.scale(dpr, dpr)
   return { canvas, ctx, w, dpr }
@@ -993,10 +997,7 @@ function drawBarChart(canvasId, labels, values, color, maxOverride) {
   const padTop = 8, padBottom = 8
   const h = labels.length * (barH + gap) + padTop + padBottom
 
-  const { ctx, w, canvas, dpr } = setupCanvas(canvasId)
-  canvas.style.height = h + 'px'
-  canvas.height = h * dpr
-  ctx.scale(dpr, dpr)
+  const { ctx, w, canvas, dpr } = setupCanvas(canvasId, h)
 
   const chartW = w - padLeft - padRight
   labels.forEach((label, i) => {
