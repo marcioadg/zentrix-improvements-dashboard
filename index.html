@@ -408,14 +408,14 @@
     <span class="meta" id="last-updated" style="display:none">Loading...</span>
     <div class="view-toggle">
       <!-- List -->
-      <button class="view-btn active" onclick="switchView('list',this)" title="List view" aria-label="List view">
+      <button class="view-btn active" onclick="switchView('list',this)" title="List view" aria-label="List view" aria-pressed="true">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
       </button>
       <!-- Analytics -->
-      <button class="view-btn" onclick="switchView('analytics',this)" title="Analytics" aria-label="Analytics">
+      <button class="view-btn" onclick="switchView('analytics',this)" title="Analytics" aria-label="Analytics" aria-pressed="false">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
       </button>
-      <button class="view-btn" onclick="switchView('agents',this)" title="AI Agents" aria-label="AI Agents">
+      <button class="view-btn" onclick="switchView('agents',this)" title="AI Agents" aria-label="AI Agents" aria-pressed="false">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       </button>
 
@@ -949,8 +949,8 @@ function clearAllFilters() {
 let currentView = 'list'
 function switchView(view, btn) {
   currentView = view
-  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'))
-  btn.classList.add('active')
+  document.querySelectorAll('.view-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false') })
+  btn.classList.add('active'); btn.setAttribute('aria-pressed', 'true')
   document.getElementById('entries').style.display = view === 'list' ? 'flex' : 'none'
   document.getElementById('filters').style.display = view === 'list' ? 'flex' : 'none'
   const _feedStaleEl = document.getElementById('feed-stale')
