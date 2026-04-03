@@ -2054,6 +2054,7 @@ async function saveAgentsData() {
     if (!res.ok) throw new Error('save failed');
   } catch(e) {
     localStorage.setItem('zentrix_agents_data', JSON.stringify(agentsData));
+    showToast('⚠ Saved locally — server unavailable');
   }
 }
 </script>
