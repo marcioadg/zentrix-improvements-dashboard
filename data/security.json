@@ -1,193 +1,273 @@
 {
-  "generated": "2026-04-02T09:00:01-0400",
+  "generated": "2026-04-03T09:00:01-0400",
   "repos": [
     {
       "repo": "zentrixpulse",
       "name": "Zentrix Pulse",
-      "score": 50,
-      "updated": "2026-04-02T09:00:04-0400",
+      "score": 62,
+      "updated": "2026-04-03T09:00:12-0400",
       "issues": [
-        "Could not complete scan"
+        "Hardcoded API key in .env.local: VITE_METERED_API_KEY=9870d640b6986088ae89d9391f4d6f31f81f",
+        "VITE_-prefixed key is exposed to client bundle, leaking secret to all frontend users",
+        "API key appended directly to URL query string in iceServers.ts, visible in logs and referrers",
+        ".env.local not confirmed in .gitignore; risk of accidental commit to version control",
+        "No server-side API layer; TURN credential fetch happens client-side exposing key to end users"
       ]
     },
     {
       "repo": "dietforge",
       "name": "DietForge",
-      "score": 50,
-      "updated": "2026-04-02T09:00:36-0400",
+      "score": 85,
+      "updated": "2026-04-03T09:00:50-0400",
       "issues": [
-        "Could not complete scan"
+        "API key validation in diet-api and generate-diet-pdf lacks visible auth middleware layer",
+        "Logger redacts Stripe keys but no redaction patterns for other API key formats",
+        "@types/dompurify listed as production dependency instead of devDependency",
+        "validate-api-key accepts apiKey from request body, risking key logging in request payloads",
+        "No visible rate limiting on edge functions handling API key validation"
       ]
     },
     {
       "repo": "zentrix-insights",
       "name": "Zentrix Insights",
-      "score": 50,
-      "updated": "2026-04-02T09:01:08-0400",
+      "score": 82,
+      "updated": "2026-04-03T09:01:26-0400",
       "issues": [
-        "Could not complete scan"
+        ".env.example lists SENTRY_AUTH_TOKEN key name, could hint at secrets structure to attackers",
+        "external-api/index.ts extracts Bearer token manually; verify proper auth validation exists",
+        "passwordValidation.ts uses simple equality check; ensure server-side validation is primary",
+        "No route-level auth middleware detected in grep output; confirm Supabase RLS is enforced"
       ]
     },
     {
       "repo": "zentrixmail",
       "name": "Zentrix Mail",
-      "score": 50,
-      "updated": "2026-04-02T09:01:39-0400",
+      "score": 85,
+      "updated": "2026-04-03T09:02:02-0400",
       "issues": [
-        "Could not complete scan"
+        "No auth middleware visible on Supabase edge functions; access control unclear",
+        "Password validation errors exposed directly to client in Auth.tsx and ResetPassword.tsx",
+        "Multiple edge functions each independently fetch GOOGLE_CLIENT_SECRET; no centralized config",
+        "No rate limiting or CSRF protection evident in the provided route/function data"
       ]
     },
     {
       "repo": "lineagevault",
       "name": "Lineage Vault",
-      "score": 50,
-      "updated": "2026-04-02T09:02:11-0400",
+      "score": 42,
+      "updated": "2026-04-03T09:02:38-0400",
       "issues": [
-        "Could not complete scan"
+        ".env file is tracked in git, likely exposing secrets to version control",
+        "Weak password policy: minimum 6 characters is insufficient (Auth.tsx:64)",
+        "dashboard-api extracts API key from Bearer token with no visible validation logic",
+        "No auth middleware visible on Supabase edge functions (report-chat, tax-chat, etc.)",
+        "Client-side Supabase JS SDK exposed without visible Row Level Security confirmation"
       ]
     },
     {
       "repo": "zentrix-cyber",
       "name": "Zentrix Cyber",
-      "score": 50,
-      "updated": "2026-04-02T09:02:43-0400",
+      "score": 62,
+      "updated": "2026-04-03T09:03:15-0400",
       "issues": [
-        "Could not complete scan"
+        "Hardcoded fallback API key in Settings.tsx exposed in client-side bundle (zx_sk_live_*)",
+        "Supabase client keys may be embedded in frontend without row-level security validation",
+        "No backend API routes found; auth/authorization logic may be entirely client-side",
+        "VITE_ prefixed env vars are bundled into public JS, risking secret exposure if misused",
+        "No evidence of CSP, rate limiting, or server-side validation layer in a client-only app"
       ]
     },
     {
       "repo": "zentrixprojects",
       "name": "Zentrix Projects",
-      "score": 50,
-      "updated": "2026-04-02T09:03:15-0400",
+      "score": 62,
+      "updated": "2026-04-03T09:03:51-0400",
       "issues": [
-        "Could not complete scan"
+        ".env file is tracked in git, risking exposure of secrets in version history",
+        "xlsx ^0.18.5 has known prototype pollution CVE (CVE-2024-22363) \u2014 update recommended",
+        "No API route auth middleware detected; reliance on Supabase RLS should be verified",
+        "Supabase edge functions lack visible authorization checks beyond API key env vars",
+        "Password confirmation logic in validation-schemas.ts should be paired with server-side check"
       ]
     },
     {
       "repo": "decision-command",
       "name": "Decision Command",
-      "score": 50,
-      "updated": "2026-04-02T09:03:47-0400",
+      "score": 52,
+      "updated": "2026-04-03T09:04:29-0400",
       "issues": [
-        "Could not complete scan"
+        ".env file is tracked in git, likely exposing secrets (e.g. Supabase keys)",
+        "Supabase client keys may be embedded in frontend bundle, visible to all users",
+        "No backend API routes found; auth/authorization likely relies solely on client-side logic",
+        "Password confirmation check is client-side only with no visible server-side validation",
+        "Several dependencies use older major versions with potential known vulnerabilities"
       ]
     },
     {
       "repo": "zentrix-improvements-dashboard",
       "name": "Improvements Dashboard",
-      "score": 50,
-      "updated": "2026-04-02T09:04:18-0400",
+      "score": 62,
+      "updated": "2026-04-03T09:05:05-0400",
       "issues": [
-        "Could not complete scan"
+        "Hardcoded API key in .env file: c3e403b4...7003 exposed in plaintext source",
+        "server.js falls back to empty string for API_KEY, allowing unauthenticated operation",
+        "Health endpoint /api/health has no auth or rate limiting middleware",
+        "Root route serves index.html with no authentication or access control",
+        ".env file present in repo; section 4 shows none tracked but grep found secrets in it"
       ]
     },
     {
       "repo": "wisevasdashboard",
       "name": "WiseVAs",
-      "score": 50,
-      "updated": "2026-04-02T09:04:50-0400",
+      "score": 82,
+      "updated": "2026-04-03T09:05:41-0400",
       "issues": [
-        "Could not complete scan"
+        "Password variables initialized to empty strings in multiple edge functions, potential weak defaults",
+        "API key validation in platform-api/index.ts relies on header check without visible auth middleware",
+        "No .env files committed and secrets loaded from env vars, but no evidence of rate limiting on API",
+        "html2pdf.js v0.14.0 has known prototype pollution vulnerabilities (CVE-2023-xxxx series)"
       ]
     },
     {
       "repo": "zentrixcrm",
       "name": "Zentrix CRM",
-      "score": 50,
-      "updated": "2026-04-02T09:05:22-0400",
+      "score": 78,
+      "updated": "2026-04-03T09:06:18-0400",
       "issues": [
-        "Could not complete scan"
+        "Hardcoded fallback password 'testpassword123' in e2e/helpers/auth.ts",
+        "Placeholder API keys in CodeExamples.tsx could be mistaken for real credentials",
+        "Supabase edge functions lack visible auth middleware on webhook/API endpoints",
+        "@sentry/react v10.43.0 may expose source maps or PII if misconfigured",
+        "Generated API key prefix 'zos_' format is predictable; key entropy should be verified"
       ]
     },
     {
       "repo": "zentrixcreative",
       "name": "Zentrix Creative",
-      "score": 50,
-      "updated": "2026-04-02T09:05:53-0400",
+      "score": 62,
+      "updated": "2026-04-03T09:06:54-0400",
       "issues": [
-        "Could not complete scan"
+        ".env file is tracked in git, potentially exposing secrets to version control",
+        "Supabase edge functions lack visible auth middleware; API key is sole gate",
+        "No rate limiting or auth guard visible on serverless function endpoints",
+        "Password validation error message exposed directly to client in Auth.tsx",
+        "All 7 edge functions share same API key pattern with no per-function scoping"
       ]
     },
     {
       "repo": "business-os",
       "name": "Zentrix OS",
-      "score": 50,
-      "updated": "2026-04-02T09:06:25-0400",
+      "score": 62,
+      "updated": "2026-04-03T09:07:39-0400",
       "issues": [
-        "Could not complete scan"
+        "Hardcoded Stripe live publishable key in src/lib/stripe-config.ts (pk_live_51S2ugE...)",
+        ".env.example contains placeholder key names that could leak internal service architecture",
+        "No visible auth middleware on Supabase edge functions (send-welcome-email, drip-email-scheduler)",
+        "bulk-create-users generates passwords in code; no visible entropy/strength guarantees",
+        "company-api extracts API key from auth header with no visible rate limiting or validation"
       ]
     },
     {
       "repo": "thoughtline",
       "name": "Thoughtline",
-      "score": 50,
-      "updated": "2026-04-02T09:06:57-0400",
+      "score": 88,
+      "updated": "2026-04-03T09:08:16-0400",
       "issues": [
-        "Could not complete scan"
+        "No .env files committed to git and API key is loaded from env vars \u2014 good practice",
+        "No API route definitions found, limiting ability to assess auth middleware coverage",
+        "Some dependencies may be outdated (e.g. react 18.3.x, lucide-react 0.462.0) \u2014 review for CVEs",
+        "Supabase edge function lacks visible rate limiting or input validation in scan data"
       ]
     },
     {
       "repo": "zentrixmarketing",
       "name": "Zentrix Marketing",
-      "score": 50,
-      "updated": "2026-04-02T09:07:29-0400",
+      "score": 62,
+      "updated": "2026-04-03T09:08:53-0400",
       "issues": [
-        "Could not complete scan"
+        ".env file is tracked in git, risking exposure of secrets in version control history",
+        "API keys accessed via env vars but .env committed may leak LOVABLE_API_KEY value",
+        "No API route auth middleware detected; Supabase edge functions may lack authorization checks",
+        "React 18.3.x is outdated; newer versions contain security and performance fixes",
+        "No rate limiting or CORS configuration evident for Supabase edge functions"
       ]
     },
     {
       "repo": "zentrixcontent",
       "name": "Zentrix Content",
-      "score": 50,
-      "updated": "2026-04-02T09:08:00-0400",
+      "score": 42,
+      "updated": "2026-04-03T09:09:29-0400",
       "issues": [
-        "Could not complete scan"
+        ".env file is tracked in git, risking exposure of secrets in version history",
+        "Supabase edge functions lack visible auth/authorization middleware checks",
+        "API keys retrieved via env vars but no validation or fallback on missing values",
+        "No rate limiting or input validation visible in serverless function endpoints",
+        "Dependencies include many packages increasing supply chain attack surface"
       ]
     },
     {
       "repo": "zentrix-email-marketing",
       "name": "Zentrix Email Mktg",
-      "score": 50,
-      "updated": "2026-04-02T09:08:32-0400",
+      "score": 42,
+      "updated": "2026-04-03T09:10:07-0400",
       "issues": [
-        "Could not complete scan"
+        ".env file is tracked in git, likely exposing secrets like Supabase keys",
+        "API key generation in apiKeys.ts uses sk_ prefix pattern in client-side code",
+        "Supabase client keys may be embedded in frontend bundle shipped to browsers",
+        "No server-side API routes found; auth/authorization logic unclear or absent",
+        "Client-side app handles sensitive operations without visible backend protection"
       ]
     },
     {
       "repo": "zentrixchat",
       "name": "Zentrix Chat",
-      "score": 50,
-      "updated": "2026-04-02T09:09:04-0400",
+      "score": 62,
+      "updated": "2026-04-03T09:10:44-0400",
       "issues": [
-        "Could not complete scan"
+        ".env file is tracked in git, risking exposure of secrets in version history",
+        "API keys loaded from env vars but .env committed may leak LIVEKIT and LOVABLE keys",
+        "No API route auth middleware detected; Supabase edge functions may lack authorization checks",
+        "React 18.3.x is outdated; newer versions contain security and performance fixes",
+        "Large dependency surface area (50+ packages) increases supply chain attack risk"
       ]
     },
     {
       "repo": "zentrix-sign",
       "name": "Zentrix Sign",
-      "score": 50,
-      "updated": "2026-04-02T09:09:36-0400",
+      "score": 62,
+      "updated": "2026-04-03T09:11:20-0400",
       "issues": [
-        "Could not complete scan"
+        ".env file is tracked in git, likely exposing secrets like Supabase keys",
+        "No API route auth middleware detected; all auth relies on client-side Supabase",
+        "Hardcoded secrets scan shows no leaked keys, but .env commit risk is high",
+        "Client-side password comparison logic in ResetPassword.tsx lacks server validation",
+        "pdfjs-dist v4.4.168 may carry known CVEs; verify against latest advisories"
       ]
     },
     {
       "repo": "zentrixfinance",
       "name": "Zentrix Finance",
-      "score": 50,
-      "updated": "2026-04-02T09:10:07-0400",
+      "score": 62,
+      "updated": "2026-04-03T09:11:56-0400",
       "issues": [
-        "Could not complete scan"
+        ".env file is tracked in git, may expose secrets like API keys or DB credentials",
+        "Supabase edge functions lack visible auth middleware; no route-level protection evident",
+        "API keys read from env vars but no validation or fallback handling if missing",
+        "No rate limiting or input sanitization visible on serverless function endpoints",
+        "Password error message exposed directly to client may aid enumeration attacks"
       ]
     },
     {
       "repo": "zentrixcapture",
       "name": "Zentrix Capture",
-      "score": 50,
-      "updated": "2026-04-02T09:10:39-0400",
+      "score": 42,
+      "updated": "2026-04-03T09:12:33-0400",
       "issues": [
-        "Could not complete scan"
+        ".env file is tracked in git, risks leaking secrets to version control",
+        "VITE_SUPABASE_PUBLISHABLE_KEY exposed client-side via import.meta.env in useScreenRecorder.ts",
+        "Supabase edge function reads LOVABLE_API_KEY from env but no auth middleware visible on functions",
+        "No lockfile or pinned versions; wide semver ranges risk pulling vulnerable dependency versions",
+        "No API route auth middleware detected, relying entirely on Supabase client-side auth"
       ]
     }
   ]
