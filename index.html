@@ -218,7 +218,8 @@
 
   /* ── Hamburger menu button ── */
   .header-controls { display: flex; align-items: center; gap: 6px; }
-  .header-controls .view-toggle { margin-right: 6px; padding-right: 6px; border-right: 1px solid var(--border); }
+  .header-controls .view-toggle { margin-right: 6px; padding-right: 6px; position: relative; }
+  .header-controls .view-toggle::after { content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 1px; height: 16px; background: var(--border); }
 
   /* ── Tablet: stats 3-col grid so labels don't truncate ── */
   @media (max-width: 1024px) and (min-width: 769px) {
