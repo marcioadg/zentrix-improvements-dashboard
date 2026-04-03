@@ -1307,6 +1307,7 @@ async function loadSummaryContent() {
       genEl.textContent = 'Generated at ' + new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(d) + ' ' + getETZoneAbbr(d)
     }
   } catch(e) {
+    summaryLoaded = false // allow retry on next open
     textEl.innerHTML = 'Summary not available yet. It will be generated on the next data update.'
   }
 }
