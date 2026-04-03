@@ -658,18 +658,18 @@ async function loadData() {
       pruneLocalStorage()
     }
     const _updatedStr = `Updated ${new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date())} ${getETZoneAbbr(new Date())}`
-    if (luEl) { luEl.textContent = _updatedStr; luEl.style.display = '' }
-    if (luBar) luBar.textContent = _updatedStr
+    if (luEl) { luEl.textContent = _updatedStr; luEl.style.display = ''; luEl.style.color = '' }
+    if (luBar) { luBar.textContent = _updatedStr; luBar.style.color = 'var(--text-muted)' }
   } catch(e) {
     // Only show empty state on initial load — preserve existing data on transient polling failures
     if (allEntries.length === 0) {
       document.getElementById('entries').innerHTML = '<div class="empty">No data yet — improvements will appear after the next hourly run.</div>'
-      if (luEl) { luEl.textContent = 'No data yet'; luEl.style.display = '' }
-      if (luBar) luBar.textContent = 'No data yet'
+      if (luEl) { luEl.textContent = 'No data yet'; luEl.style.display = ''; luEl.style.color = 'var(--warning)' }
+      if (luBar) { luBar.textContent = 'No data yet'; luBar.style.color = 'var(--warning)' }
     } else {
       const _failStr = `Update failed — showing cached data`
-      if (luEl) { luEl.textContent = _failStr; luEl.style.display = '' }
-      if (luBar) luBar.textContent = _failStr
+      if (luEl) { luEl.textContent = _failStr; luEl.style.display = ''; luEl.style.color = 'var(--warning)' }
+      if (luBar) { luBar.textContent = _failStr; luBar.style.color = 'var(--warning)' }
     }
   } finally {
     _loadInFlight = false
