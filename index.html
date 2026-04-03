@@ -531,7 +531,7 @@ function formatEntryTime(date, time) {
   // date = "2026-03-27", time = "18:49" (stored in UTC)
   // Convert to America/New_York — display correct EST/EDT label
   try {
-    const utcDate = new Date(date + 'T' + time + ':00Z')
+    const utcDate = new Date(date + 'T' + (time||'00:00') + ':00Z')
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York',
       year: 'numeric', month: '2-digit', day: '2-digit',
@@ -542,7 +542,7 @@ function formatEntryTime(date, time) {
     const hr = get('hour'), mn = get('minute')
     return `${yr}-${mo}-${dy} ${hr}:${mn} ${getETZoneAbbr(utcDate)}`
   } catch(e) {
-    return `${date} ${time} ET`
+    return `${date} ${time||'00:00'} ET`
   }
 }
 const GH_RAW = 'https://raw.githubusercontent.com/marcioadg/zentrix-improvements-dashboard/main/data/'
