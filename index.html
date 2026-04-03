@@ -583,13 +583,13 @@ function pruneLocalStorage() {
 async function fetchFresh(filename) {
   // Try GitHub API first (bypasses CDN cache), fall back to raw
   // Use AbortController to prevent hanging on slow/unresponsive requests
+  const ac1 = new AbortController()
+  const t1 = setTimeout(() => ac1.abort(), 8000)
   try {
-    const ac1 = new AbortController()
-    const t1 = setTimeout(() => ac1.abort(), 8000)
     const r = await fetch(GH_API + filename, { headers: { 'Accept': 'application/vnd.github.v3.raw' }, cache: 'no-store', signal: ac1.signal })
     clearTimeout(t1)
     if (r.ok) return r.json()
-  } catch(e) {}
+  } catch(e) { clearTimeout(t1) }
   const ac2 = new AbortController()
   const t2 = setTimeout(() => ac2.abort(), 10000)
   try {
@@ -887,9 +887,8 @@ function toggleUnreadFilter() {
 
 function updateUnreadCount() {
   const readCards = getReadCards()
-  const unreadCount = document.querySelectorAll('.card[data-key]').length > 0
-    ? [...document.querySelectorAll('.card[data-key]')].filter(c => !readCards[c.dataset.key]).length
-    : 0
+  const cards = [...document.querySelectorAll('.card[data-key]')]
+  const unreadCount = cards.filter(c => !readCards[c.dataset.key]).length
   const btn = document.getElementById('filter-unread')
   if (btn) btn.textContent = unreadCount > 0 ? `Unread (${unreadCount})` : 'Unread'
 }
