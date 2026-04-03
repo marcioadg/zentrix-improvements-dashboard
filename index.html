@@ -745,13 +745,13 @@ function render() {
   const prevSelStart = prevSearchEl?.selectionStart
   const prevSelEnd = prevSearchEl?.selectionEnd
   document.getElementById('filters').innerHTML = `
-    <label>Repo</label>
+    <label for="repo-select">Repo</label>
     <select class="repo-select" id="repo-select" onchange="setRepoFilter(this)">
       <option value="">All repos (${reposSorted.length})</option>
       ${reposSorted.map(([r,i])=>`<option value="${esc(r)}">${esc(i.name)} · ${i.count}</option>`).join('')}
     </select>
     <div class="sep"></div>
-    <label>Category</label>
+    <label for="cat-select">Category</label>
     <select class="repo-select" id="cat-select" onchange="setCatFilter(this)">
       <option value="">All categories</option>
       ${cats.sort().map(c=>{const cnt=allEntries.filter(e=>e.category===c).length; return `<option value="${esc(c)}">${esc(c)} · ${cnt}</option>`}).join('')}
