@@ -760,7 +760,7 @@ function render() {
     <button class="filter-btn${activeProposal?' active-amber':''}" id="filter-proposals" onclick="toggleProposalFilter()">Proposals</button>
     <button class="filter-btn${activeUnread?' active':''}" id="filter-unread" onclick="toggleUnreadFilter()">Unread</button>
     <div style="flex:1"></div>
-    <input id="search" type="search" placeholder="Search..." oninput="debouncedSearch()" value="${esc(prevSearch)}">
+    <input id="search" type="search" placeholder="Search..." aria-label="Search improvements" oninput="debouncedSearch()" value="${esc(prevSearch)}">
   `
   if (activeRepo) {
     const sel = document.getElementById('repo-select')
