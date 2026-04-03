@@ -1586,6 +1586,21 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault()
     e.target.click()
   }
+  // Press / to focus search (list view only, not while typing in an input)
+  if (e.key === '/' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) {
+    if (currentView === 'list') {
+      e.preventDefault()
+      const searchEl = document.getElementById('search')
+      if (searchEl) { searchEl.focus(); searchEl.select() }
+    }
+  }
+  // Press Escape to clear and blur search
+  if (e.key === 'Escape' && document.activeElement?.id === 'search') {
+    const searchEl = document.activeElement
+    searchEl.value = ''
+    searchEl.blur()
+    applyFilters()
+  }
 })
 
 // Pull-to-refresh
