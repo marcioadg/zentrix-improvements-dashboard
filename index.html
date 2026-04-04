@@ -61,7 +61,7 @@
   @keyframes cardFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
   @media (prefers-reduced-motion: reduce) { .card, .sec-card { animation: none !important; } .loading::before { animation: none !important; border-top-color: var(--accent); } }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--page-bg); color: var(--text-primary); font-family: Inter, -apple-system, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; min-height: 100vh; font-feature-settings: "cv01", "cv02", "cv11"; }
+  body { background: var(--page-bg); color: var(--text-primary); font-family: Inter, -apple-system, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; min-height: 100vh; font-feature-settings: "cv01", "cv02", "cv11"; scrollbar-width: thin; scrollbar-color: var(--border) var(--page-bg); }
   header { background: var(--sidebar-bg); border-bottom: 1px solid var(--border); min-height: 52px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; top: 0; z-index: 10; }
   header h1 { font-size: 13px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
   header h1 .logo-icon { flex-shrink: 0; }
