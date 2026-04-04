@@ -460,7 +460,7 @@
   <div style="flex:1"></div>
   <input id="search" type="search" placeholder="Search..." aria-label="Search improvements" oninput="debouncedSearch()">
 </div>
-<div class="feed-stale" id="feed-stale">⚠ Data feed appears stale — last improvement was logged more than 2 hours ago. The pipeline may need attention.</div>
+<div class="feed-stale" id="feed-stale"></div>
 <div class="entries" id="entries"><div class="loading">Loading improvements...</div></div>
 <div class="analytics" id="analytics" style="display:none">
   <div class="chart-card"><h3 tabindex="0" role="button" aria-expanded="true" onclick="toggleCard(this)">Improvements Over Time<svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3><div class="chart-body"><div class="chart-wrap"><canvas id="chart-timeline"></canvas></div></div></div>
@@ -688,8 +688,16 @@ function updateFeedStale() {
     return new Date(da) > new Date(db) ? a : b
   })
   const newestDate = new Date(newest.date + 'T' + (newest.time||'00:00') + ':00Z')
-  const ageHours = (Date.now() - newestDate.getTime()) / 3600000
+  const ageMs = Date.now() - newestDate.getTime()
+  const ageHours = ageMs / 3600000
   _feedStale = ageHours > 2
+  if (_feedStale) {
+    const ageMin = Math.floor(ageMs / 60000)
+    const ageFmt = ageMin >= 60
+      ? `${Math.floor(ageMin / 60)}h ${ageMin % 60}m`
+      : `${ageMin}m`
+    feedStaleEl.textContent = `⚠ Data feed appears stale — last improvement was ${ageFmt} ago. The pipeline may need attention.`
+  }
   feedStaleEl.style.display = _feedStale && currentView === 'list' ? 'flex' : 'none'
 }
 
