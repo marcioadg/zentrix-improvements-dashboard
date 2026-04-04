@@ -1909,8 +1909,11 @@ function renderAgentsContent() {
 function toggleAiStatus(companyId) {
   var company = agentsData.companies.find(function(c) { return c.id === companyId; });
   if (!company) return;
-  company.aiStatus = company.aiStatus === 'off_track' ? 'on_track' : 'off_track';
+  var cycle = ['on_track', 'working_on_track', 'off_track', 'not_working'];
+  var idx = cycle.indexOf(company.aiStatus);
+  company.aiStatus = cycle[(idx + 1) % cycle.length];
   saveAgentsData();
+  renderCompanyTabs();
   renderAgentsContent();
 }
 
