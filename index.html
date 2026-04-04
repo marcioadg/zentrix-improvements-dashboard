@@ -1757,13 +1757,14 @@ function setActiveCompany(id) {
 }
 
 function getAgentStatusStyle(status) {
+  var l = document.documentElement.getAttribute('data-theme') === 'light';
   var map = {
-    'on_track': { bg: 'rgba(74,222,128,0.1)', color: '#4ade80', label: 'On Track' },
-    'working_on_track': { bg: 'rgba(251,191,36,0.1)', color: '#fbbf24', label: 'Working \u00b7 On Track' },
-    'off_track': { bg: 'rgba(248,113,113,0.1)', color: '#f87171', label: 'Off Track' },
-    'not_started': { bg: 'rgba(94,94,95,0.1)', color: '#5e5e5f', label: 'Not Started' },
-    'not_working': { bg: 'rgba(248,113,113,0.12)', color: '#f87171', label: 'Not Working' },
-    'working_with_locks': { bg: 'rgba(251,191,36,0.08)', color: '#fbbf24', label: 'Working \u00b7 Locked' }
+    'on_track':           { bg: l ? 'rgba(22,163,74,0.1)'   : 'rgba(74,222,128,0.1)',  color: l ? '#16a34a' : '#4ade80',  label: 'On Track' },
+    'working_on_track':   { bg: l ? 'rgba(180,83,9,0.1)'    : 'rgba(251,191,36,0.1)',  color: l ? '#b45309' : '#fbbf24',  label: 'Working \u00b7 On Track' },
+    'off_track':          { bg: l ? 'rgba(185,28,28,0.1)'   : 'rgba(248,113,113,0.1)', color: l ? '#b91c1c' : '#f87171',  label: 'Off Track' },
+    'not_started':        { bg: 'rgba(94,94,95,0.1)',                                   color: '#5e5e5f',                  label: 'Not Started' },
+    'not_working':        { bg: l ? 'rgba(185,28,28,0.12)'  : 'rgba(248,113,113,0.12)',color: l ? '#b91c1c' : '#f87171',  label: 'Not Working' },
+    'working_with_locks': { bg: l ? 'rgba(180,83,9,0.08)'   : 'rgba(251,191,36,0.08)', color: l ? '#b45309' : '#fbbf24',  label: 'Working \u00b7 Locked' }
   };
   return map[status] || { bg: 'rgba(94,94,95,0.1)', color: '#5e5e5f', label: status };
 }
@@ -1812,9 +1813,7 @@ function renderOverviewContent() {
   }).join('');
 
   var aiStatusRows = agentsData.companies.map(function(c) {
-    var st = c.aiStatus === 'off_track'
-      ? { bg: 'rgba(248,113,113,0.1)', color: '#f87171', label: 'Off Track' }
-      : { bg: 'rgba(74,222,128,0.1)', color: '#4ade80', label: 'On Track' };
+    var st = getAgentStatusStyle(c.aiStatus === 'off_track' ? 'off_track' : 'on_track');
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-subtle);">' +
       '<div style="font-size:12px;font-weight:500;color:var(--text-primary);">' + esc(c.name) + '</div>' +
       '<span onclick="toggleAiStatus(\'' + c.id + '\')" style="cursor:pointer;font-size:10px;font-weight:500;padding:3px 10px;border-radius:4px;background:' + st.bg + ';color:' + st.color + ';">' + st.label + '</span>' +
@@ -1882,9 +1881,7 @@ function renderAgentsContent() {
     '</div>';
   }).join('');
 
-  var aiSt = company.aiStatus === 'off_track'
-    ? { bg: 'rgba(248,113,113,0.1)', color: '#f87171', label: 'Off Track' }
-    : { bg: 'rgba(74,222,128,0.1)', color: '#4ade80', label: 'On Track' };
+  var aiSt = getAgentStatusStyle(company.aiStatus === 'off_track' ? 'off_track' : 'on_track');
 
   container.innerHTML =
     '<div style="margin-bottom:12px;font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px;">' +
