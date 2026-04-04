@@ -627,7 +627,7 @@ async function loadData() {
   const luEl = document.getElementById('last-updated')
   const luBar = document.getElementById('last-updated-bar')
   const fetchingStr = 'Fetching latest…'
-  if (luEl) luEl.textContent = fetchingStr
+  if (luEl) { luEl.textContent = fetchingStr; luEl.style.display = ''; }
   if (luBar) luBar.textContent = fetchingStr
   try {
     const [data, proposalsData, agentsRaw] = await Promise.all([
