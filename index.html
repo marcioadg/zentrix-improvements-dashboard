@@ -635,7 +635,7 @@ async function loadData() {
       fetchFresh('proposals.json').catch(() => []),
       fetch('/data/agents.json?t=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)
     ])
-    if (agentsRaw) { agentsData = agentsRaw; }
+    if (agentsRaw) { agentsData = agentsRaw; if (currentView === 'agents') { renderCompanyTabs(); renderAgentsContent(); } }
     const proposals = Array.isArray(proposalsData) ? proposalsData : []
     const _swipeActions = getSwipeActions()
     const sorted = [...proposals, ...data].sort((a,b) => {
