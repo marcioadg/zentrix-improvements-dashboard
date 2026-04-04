@@ -1412,7 +1412,8 @@ function showToast(msg) {
 
 // ── Swipe gestures for proposal cards (Gmail-style) ────────────────────────
 ;(function() {
-  let dragging = false, startX = 0, currentCard = null, currentWrap = null, cardW = 0
+  let dragging = false, startX = 0, startY = 0, currentCard = null, currentWrap = null, cardW = 0
+  let _dirLocked = false, _isHorizontal = false
 
   function getAction(dx) {
     const pct = Math.abs(dx) / cardW
@@ -1508,57 +1509,79 @@ function showToast(msg) {
     setTimeout(() => { render(); updateUnreadCount() }, 290)
   }
 
-  function onStart(x, target) {
+  function onStart(x, y, target) {
     const card = target.closest('.proposal-card')
     if (!card) return
     const wrap = card.closest('.swipe-wrap')
     if (!wrap) return
     dragging = true
     startX = x
+    startY = y
+    _dirLocked = false
+    _isHorizontal = false
     currentCard = card
     currentWrap = wrap
     cardW = card.offsetWidth
     card.style.userSelect = 'none'
   }
 
-  function onMove(x) {
+  function onMove(x, y) {
     if (!dragging || !currentCard) return
-    updateSwipe(currentCard, currentWrap, x - startX)
+    const dx = x - startX
+    const dy = y - startY
+    // Lock scroll direction once intent is clear (5px threshold)
+    if (!_dirLocked && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      _isHorizontal = Math.abs(dx) > Math.abs(dy)
+      _dirLocked = true
+    }
+    if (!_dirLocked || !_isHorizontal) return // vertical scroll — don't interfere
+    updateSwipe(currentCard, currentWrap, dx)
   }
 
-  function onEnd(x) {
+  function onEnd(x, y) {
     if (!dragging || !currentCard) return
     dragging = false
-    commitSwipe(currentCard, currentWrap, x - startX)
+    const dx = x - startX
+    // Only commit if the gesture was horizontal
+    if (_isHorizontal) commitSwipe(currentCard, currentWrap, dx)
+    else {
+      // Snap back silently on vertical releases
+      currentCard.style.transition = 'transform 180ms cubic-bezier(0.25,0.46,0.45,0.94)'
+      currentCard.style.transform = 'translateX(0)'
+    }
     currentCard = null; currentWrap = null
+    _dirLocked = false; _isHorizontal = false
   }
 
   document.addEventListener('touchstart', e => {
     const t = e.touches[0]
-    onStart(t.clientX, e.target)
+    onStart(t.clientX, t.clientY, e.target)
   }, { passive: true })
   document.addEventListener('touchmove', e => {
     if (!dragging) return
-    e.preventDefault() // prevent page scroll while swiping
-    onMove(e.touches[0].clientX)
+    const t = e.touches[0]
+    // Only call preventDefault (which blocks native scroll) once we know it's a horizontal swipe
+    if (_isHorizontal) e.preventDefault()
+    onMove(t.clientX, t.clientY)
   }, { passive: false })
   document.addEventListener('touchend', e => {
     if (!dragging) return
-    onEnd(e.changedTouches[0].clientX)
+    const t = e.changedTouches[0]
+    onEnd(t.clientX, t.clientY)
   }, { passive: true })
 
   // Mouse events
   document.addEventListener('mousedown', e => {
-    onStart(e.clientX, e.target)
+    onStart(e.clientX, e.clientY, e.target)
   })
   document.addEventListener('mousemove', e => {
     if (!dragging) return
-    e.preventDefault()
-    onMove(e.clientX)
+    if (_isHorizontal) e.preventDefault()
+    onMove(e.clientX, e.clientY)
   })
   document.addEventListener('mouseup', e => {
     if (!dragging) return
-    onEnd(e.clientX)
+    onEnd(e.clientX, e.clientY)
   })
 })()
 
