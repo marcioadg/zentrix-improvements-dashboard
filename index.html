@@ -986,6 +986,7 @@ function switchView(view, btn) {
   if (_feedStaleEl) _feedStaleEl.style.display = _feedStale && view === 'list' ? 'flex' : 'none'
   document.getElementById('analytics').style.display = view === 'analytics' ? 'grid' : 'none'
   document.getElementById('agents-view').style.display = view === 'agents' ? 'flex' : 'none'
+  if (view === 'list') { applyFilters(); }
   if (view === 'analytics') { if (allEntries.length) renderCharts(); loadSecurityData(); renderCoverageChart(); }
   if (view === 'agents') { loadAgentsView(); }
 }
