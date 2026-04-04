@@ -557,10 +557,21 @@ const _analyticsCache = { security: { data: null, ts: 0 }, coverage: { data: nul
 const ANALYTICS_CACHE_TTL = 300000 // 5 minutes (matches polling interval)
 
 function getCardKey(e) { return e.id || (e.repo + '|' + e.date + '|' + e.time) }
-function getReadCards() { try { return JSON.parse(localStorage.getItem('zentrix_read_cards') || '{}') } catch(e) { return {} } }
-function markCardRead(key) { const r = getReadCards(); r[key] = true; localStorage.setItem('zentrix_read_cards', JSON.stringify(r)) }
-function getSwipeActions() { try { return JSON.parse(localStorage.getItem('swipe_actions') || '{}') } catch(e) { return {} } }
-function saveSwipeAction(key, action) { const a = getSwipeActions(); a[key] = action; localStorage.setItem('swipe_actions', JSON.stringify(a)) }
+
+// In-memory caches for localStorage — avoid repeated JSON.parse on every render/filter cycle
+let _readCardsCache = null, _swipeActionsCache = null
+function getReadCards() {
+  if (_readCardsCache !== null) return _readCardsCache
+  try { _readCardsCache = JSON.parse(localStorage.getItem('zentrix_read_cards') || '{}') } catch(e) { _readCardsCache = {} }
+  return _readCardsCache
+}
+function markCardRead(key) { const r = getReadCards(); r[key] = true; _readCardsCache = r; localStorage.setItem('zentrix_read_cards', JSON.stringify(r)) }
+function getSwipeActions() {
+  if (_swipeActionsCache !== null) return _swipeActionsCache
+  try { _swipeActionsCache = JSON.parse(localStorage.getItem('swipe_actions') || '{}') } catch(e) { _swipeActionsCache = {} }
+  return _swipeActionsCache
+}
+function saveSwipeAction(key, action) { const a = getSwipeActions(); a[key] = action; _swipeActionsCache = a; localStorage.setItem('swipe_actions', JSON.stringify(a)) }
 
 // Prune stale localStorage entries to prevent unbounded growth.
 // Keeps only keys that match current entries. Runs once per load.
@@ -579,6 +590,8 @@ function pruneLocalStorage() {
       }
     } catch(e) { /* ignore parse errors */ }
   })
+  // Invalidate caches so next read picks up the pruned data
+  _readCardsCache = null; _swipeActionsCache = null
 }
 
 async function fetchFresh(filename) {
