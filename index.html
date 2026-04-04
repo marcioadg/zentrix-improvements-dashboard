@@ -1823,7 +1823,7 @@ function renderOverviewContent() {
   }).join('');
 
   var aiStatusRows = agentsData.companies.map(function(c) {
-    var st = getAgentStatusStyle(c.aiStatus === 'off_track' ? 'off_track' : 'on_track');
+    var st = getAgentStatusStyle(c.aiStatus || 'on_track');
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-subtle);">' +
       '<div style="font-size:12px;font-weight:500;color:var(--text-primary);">' + esc(c.name) + '</div>' +
       '<span onclick="toggleAiStatus(\'' + c.id + '\')" style="cursor:pointer;font-size:10px;font-weight:500;padding:3px 10px;border-radius:4px;background:' + st.bg + ';color:' + st.color + ';">' + st.label + '</span>' +
@@ -1891,7 +1891,7 @@ function renderAgentsContent() {
     '</div>';
   }).join('');
 
-  var aiSt = getAgentStatusStyle(company.aiStatus === 'off_track' ? 'off_track' : 'on_track');
+  var aiSt = getAgentStatusStyle(company.aiStatus || 'on_track');
 
   container.innerHTML =
     '<div style="margin-bottom:12px;font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px;">' +
