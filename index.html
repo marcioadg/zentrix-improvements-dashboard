@@ -1584,8 +1584,13 @@ document.addEventListener('visibilitychange', () => {
 // ── Collapsible chart cards ───────────────────────────────────────────────────
 function toggleCard(h3) {
   const card = h3.closest('.chart-card')
+  const wasCollapsed = card.classList.contains('collapsed')
   card.classList.toggle('collapsed')
   h3.setAttribute('aria-expanded', !card.classList.contains('collapsed'))
+  // If expanding a card, re-render charts — a resize while collapsed zeroes the canvas
+  if (wasCollapsed && currentView === 'analytics' && allEntries.length) {
+    requestAnimationFrame(() => { renderCharts(); renderCoverageChart(); })
+  }
 }
 // Keyboard support for chart card toggles (Enter/Space)
 document.addEventListener('keydown', function(e) {
