@@ -715,6 +715,7 @@ function updateFeedStale() {
 }
 
 function render() {
+  const _savedScrollY = window.scrollY
   const repos = [...new Set(allEntries.map(e=>e.repo))]
   const bugs = allEntries.filter(e=>e.category==='Bug Fix').length
   const ux = allEntries.filter(e=>e.category==='UX/UI').length
@@ -875,6 +876,7 @@ function render() {
   }).join('') : '<div class="empty">No improvements logged yet.<span style="font-size:12px;color:var(--text-muted);display:block">New entries appear automatically after each hourly run.</span></div>'
 
   applyFilters()
+  if (_savedScrollY > 0) window.scrollTo({ top: _savedScrollY, behavior: 'instant' })
 }
 
 function setRepoFilter(sel) {
