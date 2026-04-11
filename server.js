@@ -52,6 +52,16 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Unauthorized' })
 }
 
+// ── Validation helpers ──────────────────────────────────────────────────────
+function validateAgentsJSON(data) {
+  if (!data || typeof data !== 'object') return false
+  if (!Array.isArray(data.companies)) return false
+  return data.companies.every(c =>
+    c.id && c.name && Array.isArray(c.agents) &&
+    c.agents.every(a => a.id && a.name && a.role && Array.isArray(a.channels))
+  )
+}
+
 // ── Rate limiting (in-memory, per-IP) ───────────────────────────────────────
 const _rateLimitMap = new Map()
 const RATE_LIMIT_WINDOW = 60000 // 1 minute
@@ -101,12 +111,15 @@ app.get('/api/health', (req, res) => {
 
 // Agents data — read/write
 app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
+  if (!validateAgentsJSON(req.body)) {
+    return res.status(400).json({ error: 'Invalid agents data structure' })
+  }
   const filePath = path.join(__dirname, 'data', 'agents.json')
   try {
     fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2))
     res.json({ ok: true })
   } catch (e) {
-    res.status(500).json({ error: e.message })
+    res.status(500).json({ error: 'Failed to save agents' })
   }
 })
 
