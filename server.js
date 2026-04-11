@@ -48,7 +48,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')))
 // ── Auth middleware ──────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
   const key = req.headers['x-api-key'] || req.query.key
-  if (!API_KEY || key === API_KEY) return next()
+  if (API_KEY && key === API_KEY) return next()
   res.status(401).json({ error: 'Unauthorized' })
 }
 
