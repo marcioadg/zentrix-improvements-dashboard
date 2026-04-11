@@ -91,6 +91,10 @@ setInterval(() => {
 }, 300000)
 
 // ── Slack post helper ────────────────────────────────────────────────────────
+function escapeSlackMarkdown(str) {
+  return String(str || '').replace(/[*_~`\[\]]/g, '\\$&')
+}
+
 async function postSlack(text, blocks) {
   const body = { channel: SLACK_CHANNEL, text }
   if (blocks) body.blocks = blocks
@@ -136,7 +140,7 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
   const blocks = [
     { type: 'section', text: { type: 'mrkdwn', text: `${label} — *${repoName || repo}*${route ? ` \`${route}\`` : ''}` } },
     { type: 'section', text: { type: 'mrkdwn', text: `>${summary || '(no summary)'}` } },
-    { type: 'context', elements: [{ type: 'mrkdwn', text: `Card: ${cardId} · ${new Date().toISOString().slice(0,16).replace('T',' ')} UTC` }] }
+    { type: 'context', elements: [{ type: 'mrkdwn', text: `Card: ${escapeSlackMarkdown(cardId)} · ${new Date().toISOString().slice(0,16).replace('T',' ')} UTC` }] }
   ]
 
   try {
