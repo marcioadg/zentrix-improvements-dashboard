@@ -6,7 +6,12 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="/home/ubuntu/zentrix-improvements-dashboard"
 OUTPUT="$REPO_DIR/data/security.json"
-CLAUDE="/home/ubuntu/.npm-global/bin/claude"
+# Find claude in PATH, fallback to hardcoded location, fail clearly if not found
+CLAUDE="$(command -v claude || echo /home/ubuntu/.npm-global/bin/claude)"
+if [ ! -x "$CLAUDE" ]; then
+  echo "ERROR: claude binary not found in PATH or at $CLAUDE"
+  exit 1
+fi
 TIMESTAMP=$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S%z)
 
 declare -A REPOS=(
@@ -58,6 +63,12 @@ declare -A REPO_NAMES=(
 )
 
 echo "[$TIMESTAMP] Starting daily security scoring"
+
+# Verify output directory exists
+if [ ! -d "$(dirname "$OUTPUT")" ]; then
+  echo "ERROR: output directory $(dirname "$OUTPUT") not found"
+  exit 1
+fi
 
 RESULTS_FILE=$(mktemp)
 echo "[]" > "$RESULTS_FILE"
