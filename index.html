@@ -455,6 +455,17 @@
       <span class="material-symbols-outlined" style="font-size:20px;">dashboard</span>
       Portfolio Overview
     </button>
+    <!-- Portfolio sub-nav items (shown when Portfolio Overview is active) -->
+    <div id="biz-subnav" style="display:flex; flex-direction:column; padding-left:0; margin-top:2px;">
+      <button id="subnav-overview" onclick="showBizSubtab('overview')" style="display:flex; align-items:center; gap:10px; padding:9px 16px 9px 44px; border:none; border-left:4px solid #002fbb; border-radius:0; background:rgba(255,255,255,0.04); width:100%; text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#ffffff; cursor:pointer; transition: all 150ms;">
+        <span class="material-symbols-outlined" style="font-size:16px;">bar_chart</span>
+        Overview
+      </button>
+      <button id="subnav-venture" onclick="showBizSubtab('venture')" style="display:flex; align-items:center; gap:10px; padding:9px 16px 9px 44px; border:none; border-left:4px solid transparent; border-radius:0; background:none; width:100%; text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#94a3b8; cursor:pointer; transition: all 150ms;">
+        <span class="material-symbols-outlined" style="font-size:16px;">rocket_launch</span>
+        Venture Performance
+      </button>
+    </div>
   </div>
   <div style="margin-top:auto; border-top: 1px solid rgba(255,255,255,0.05); padding-bottom:24px;">
     <div style="display:flex; align-items:center; gap:12px; padding:16px 24px; color:#94a3b8; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em;">
@@ -2224,6 +2235,8 @@ function switchPage(page) {
   if (page === 'dev') {
     devContent.style.display = '';
     bizContent.style.display = 'none';
+    var ventureElDev = document.getElementById('biz-venture-view');
+    if (ventureElDev) ventureElDev.style.display = 'none';
     navDev.classList.add('active');
     navDev.setAttribute('aria-current', 'page');
     navDev.style.color = '#ffffff';
@@ -2236,7 +2249,21 @@ function switchPage(page) {
     navBiz.style.borderLeft = '4px solid transparent';
   } else {
     devContent.style.display = 'none';
-    bizContent.style.display = 'block';
+    // Show whichever biz subtab was last active
+    var ventureEl = document.getElementById('biz-venture-view');
+    var productSelector = document.getElementById('venture-product-selector');
+    var subnavOverview = document.getElementById('subnav-overview');
+    var subnavVenture  = document.getElementById('subnav-venture');
+    // Default to overview if venture view is hidden or both are hidden
+    if (ventureEl && ventureEl.style.display === 'block') {
+      bizContent.style.display = 'none';
+      ventureEl.style.display = 'block';
+      if (productSelector) productSelector.style.display = 'block';
+    } else {
+      bizContent.style.display = 'block';
+      if (ventureEl) ventureEl.style.display = 'none';
+      if (productSelector) productSelector.style.display = 'none';
+    }
     loadBizMetrics();
     loadMRRHistory();
     navBiz.classList.add('active');
@@ -2481,6 +2508,11 @@ function setBizPeriod(period) {
     })
   }
   loadBizMetrics(period)
+  // Also reload venture metrics if that subtab is visible
+  var ventureEl = document.getElementById('biz-venture-view')
+  if (ventureEl && ventureEl.style.display === 'block') {
+    loadVentureMetrics()
+  }
 }
 
 async function loadMRRHistory() {
@@ -2530,6 +2562,188 @@ async function loadMRRHistory() {
 
 loadBizMetrics()
 loadMRRHistory()
+
+// ── Venture Performance ────────────────────────────────────────────────────────────
+let currentVentureProduct = 'Zentrix OS'
+let _ventureAllAccounts = [] // cache for client-side search
+
+const VENTURE_META = {
+  'Zentrix OS':      { icon: 'computer',  color: '#002fbb', desc: 'Business Operating System', slug: 'os' },
+  'Zentrix Insights':{ icon: 'analytics', color: '#284ad8', desc: 'Analytics & Reporting',      slug: 'insights' },
+  'Zentrix CRM':     { icon: 'contacts',  color: '#545f73', desc: 'Customer Relationship Mgmt', slug: 'crm' },
+  'Zentrix Agents':  { icon: 'smart_toy', color: '#8b9bb4', desc: 'AI Agent Platform',          slug: 'agents' }
+}
+
+function showBizSubtab(subtab) {
+  const overviewEl = document.getElementById('biz-metrics-view')
+  const ventureEl  = document.getElementById('biz-venture-view')
+  const subnavOverview = document.getElementById('subnav-overview')
+  const subnavVenture  = document.getElementById('subnav-venture')
+  const productSelector = document.getElementById('venture-product-selector')
+  const sectionTitle = document.getElementById('biz-section-title')
+
+  if (subtab === 'overview') {
+    if (overviewEl) overviewEl.style.display = 'block'
+    if (ventureEl)  ventureEl.style.display  = 'none'
+    if (productSelector) productSelector.style.display = 'none'
+    if (sectionTitle) sectionTitle.textContent = 'Portfolio Overview'
+    // Style sub-nav buttons
+    if (subnavOverview) { subnavOverview.style.color = '#ffffff'; subnavOverview.style.borderLeftColor = '#002fbb'; subnavOverview.style.background = 'rgba(255,255,255,0.04)' }
+    if (subnavVenture)  { subnavVenture.style.color  = '#94a3b8'; subnavVenture.style.borderLeftColor  = 'transparent'; subnavVenture.style.background = 'none' }
+  } else {
+    if (overviewEl) overviewEl.style.display = 'none'
+    if (ventureEl)  ventureEl.style.display  = 'block'
+    if (productSelector) productSelector.style.display = 'block'
+    if (sectionTitle) sectionTitle.textContent = 'Venture Performance'
+    if (subnavOverview) { subnavOverview.style.color = '#94a3b8'; subnavOverview.style.borderLeftColor = 'transparent'; subnavOverview.style.background = 'none' }
+    if (subnavVenture)  { subnavVenture.style.color  = '#ffffff'; subnavVenture.style.borderLeftColor  = '#002fbb';    subnavVenture.style.background  = 'rgba(255,255,255,0.04)' }
+    loadVentureMetrics()
+  }
+}
+
+function setVentureProduct(product) {
+  currentVentureProduct = product
+  updateVentureProductHeader(product)
+  loadVentureMetrics()
+}
+
+function updateVentureProductHeader(product) {
+  const meta = VENTURE_META[product]
+  if (!meta) return
+  const nameEl   = document.getElementById('venture-product-name')
+  const descEl   = document.getElementById('venture-product-desc')
+  const iconEl   = document.getElementById('venture-product-icon')
+  if (nameEl) nameEl.textContent = product
+  if (descEl) descEl.textContent = meta.desc
+  if (iconEl) {
+    iconEl.style.background = meta.color + '18'
+    iconEl.innerHTML = `<span class="material-symbols-outlined" style="color: ${meta.color}; font-size: 22px;">${meta.icon}</span>`
+  }
+}
+
+async function loadVentureMetrics() {
+  const meta = VENTURE_META[currentVentureProduct]
+  if (!meta) return
+  try {
+    const resp = await fetch('/api/metrics?period=' + currentBizPeriod)
+    const data = await resp.json()
+    const d = data.productMRR?.[currentVentureProduct] || { mrr: 0, growth: null, newCustomers: 0, convRate: null }
+    const accounts = data.productAccountCounts?.[currentVentureProduct] ?? null
+    // Stat cards
+    const mrrEl = document.getElementById('venture-mrr-value')
+    if (mrrEl) mrrEl.textContent = d.mrr > 0 ? '$' + d.mrr.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—'
+    const acctEl = document.getElementById('venture-accounts-value')
+    if (acctEl) acctEl.textContent = accounts != null ? accounts.toLocaleString() : '—'
+    const newEl = document.getElementById('venture-new-customers-value')
+    if (newEl) newEl.textContent = d.newCustomers != null ? '+' + d.newCustomers : '—'
+    const paidEl = document.getElementById('venture-paid-accounts-value')
+    const paidCount = data.productBreakdown?.[currentVentureProduct] ?? null
+    if (paidEl) paidEl.textContent = paidCount != null ? paidCount : '—'
+    // Conv rate gauge
+    const convEl = document.getElementById('venture-conv-rate-value')
+    const convRate = d.convRate
+    if (convEl) convEl.textContent = convRate != null ? convRate + '%' : '—'
+    // Update SVG circle
+    if (convRate != null) {
+      const circle = document.getElementById('venture-conv-circle')
+      if (circle) {
+        const circumference = 314
+        const offset = circumference - (convRate / 100) * circumference
+        circle.setAttribute('stroke-dashoffset', Math.max(0, offset))
+      }
+    }
+  } catch (e) {
+    console.warn('venture metrics error:', e)
+  }
+  loadVentureGrowthChart(meta.slug)
+  loadVentureAccountsTable(meta.slug)
+}
+
+async function loadVentureGrowthChart(slug) {
+  const chartEl = document.getElementById('venture-growth-chart')
+  if (!chartEl) return
+  try {
+    const resp = await fetch('/api/weekly-usage?product=' + slug)
+    const json = await resp.json()
+    const snapshots = json.data || []
+    if (snapshots.length === 0) {
+      chartEl.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #8b9bb4; font-size: 13px;">No weekly data available yet</div>'
+      return
+    }
+    const maxHours = Math.max(...snapshots.map(s => s.total_hours || 0), 1)
+    chartEl.innerHTML = snapshots.map((s) => {
+      const totalPct = Math.round(((s.total_hours || 0) / maxHours) * 100)
+      const paidPct  = Math.round(((s.paid_hours  || 0) / maxHours) * 100)
+      const freePct  = Math.round(((s.free_hours  || 0) / maxHours) * 100)
+      const trialPct = Math.round(((s.trial_hours || 0) / maxHours) * 100)
+      const label = s.week_start ? s.week_start.slice(5, 10) : ''
+      return `<div style="flex: 1; min-width:0; display: flex; flex-direction: column; align-items: center; gap: 2px;" title="Week of ${s.week_start}: ${(s.total_hours||0).toFixed(1)}h total">
+        <div style="width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 1px;">
+          <div style="width: 55%; background: #002fbb; height: ${totalPct}%; min-height: 2px; border-radius: 3px 3px 0 0; transition: height 0.4s ease;"></div>
+        </div>
+        <div style="font-size: 9px; color: #8b9bb4; font-weight: 600; white-space: nowrap;">${label}</div>
+      </div>`
+    }).join('')
+    chartEl.style.display = 'flex'
+    chartEl.style.alignItems = 'flex-end'
+    chartEl.style.gap = '4px'
+  } catch (e) {
+    console.warn('venture growth chart error:', e)
+  }
+}
+
+async function loadVentureAccountsTable(slug) {
+  const tbody = document.getElementById('venture-accounts-table-body')
+  const countEl = document.getElementById('venture-accounts-count')
+  if (!tbody) return
+  tbody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: #8b9bb4; font-size: 13px;">Loading...</td></tr>'
+  try {
+    const resp = await fetch('/api/product-accounts?product=' + slug)
+    const json = await resp.json()
+    const accounts = json.accounts || []
+    _ventureAllAccounts = accounts
+    if (countEl) countEl.textContent = 'Showing ' + accounts.length + ' account' + (accounts.length !== 1 ? 's' : '')
+    renderVentureAccountRows(accounts)
+  } catch (e) {
+    console.warn('venture accounts table error:', e)
+    tbody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: #ef4444; font-size: 13px;">Failed to load accounts</td></tr>'
+  }
+}
+
+function renderVentureAccountRows(accounts) {
+  const tbody = document.getElementById('venture-accounts-table-body')
+  if (!tbody) return
+  if (accounts.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: #8b9bb4; font-size: 13px;">No accounts found</td></tr>'
+    return
+  }
+  tbody.innerHTML = accounts.map((a, i) => {
+    const rowBg = i % 2 === 1 ? 'background: rgba(239,244,255,0.4);' : ''
+    const tier = a.subscription_tier || 'Free'
+    const tierColor = tier === 'Paid' ? '#16a34a' : tier === 'Trial' ? '#92400e' : (tier === 'Blocked' || tier === 'Cancelled') ? '#dc2626' : '#8b9bb4'
+    const tierBg    = tier === 'Paid' ? '#dcfce7' : tier === 'Trial' ? '#fef9c3' : (tier === 'Blocked' || tier === 'Cancelled') ? '#fee2e2' : '#f1f5f9'
+    const created = a.created_at ? new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
+    const rowRestore = i % 2 === 1 ? 'rgba(239,244,255,0.4)' : 'transparent'
+    return `<tr style="${rowBg}" onmouseover="this.style.background='#f8f9ff'" onmouseout="this.style.background='${rowRestore}'">
+      <td style="padding: 16px 24px; font-size: 13px; font-weight: 600; color: #0b1c30;">${a.name || '—'}</td>
+      <td style="padding: 16px 24px; text-align: right; font-size: 13px; color: #0b1c30;">${a.users != null ? a.users : '—'}</td>
+      <td style="padding: 16px 24px; text-align: right; font-size: 13px; color: #0b1c30;">${a.teams != null ? a.teams : '—'}</td>
+      <td style="padding: 16px 24px; text-align: center;"><span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: ${tierBg}; color: ${tierColor};">${tier}</span></td>
+      <td style="padding: 16px 24px; text-align: center; font-size: 12px; color: #454652;">${created}</td>
+      <td style="padding: 16px 24px; text-align: right; font-size: 13px; color: #0b1c30;">${a.usage_7d != null ? a.usage_7d.toFixed(1) + 'h' : '—'}</td>
+    </tr>`
+  }).join('')
+}
+
+function filterVentureAccountsTable(query) {
+  const q = query.toLowerCase().trim()
+  if (!q) {
+    renderVentureAccountRows(_ventureAllAccounts)
+    return
+  }
+  const filtered = _ventureAllAccounts.filter(a => (a.name || '').toLowerCase().includes(q))
+  renderVentureAccountRows(filtered)
+}
 function toggleSidebar() {
   var sidebar = document.getElementById('sidebar');
   var overlay = document.getElementById('sidebar-overlay');
@@ -2548,18 +2762,29 @@ function closeSidebar() {
   <div style="padding: 32px; display: flex; flex-direction: column; gap: 24px; font-family: 'Inter', sans-serif; background-color: #f8f9ff; min-height: 100vh;">
     
     <!-- Portfolio Overview Header -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-      <h2 style="font-size: 22px; font-weight: 800; color: #213145; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.01em;">Portfolio Overview</h2>
-      <nav style="display: flex; gap: 2px; align-items: center; background: #eff4ff; border-radius: 8px; padding: 4px;" id="biz-period-nav">
-        <button onclick="setBizPeriod('day')" data-period="day" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Day</button>
-        <button onclick="setBizPeriod('7d')" data-period="7d" style="padding: 6px 12px; border-radius: 6px; border: none; background: #ffffff; font-size: 11px; font-weight: 700; color: #002fbb; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 150ms;">7D</button>
-        <button onclick="setBizPeriod('14d')" data-period="14d" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">14D</button>
-        <button onclick="setBizPeriod('30d')" data-period="30d" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">30D</button>
-        <button onclick="setBizPeriod('month')" data-period="month" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Month</button>
-        <button onclick="setBizPeriod('quarter')" data-period="quarter" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Quarter</button>
-        <button onclick="setBizPeriod('semester')" data-period="semester" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Semester</button>
-        <button onclick="setBizPeriod('year')" data-period="year" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Year</button>
-      </nav>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
+      <h2 id="biz-section-title" style="font-size: 22px; font-weight: 800; color: #213145; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.01em;">Portfolio Overview</h2>
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <!-- Product dropdown — only shown on Venture Performance subtab -->
+        <div id="venture-product-selector" style="display: none;">
+          <select id="venture-product-select" onchange="setVentureProduct(this.value)" style="padding: 6px 32px 6px 12px; border-radius: 8px; border: 1.5px solid #dce9ff; background: #ffffff; font-size: 12px; font-weight: 700; color: #0b1c30; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; appearance: none; -webkit-appearance: none; background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23454652' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 10px center; outline: none;">
+            <option value="Zentrix OS">Zentrix OS</option>
+            <option value="Zentrix Insights">Zentrix Insights</option>
+            <option value="Zentrix CRM">Zentrix CRM</option>
+            <option value="Zentrix Agents">Zentrix Agents</option>
+          </select>
+        </div>
+        <nav style="display: flex; gap: 2px; align-items: center; background: #eff4ff; border-radius: 8px; padding: 4px;" id="biz-period-nav">
+          <button onclick="setBizPeriod('day')" data-period="day" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Day</button>
+          <button onclick="setBizPeriod('7d')" data-period="7d" style="padding: 6px 12px; border-radius: 6px; border: none; background: #ffffff; font-size: 11px; font-weight: 700; color: #002fbb; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 150ms;">7D</button>
+          <button onclick="setBizPeriod('14d')" data-period="14d" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">14D</button>
+          <button onclick="setBizPeriod('30d')" data-period="30d" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">30D</button>
+          <button onclick="setBizPeriod('month')" data-period="month" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Month</button>
+          <button onclick="setBizPeriod('quarter')" data-period="quarter" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Quarter</button>
+          <button onclick="setBizPeriod('semester')" data-period="semester" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Semester</button>
+          <button onclick="setBizPeriod('year')" data-period="year" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Year</button>
+        </nav>
+      </div>
     </div>
 
     <!-- Hero Stats Grid -->
@@ -2709,6 +2934,237 @@ function closeSidebar() {
       </div>
       <div style="padding: 16px 32px; border-top: 1px solid #e5eeff; display: flex; align-items: center; justify-content: space-between;">
         <p style="font-size: 11px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em;">Showing all products</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────────
+     Venture Performance View  (#biz-venture-view)
+     Lives inside #biz-metrics-view wrapper; toggled by showBizSubtab()
+────────────────────────────────────────────────────────────────────────── -->
+<div id="biz-venture-view" style="display:none; flex-direction:column; background:#f8f9ff; min-height:100vh; overflow-y:auto;">
+  <div style="padding: 32px; display: flex; flex-direction: column; gap: 24px; font-family: 'Inter', sans-serif; background-color: #f8f9ff; min-height: 100vh;">
+
+    <!-- A. Product Header -->
+    <div id="venture-product-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div id="venture-product-icon" style="width: 40px; height: 40px; background: rgba(0,47,187,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+          <span class="material-symbols-outlined" style="color: #002fbb; font-size: 22px;">computer</span>
+        </div>
+        <div>
+          <h2 id="venture-product-name" style="font-size: 24px; font-weight: 800; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif;">Zentrix OS</h2>
+          <p id="venture-product-desc" style="font-size: 13px; color: #454652;">Business Operating System</p>
+        </div>
+      </div>
+      <span id="venture-product-status-badge" style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 12px; border-radius: 999px; background: #dcfce7; color: #16a34a;">Active</span>
+    </div>
+
+    <!-- B. 4 Stat Cards -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;">
+
+      <!-- Total MRR -->
+      <div style="background: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+          <span style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">Total MRR</span>
+          <span style="display: flex; align-items: center; color: #454652; font-size: 12px; font-weight: 700; background: #e5eeff; padding: 4px 8px; border-radius: 4px;">
+            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">trending_up</span>Product
+          </span>
+        </div>
+        <h3 id="venture-mrr-value" style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;">—</h3>
+        <p style="color: #454652; font-size: 14px;">This product</p>
+      </div>
+
+      <!-- Total Accounts -->
+      <div style="background: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+          <span style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">Total Accounts</span>
+          <span style="display: flex; align-items: center; color: #454652; font-size: 12px; font-weight: 700; background: #e5eeff; padding: 4px 8px; border-radius: 4px;">
+            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">people</span>All
+          </span>
+        </div>
+        <h3 id="venture-accounts-value" style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;">—</h3>
+        <p style="color: #454652; font-size: 14px;">Registered companies</p>
+      </div>
+
+      <!-- New Paying Customers -->
+      <div style="background: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+          <span style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">New Paying Customers</span>
+          <span style="display: flex; align-items: center; color: #454652; font-size: 12px; font-weight: 700; background: #e5eeff; padding: 4px 8px; border-radius: 4px;">
+            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">person_add</span>New
+          </span>
+        </div>
+        <h3 id="venture-new-customers-value" style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;">—</h3>
+        <p style="color: #454652; font-size: 14px;">Selected period</p>
+      </div>
+
+      <!-- Total Paid Accounts -->
+      <div style="background: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+          <span style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">Total Paid Accounts</span>
+          <span style="display: flex; align-items: center; color: #454652; font-size: 12px; font-weight: 700; background: #e5eeff; padding: 4px 8px; border-radius: 4px;">
+            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">credit_card</span>Stripe
+          </span>
+        </div>
+        <h3 id="venture-paid-accounts-value" style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;">—</h3>
+        <p style="color: #454652; font-size: 14px;">Paying customers</p>
+      </div>
+
+    </div>
+
+    <!-- C. Growth in Hours Chart -->
+    <div style="background: #eff4ff; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+        <div>
+          <h4 style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">Weekly Platform Usage</h4>
+          <h3 style="font-size: 18px; font-weight: 700; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif;">Growth in Hours</h3>
+          <p style="font-size: 12px; color: #454652; margin-top: 4px;">Week-over-week platform usage hours</p>
+        </div>
+        <!-- Legend -->
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #002fbb;"></div>
+            <span style="font-size: 11px; font-weight: 500; color: #454652;">Total</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #bac3ff;"></div>
+            <span style="font-size: 11px; font-weight: 500; color: #454652;">Paid</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #4edea3;"></div>
+            <span style="font-size: 11px; font-weight: 500; color: #454652;">Free</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #545f73;"></div>
+            <span style="font-size: 11px; font-weight: 500; color: #454652;">Trial</span>
+          </div>
+        </div>
+      </div>
+      <div id="venture-growth-chart" style="position: relative; height: 280px; overflow: hidden;">
+        <!-- filled by JS -->
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #8b9bb4; font-size: 13px;">Loading chart...</div>
+      </div>
+    </div>
+
+    <!-- D. Conversion Funnel Section -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+
+      <!-- Left: Circular gauge + funnel steps -->
+      <div style="background: #ffffff; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 24px;">
+        <div>
+          <h4 style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">Conversion Funnel</h4>
+          <h3 style="font-size: 18px; font-weight: 700; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif;">Trial to Paid</h3>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 32px;">
+          <!-- Circular Gauge -->
+          <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="position: relative; width: 120px; height: 120px;">
+              <svg width="120" height="120" viewBox="0 0 120 120" style="transform: rotate(-90deg);">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#eff4ff" stroke-width="12"/>
+                <circle id="venture-conv-circle" cx="60" cy="60" r="50" fill="none" stroke="#002fbb" stroke-width="12"
+                  stroke-dasharray="314" stroke-dashoffset="251" stroke-linecap="round"
+                  style="transition: stroke-dashoffset 0.8s ease;"/>
+              </svg>
+              <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <span id="venture-conv-rate-value" style="font-size: 22px; font-weight: 800; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif;">—</span>
+                <span style="font-size: 9px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.06em;">Conv Rate</span>
+              </div>
+            </div>
+          </div>
+          <!-- Funnel Steps -->
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 700; color: #0b1c30;">Trials Started</span>
+                <span style="font-size: 12px; font-weight: 700; color: #002fbb;">—</span>
+              </div>
+              <div style="width: 100%; background: #eff4ff; height: 6px; border-radius: 999px; overflow: hidden;">
+                <div style="background: #002fbb; height: 100%; width: 100%; border-radius: 999px;"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 700; color: #0b1c30;">Active Engagement</span>
+                <span style="font-size: 12px; font-weight: 700; color: #002fbb;">—</span>
+              </div>
+              <div style="width: 100%; background: #eff4ff; height: 6px; border-radius: 999px; overflow: hidden;">
+                <div style="background: #bac3ff; height: 100%; width: 60%; border-radius: 999px;"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 700; color: #0b1c30;">Payment Method Added</span>
+                <span style="font-size: 12px; font-weight: 700; color: #002fbb;">—</span>
+              </div>
+              <div style="width: 100%; background: #eff4ff; height: 6px; border-radius: 999px; overflow: hidden;">
+                <div style="background: #4edea3; height: 100%; width: 25%; border-radius: 999px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: 3 small cards -->
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+
+        <!-- Avg. Time to Paid -->
+        <div style="background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex: 1;">
+          <p style="font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Avg. Time to Paid</p>
+          <p style="font-size: 28px; font-weight: 800; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif;">—</p>
+          <p style="font-size: 11px; color: #8b9bb4; margin-top: 4px;">Days from trial start</p>
+        </div>
+
+        <!-- Expansion Revenue -->
+        <div style="background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex: 1;">
+          <p style="font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Expansion Revenue</p>
+          <p style="font-size: 28px; font-weight: 800; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif;">—</p>
+          <p style="font-size: 11px; color: #8b9bb4; margin-top: 4px;">Upsells &amp; upgrades</p>
+        </div>
+
+        <!-- Insight Alpha callout -->
+        <div style="background: #213145; border-radius: 12px; padding: 24px; flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span class="material-symbols-outlined" style="color: #bac3ff; font-size: 18px;">lightbulb</span>
+            <p style="font-size: 10px; font-weight: 700; color: #bac3ff; text-transform: uppercase; letter-spacing: 0.1em;">Insight Alpha</p>
+          </div>
+          <p style="font-size: 12px; color: #e2e8f0; line-height: 1.6;">Conversion data will populate as trials mature. Check back after 30+ days of activity.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- E. Company / Accounts Table -->
+    <div style="background: #ffffff; border-radius: 12px; box-shadow: 0 20px 40px rgba(11,28,48,0.06); overflow: hidden;">
+      <div style="padding: 24px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5eeff;">
+        <div>
+          <h2 style="font-size: 16px; font-weight: 700; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; margin-bottom: 4px;">Accounts</h2>
+          <p style="font-size: 12px; color: #454652;">Companies using this product.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <input id="venture-accounts-search" type="text" placeholder="Search accounts..." oninput="filterVentureAccountsTable(this.value)" style="padding: 8px 14px; border: 1.5px solid #dce9ff; border-radius: 8px; font-size: 12px; color: #0b1c30; background: #f8f9ff; outline: none; width: 220px;" />
+        </div>
+      </div>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="background: #eff4ff;">
+              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em;">Company</th>
+              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: right;">Users</th>
+              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: right;">Teams</th>
+              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Subscription</th>
+              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Created</th>
+              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: right;">Usage (7d hrs)</th>
+            </tr>
+          </thead>
+          <tbody id="venture-accounts-table-body">
+            <tr><td colspan="6" style="padding: 24px; text-align: center; color: #8b9bb4; font-size: 13px;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="padding: 16px 32px; border-top: 1px solid #e5eeff; display: flex; align-items: center; justify-content: space-between;">
+        <p id="venture-accounts-count" style="font-size: 11px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em;">Loading...</p>
       </div>
     </div>
 
