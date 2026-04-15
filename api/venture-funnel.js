@@ -49,15 +49,14 @@ export default async function handler(req, res) {
 
   try {
     // ── 1. Avg time to paid ──────────────────────────────────────────────────
-    // Fetch ALL paid company_subscriptions (subscribed=true) with created_at
-    // We treat company_subscriptions.created_at as when the company first joined (trial start)
-    // and we find the first time subscribed flipped to true via subscription_updated_at or
-    // simply the row's created_at for paid rows vs the company's earliest subscription row.
-    // Best available: fetch companies that have BOTH a trial row (oldest) and a paid row,
-    // compute diff between company created_at and subscription created_at where subscribed=true.
+    // Schema: one row per company in company_subscriptions.
+    // When a company converts from trial→paid, the SAME ROW is updated:
+    //   subscribed flips true, updated_at = conversion timestamp.
+    // So: avgTimeToPaid = mean( (updated_at - created_at) in days ) for subscribed=true rows
+    //   where the diff is > 0 (i.e. they were on trial before converting)
     let avgTimeToPaid = null
     const paidResp = await fetch(
-      `${SUPABASE_URL}/rest/v1/company_subscriptions?select=company_id,created_at,subscribed,subscription_updated_at&subscribed=eq.true&order=created_at.asc&limit=500`,
+      `${SUPABASE_URL}/rest/v1/company_subscriptions?select=created_at,updated_at&subscribed=eq.true&limit=500`,
       {
         headers: {
           'apikey': SUPABASE_SERVICE_ROLE_KEY,
@@ -68,76 +67,51 @@ export default async function handler(req, res) {
     )
     if (paidResp.ok) {
       const paidRows = await paidResp.json()
-      if (paidRows.length > 0) {
-        // Also fetch company created_at to get trial start date
-        const companyIds = paidRows.map(r => r.company_id).filter(Boolean)
-        // Fetch in one shot using 'in' filter (up to 100 IDs)
-        const idList = companyIds.slice(0, 100).map(id => `"${id}"`).join(',')
-        const coResp = await fetch(
-          `${SUPABASE_URL}/rest/v1/companies?select=id,created_at&id=in.(${idList})`,
-          {
-            headers: {
-              'apikey': SUPABASE_SERVICE_ROLE_KEY,
-              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        )
-        if (coResp.ok) {
-          const companies = await coResp.json()
-          const companyMap = {}
-          companies.forEach(c => { companyMap[c.id] = c.created_at })
-
-          const diffs = []
-          paidRows.forEach(row => {
-            const trialStart = companyMap[row.company_id]
-            // Use subscription_updated_at (when they converted) if available, else row created_at
-            const paidAt = row.subscription_updated_at || row.created_at
-            if (trialStart && paidAt) {
-              const diffDays = (new Date(paidAt) - new Date(trialStart)) / 86400000
-              if (diffDays >= 0 && diffDays < 3650) diffs.push(diffDays) // sanity cap 10yr
-            }
-          })
-          if (diffs.length > 0) {
-            avgTimeToPaid = Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length)
-          }
-        }
+      const diffs = []
+      paidRows.forEach(row => {
+        if (!row.created_at || !row.updated_at) return
+        const diffDays = (new Date(row.updated_at) - new Date(row.created_at)) / 86400000
+        // Only count meaningful conversions: > 0 days and < 730 days (2yr sanity cap)
+        if (diffDays > 0.5 && diffDays < 730) diffs.push(diffDays)
+      })
+      if (diffs.length > 0) {
+        avgTimeToPaid = Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length)
       }
     }
 
-    // ── 2. New trials in period ──────────────────────────────────────────────
-    // Count company_subscriptions where created_at >= periodStart (regardless of subscribed status)
-    // This represents companies that signed up / started trial in the selected window
+    // ── 2. New signups (trials) in period ───────────────────────────────────
+    // Count ALL new company_subscriptions rows created in period.
+    // subscribed=false = still on trial; subscribed=true = came in as direct paid.
+    // We report total new signups (both) as "new leads" for the period.
     const trialsResp = await fetch(
-      `${SUPABASE_URL}/rest/v1/company_subscriptions?select=company_id&created_at=gte.${encodeURIComponent(periodStartIso)}&limit=1000`,
+      `${SUPABASE_URL}/rest/v1/company_subscriptions?select=company_id&created_at=gte.${encodeURIComponent(periodStartIso)}`,
       {
-        method: 'GET',
         headers: {
           'apikey': SUPABASE_SERVICE_ROLE_KEY,
           'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
           'Content-Type': 'application/json',
-          'Prefer': 'count=exact'
+          'Prefer': 'count=exact',
+          'Range': '0-0'
         }
       }
     )
     let newTrials = 0
-    if (trialsResp.ok) {
+    if (trialsResp.ok || trialsResp.status === 206) {
       const contentRange = trialsResp.headers.get('content-range')
       if (contentRange) {
         const match = contentRange.match(/\/(\d+)$/)
         if (match) newTrials = parseInt(match[1], 10)
-      } else {
-        const rows = await trialsResp.json()
-        newTrials = Array.isArray(rows) ? rows.length : 0
       }
     }
 
     // ── 3. Potential MRR ────────────────────────────────────────────────────
-    // Fetch all trial companies (subscribed=false) with their user_count
-    // potentialMrr = sum(user_count * pricePerSeat) for all trials + current MRR
+    // Fetch all trial (subscribed=false) companies with user_count + base_price_per_user
+    // potentialMrr = sum(max(user_count,1) * base_price_per_user) for all trials
+    // Frontend adds current MRR to get total potential
     let potentialMrr = null
+    let trialCount = 0
     const trialCompResp = await fetch(
-      `${SUPABASE_URL}/rest/v1/company_subscriptions?select=user_count,subscribed&subscribed=eq.false&limit=500`,
+      `${SUPABASE_URL}/rest/v1/company_subscriptions?select=user_count,base_price_per_user&subscribed=eq.false&limit=500`,
       {
         headers: {
           'apikey': SUPABASE_SERVICE_ROLE_KEY,
@@ -148,19 +122,21 @@ export default async function handler(req, res) {
     )
     if (trialCompResp.ok) {
       const trialComps = await trialCompResp.json()
+      trialCount = trialComps.length
       if (trialComps.length > 0) {
-        const trialRevPotential = trialComps.reduce((sum, c) => {
-          const seats = c.user_count || 1
-          return sum + (seats * pricePerSeat)
+        potentialMrr = trialComps.reduce((sum, c) => {
+          const seats = Math.max(c.user_count || 0, 1)
+          const price = c.base_price_per_user || pricePerSeat
+          return sum + (seats * price)
         }, 0)
-        potentialMrr = trialRevPotential // caller will add current MRR
       }
     }
 
     return res.json({
       avgTimeToPaid,
       newTrials,
-      potentialMrr,  // just the trial portion; add to current MRR on frontend
+      potentialMrr,   // trial portion only — frontend adds current MRR
+      trialCount,     // total companies currently on trial
       product,
       period
     })
