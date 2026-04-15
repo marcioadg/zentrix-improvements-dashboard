@@ -398,9 +398,61 @@
     .stat .val { font-size: 18px; }
     .filter-btn { font-size: 11px; padding: 4px 8px; }
   }
+
+  /* ── Sidebar navigation ── */
+  .app-shell { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 200px; flex-shrink: 0; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100; transition: transform 200ms ease; }
+  .sidebar-brand { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .sidebar-brand .brand { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .sidebar-nav { padding: 8px 8px; flex: 1; overflow-y: auto; }
+  .sidebar-nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-secondary); background: none; border: none; width: 100%; text-align: left; transition: background 150ms ease, color 150ms ease; }
+  .sidebar-nav-item:hover { background: var(--hover); color: var(--text-primary); }
+  .sidebar-nav-item.active { background: var(--accent-bg); color: var(--accent); }
+  .sidebar-nav-item.active:hover { background: var(--accent-bg-hover); }
+  .sidebar-nav-item svg { flex-shrink: 0; opacity: 0.8; }
+  .sidebar-nav-item.active svg { opacity: 1; }
+  .sidebar-nav-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .main-content { margin-left: 200px; flex: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; min-width: 0; }
+  /* Sidebar overlay for mobile */
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+  .sidebar-overlay.visible { display: block; }
+  /* Hamburger button for mobile */
+  .sidebar-toggle { display: none; background: none; border: none; border-radius: 5px; cursor: pointer; padding: 0; width: 30px; height: 30px; align-items: center; justify-content: center; color: var(--text-muted); transition: color 120ms, background 120ms; }
+  .sidebar-toggle:hover { color: var(--text-primary); background: var(--hover); }
+  /* Business metrics placeholder */
+  #biz-metrics-view { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 52px); padding: 48px 24px; text-align: center; }
+  #biz-metrics-view .biz-icon { width: 48px; height: 48px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-raised); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  #biz-metrics-view h2 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+  #biz-metrics-view p { font-size: 13px; color: var(--text-muted); max-width: 280px; line-height: 1.6; }
+  /* Mobile responsive adjustments for sidebar */
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0; }
+    .sidebar-toggle { display: flex; }
+  }
 </style>
 </head>
 <body>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+<nav class="sidebar" id="sidebar" aria-label="Main navigation">
+  <div class="sidebar-brand">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 0.5L14.5 4.25V11.75L8 15.5L1.5 11.75V4.25L8 0.5Z" fill="var(--accent)" opacity="0.9"/></svg>
+    <span class="brand">Zentrix</span>
+  </div>
+  <div class="sidebar-nav">
+    <button class="sidebar-nav-item active" id="nav-dev" onclick="switchPage('dev')" aria-current="page">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      AI Dev Dashboard
+    </button>
+    <button class="sidebar-nav-item" id="nav-biz" onclick="switchPage('biz')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Business Metrics
+    </button>
+  </div>
+</nav>
+<div class="main-content" id="main-content">
+<div id="dev-dashboard-content">
 <header>
   <h1>
     <svg class="logo-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -409,6 +461,9 @@
     <span class="brand">Zentrix</span><span class="brand-sub">&nbsp;Dashboard</span>
   </h1>
   <div class="header-controls" style="margin-left:auto">
+    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle navigation" title="Toggle navigation">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <span class="meta" id="last-updated" style="display:none">Loading...</span>
     <div class="view-toggle">
       <!-- List -->
@@ -485,6 +540,7 @@
   </div>
   <div id="agents-content"></div>
 </div>
+</div><!-- /#dev-dashboard-content -->
 
 <script>
 // Polyfill CanvasRenderingContext2D.roundRect for older browsers (Safari <16, Chrome <99)
@@ -2142,6 +2198,53 @@ async function saveAgentsData() {
     showToast('⚠ Saved locally — server unavailable');
   }
 }
+
+// ── Sidebar navigation ──
+function switchPage(page) {
+  var devContent = document.getElementById('dev-dashboard-content');
+  var bizContent = document.getElementById('biz-metrics-view');
+  var navDev = document.getElementById('nav-dev');
+  var navBiz = document.getElementById('nav-biz');
+  if (page === 'dev') {
+    devContent.style.display = '';
+    bizContent.style.display = 'none';
+    navDev.classList.add('active');
+    navDev.setAttribute('aria-current', 'page');
+    navBiz.classList.remove('active');
+    navBiz.removeAttribute('aria-current');
+  } else {
+    devContent.style.display = 'none';
+    bizContent.style.display = 'flex';
+    navBiz.classList.add('active');
+    navBiz.setAttribute('aria-current', 'page');
+    navDev.classList.remove('active');
+    navDev.removeAttribute('aria-current');
+  }
+  // close sidebar on mobile after navigation
+  if (window.innerWidth <= 768) closeSidebar();
+}
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('visible');
+}
+function closeSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('visible');
+}
+
 </script>
+<div id="biz-metrics-view" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; padding:48px 24px; text-align:center;">
+  <div style="width:48px;height:48px;border:1px solid var(--border);border-radius:10px;background:var(--surface-raised);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+  </div>
+  <h2 style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">Business Metrics</h2>
+  <p style="font-size:13px;color:var(--text-muted);max-width:280px;line-height:1.6;">Coming soon — business metrics and KPIs will appear here.</p>
+</div>
+</div><!-- /.main-content -->
+
 </body>
 </html>
