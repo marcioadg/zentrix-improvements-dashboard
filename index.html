@@ -2253,9 +2253,12 @@ function switchPage(page) {
   if (window.innerWidth <= 768) closeSidebar();
 }
 // ── Portfolio Metrics ──────────────────────────────────────────────────────────────
-async function loadBizMetrics() {
+let currentBizPeriod = '7d'
+
+async function loadBizMetrics(period) {
+  if (period) currentBizPeriod = period
   try {
-    const res = await fetch('/api/metrics')
+    const res = await fetch('/api/metrics?period=' + currentBizPeriod)
     if (!res.ok) throw new Error('metrics fetch failed')
     const data = await res.json()
 
@@ -2266,19 +2269,12 @@ async function loadBizMetrics() {
       if (data.totalAccounts != null) {
         accountsEl.textContent = data.totalAccounts.toLocaleString()
         if (accountsLabel) {
-          const ventures = data.ventures || []
-          accountsLabel.textContent = `Across ${data.ventureCount || ventures.length} active product${(data.ventureCount || ventures.length) !== 1 ? 's' : ''}`
+          accountsLabel.textContent = 'Across ' + (data.ventureCount || 3) + ' active products'
         }
       } else {
         accountsEl.textContent = '—'
         if (accountsLabel) accountsLabel.textContent = 'Awaiting service key'
       }
-    }
-
-    // Total MRR
-    const mrrEl = document.getElementById('biz-mrr-value')
-    if (mrrEl && data.mrr != null) {
-      mrrEl.textContent = '$' + Math.round(data.mrr).toLocaleString()
     }
 
     // Total Paid Accounts
@@ -2289,7 +2285,27 @@ async function loadBizMetrics() {
         paidEl.textContent = data.totalPaidAccounts.toLocaleString()
         if (paidLabel) paidLabel.textContent = 'Paying customers'
       }
-      // else leave as — / "Awaiting Stripe access"
+    }
+
+    // MRR
+    const mrrEl = document.getElementById('biz-mrr-value')
+    if (mrrEl && data.mrr != null) {
+      mrrEl.textContent = '$' + Math.round(data.mrr).toLocaleString()
+    }
+
+    // New Paying Customers
+    const newEl = document.getElementById('biz-new-customers-value')
+    const newLabel = document.getElementById('biz-new-customers-label')
+    if (newEl) {
+      if (data.newPayingCustomers != null) {
+        newEl.textContent = data.newPayingCustomers.toLocaleString()
+        if (newLabel) {
+          const labels = { day: 'Last 24 hours', '7d': 'Last 7 days', '14d': 'Last 14 days', '30d': 'Last 30 days', month: 'This month', quarter: 'This quarter', semester: 'This semester', year: 'This year' }
+          newLabel.textContent = labels[currentBizPeriod] || 'Selected period'
+        }
+      } else {
+        newEl.textContent = '—'
+      }
     }
 
   } catch (e) {
@@ -2300,6 +2316,27 @@ async function loadBizMetrics() {
     if (accountsLabel) accountsLabel.textContent = 'Service unavailable'
   }
 }
+
+function setBizPeriod(period) {
+  currentBizPeriod = period
+  // Update active button styles
+  const nav = document.getElementById('biz-period-nav')
+  if (nav) {
+    nav.querySelectorAll('button').forEach(btn => {
+      if (btn.dataset.period === period) {
+        btn.style.background = '#ffffff'
+        btn.style.color = '#002fbb'
+        btn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
+      } else {
+        btn.style.background = 'none'
+        btn.style.color = '#454652'
+        btn.style.boxShadow = 'none'
+      }
+    })
+  }
+  loadBizMetrics(period)
+}
+
 loadBizMetrics()
 function toggleSidebar() {
   var sidebar = document.getElementById('sidebar');
@@ -2318,6 +2355,21 @@ function closeSidebar() {
 <div id="biz-metrics-view" style="display:block; flex-direction:column; background:#f8f9ff; min-height:100vh; overflow-y:auto;">
   <div style="padding: 32px; display: flex; flex-direction: column; gap: 24px; font-family: 'Inter', sans-serif; background-color: #f8f9ff; min-height: 100vh;">
     
+    <!-- Portfolio Overview Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+      <h2 style="font-size: 22px; font-weight: 800; color: #213145; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.01em;">Portfolio Overview</h2>
+      <nav style="display: flex; gap: 2px; align-items: center; background: #eff4ff; border-radius: 8px; padding: 4px;" id="biz-period-nav">
+        <button onclick="setBizPeriod('day')" data-period="day" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Day</button>
+        <button onclick="setBizPeriod('7d')" data-period="7d" style="padding: 6px 12px; border-radius: 6px; border: none; background: #ffffff; font-size: 11px; font-weight: 700; color: #002fbb; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 150ms;">7D</button>
+        <button onclick="setBizPeriod('14d')" data-period="14d" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">14D</button>
+        <button onclick="setBizPeriod('30d')" data-period="30d" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">30D</button>
+        <button onclick="setBizPeriod('month')" data-period="month" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Month</button>
+        <button onclick="setBizPeriod('quarter')" data-period="quarter" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Quarter</button>
+        <button onclick="setBizPeriod('semester')" data-period="semester" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Semester</button>
+        <button onclick="setBizPeriod('year')" data-period="year" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Year</button>
+      </nav>
+    </div>
+
     <!-- Hero Stats Grid -->
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;">
       
@@ -2345,16 +2397,16 @@ function closeSidebar() {
         <p style="color: #454652; font-size: 14px;" id="biz-total-accounts-label">Loading...</p>
       </div>
       
-      <!-- New Customers Card -->
+      <!-- New Paying Customers Card -->
       <div style="background: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-          <span style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">New Customers</span>
-          <span style="display: flex; align-items: center; color: #93000a; font-size: 12px; font-weight: 700; background: #ffdad6; padding: 4px 8px; border-radius: 4px;">
-            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">trending_down</span>2.1%
+          <span style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">New Paying Customers</span>
+          <span style="display: flex; align-items: center; color: #454652; font-size: 12px; font-weight: 700; background: #e5eeff; padding: 4px 8px; border-radius: 4px;" id="biz-new-customers-badge">
+            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">person_add</span>New
           </span>
         </div>
-        <h3 style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;">1,402</h3>
-        <p style="color: #454652; font-size: 14px;">This billing cycle</p>
+        <h3 style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;" id="biz-new-customers-value">—</h3>
+        <p style="color: #454652; font-size: 14px;" id="biz-new-customers-label">Last 7 days</p>
       </div>
 
       <!-- Total Paid Accounts Card -->
