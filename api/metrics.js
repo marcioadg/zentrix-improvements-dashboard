@@ -1,0 +1,131 @@
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bprlchkedecbyoaqlbfz.supabase.co'
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
+const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
+
+const ALLOWED_ORIGINS = [
+  'https://zentrix-improvements-dashboard.vercel.app'
+]
+
+export default async function handler(req, res) {
+  const origin = req.headers.origin
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const results = {
+    totalAccounts: null,
+    totalPaidAccounts: null,
+    mrr: null,
+    ventureCount: 3,
+    ventures: ['Business OS', 'Insights', 'CRM'],
+    source: 'partial',
+    lastUpdated: null
+  }
+
+  // ── Supabase: Total Accounts ──
+  try {
+    if (SUPABASE_SERVICE_ROLE_KEY) {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
+        {
+          headers: {
+            'apikey': SUPABASE_SERVICE_ROLE_KEY,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+      if (response.ok) {
+        const data = await response.json()
+        const snapshot = data[0]
+        if (snapshot) {
+          results.totalAccounts = snapshot.total_users
+          results.lastUpdated = snapshot.snapshot_date
+        }
+      } else {
+        console.error('Supabase metrics error:', await response.text())
+      }
+    }
+  } catch (err) {
+    console.error('Supabase metrics error:', err.message)
+  }
+
+  // ── Stripe: MRR + Paid Accounts ──
+  const stripeKeys = [STRIPE_SECRET_KEY, STRIPE_SECRET_KEY_NEW].filter(Boolean)
+
+  if (stripeKeys.length > 0) {
+    let totalMRR = 0
+    const paidCustomers = new Set()
+
+    for (const stripeKey of stripeKeys) {
+      try {
+        let hasMore = true
+        let startingAfter = undefined
+
+        while (hasMore) {
+          const params = new URLSearchParams({ limit: '100', status: 'active' })
+          if (startingAfter) params.append('starting_after', startingAfter)
+
+          const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
+            headers: {
+              'Authorization': `Bearer ${stripeKey}`
+            }
+          })
+
+          if (!response.ok) {
+            console.error('Stripe error:', await response.text())
+            break
+          }
+
+          const data = await response.json()
+
+          for (const sub of data.data) {
+            const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
+            if (customerId) paidCustomers.add(stripeKey.slice(-8) + ':' + customerId)
+
+            for (const item of sub.items.data) {
+              const price = item.price
+              if (!price || !price.unit_amount) continue
+              const quantity = item.quantity || 1
+              const amount = (price.unit_amount / 100) * quantity
+              const interval = price.recurring?.interval
+              if (interval === 'month') {
+                totalMRR += amount
+              } else if (interval === 'year') {
+                totalMRR += amount / 12
+              } else if (interval === 'week') {
+                totalMRR += amount * 4.33
+              }
+            }
+          }
+
+          hasMore = data.has_more
+          if (hasMore && data.data.length > 0) {
+            startingAfter = data.data[data.data.length - 1].id
+          } else {
+            hasMore = false
+          }
+        }
+      } catch (err) {
+        console.error('Stripe key error:', err.message)
+      }
+    }
+
+    results.mrr = Math.round(totalMRR * 100) / 100
+    results.totalPaidAccounts = paidCustomers.size
+    results.source = results.totalAccounts != null ? 'live' : 'partial'
+  }
+
+  res.json(results)
+}
