@@ -116,7 +116,7 @@ app.get('/api/health', (req, res) => {
 // ── Metrics endpoint ──────────────────────────────────────────────────────────
 app.get('/api/metrics', async (req, res) => {
   try {
-    const supabaseUrl = process.env.SUPABASE_URL || 'https://iftqwfqpplcfmxdrmzor.supabase.co'
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://bprlchkedecbyoaqlbfz.supabase.co'
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseServiceKey) {
