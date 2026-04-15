@@ -2309,6 +2309,43 @@ async function loadBizMetrics(period) {
       }
     }
 
+    // Account Growth by Product
+    const breakdownEl = document.getElementById('biz-product-breakdown')
+    const insightTitle = document.getElementById('biz-product-insight-title')
+    const insightText = document.getElementById('biz-product-insight-text')
+
+    if (breakdownEl && data.productBreakdown) {
+      const products = data.productBreakdown
+      const total = Object.values(products).reduce((a, b) => a + b, 0)
+      const colors = { 'Zentrix OS': '#002fbb', 'Zentrix CRM': '#284ad8', 'Zentrix Insights': '#545f73' }
+      const sortedProducts = Object.entries(products).sort((a, b) => b[1] - a[1])
+
+      breakdownEl.innerHTML = sortedProducts.map(([name, count]) => {
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0
+        const color = colors[name] || '#002fbb'
+        const shortName = name.replace('Zentrix ', '')
+        return `<div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #0b1c30;">
+            <span>${shortName}</span><span>${pct}% (${count})</span>
+          </div>
+          <div style="width: 100%; background: #dce9ff; height: 8px; border-radius: 999px; overflow: hidden;">
+            <div style="background: ${color}; height: 100%; width: ${pct}%; transition: width 600ms ease;"></div>
+          </div>
+        </div>`
+      }).join('')
+
+      // Insight: highlight the biggest product
+      if (insightText && sortedProducts.length > 0) {
+        const top = sortedProducts[0]
+        const topPct = total > 0 ? Math.round((top[1] / total) * 100) : 0
+        const topShort = top[0].replace('Zentrix ', '')
+        if (insightTitle) insightTitle.textContent = 'Top Product'
+        insightText.textContent = `${topShort} leads with ${topPct}% of all paid seats across the portfolio.`
+      }
+    } else if (breakdownEl) {
+      breakdownEl.innerHTML = '<div style="color: #454652; font-size: 13px;">No product data available</div>'
+    }
+
   } catch (e) {
     console.warn('Biz metrics load failed:', e)
     const accountsEl = document.getElementById('biz-total-accounts-value')
@@ -2501,49 +2538,19 @@ function closeSidebar() {
         </div>
       </div>
       
-      <!-- Sector Allocation -->
-      <div style="background: #eff4ff; padding: 32px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid rgba(197,197,212,0.1);">
-        <h4 style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px;">Sector Allocation</h4>
-        <div style="display: flex; flex-direction: column; gap: 24px;">
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #0b1c30;">
-              <span>FinTech SaaS</span><span>42%</span>
-            </div>
-            <div style="width: 100%; background: #dce9ff; height: 8px; border-radius: 999px; overflow: hidden;">
-              <div style="background: #002fbb; height: 100%; width: 42%;"></div>
-            </div>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #0b1c30;">
-              <span>Developer Tools</span><span>28%</span>
-            </div>
-            <div style="width: 100%; background: #dce9ff; height: 8px; border-radius: 999px; overflow: hidden;">
-              <div style="background: #284ad8; height: 100%; width: 28%;"></div>
-            </div>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #0b1c30;">
-              <span>EdTech</span><span>18%</span>
-            </div>
-            <div style="width: 100%; background: #dce9ff; height: 8px; border-radius: 999px; overflow: hidden;">
-              <div style="background: #545f73; height: 100%; width: 18%;"></div>
-            </div>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #0b1c30;">
-              <span>Infrastructure</span><span>12%</span>
-            </div>
-            <div style="width: 100%; background: #dce9ff; height: 8px; border-radius: 999px; overflow: hidden;">
-              <div style="background: #bcc7de; height: 100%; width: 12%;"></div>
-            </div>
-          </div>
+      <!-- Account Growth by Product -->
+      <div style="background: #eff4ff; padding: 32px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid rgba(197,197,212,0.1); display: flex; flex-direction: column;">
+        <h4 style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px;">Account Growth by Product</h4>
+        <div style="display: flex; flex-direction: column; gap: 24px;" id="biz-product-breakdown">
+          <!-- injected by JS -->
+          <div style="color: #454652; font-size: 13px;">Loading...</div>
         </div>
-        <div style="margin-top: 48px; padding: 24px; background: #ffffff; border-radius: 8px;">
+        <div style="margin-top: auto; padding-top: 32px; padding: 24px; background: #ffffff; border-radius: 8px; margin-top: 32px;">
           <div style="display: flex; align-items: flex-start; gap: 16px;">
-            <span class="material-symbols-outlined" style="color: #002fbb; font-size: 22px; flex-shrink: 0;">auto_awesome</span>
+            <span class="material-symbols-outlined" style="color: #002fbb; font-size: 22px; flex-shrink: 0;">insights</span>
             <div>
-              <p style="font-size: 12px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Alpha Insight</p>
-              <p style="font-size: 11px; color: #454652; line-height: 1.6;">FinTech sector seeing 2.4x retention vs other verticals this quarter.</p>
+              <p style="font-size: 12px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;" id="biz-product-insight-title">Product Mix</p>
+              <p style="font-size: 11px; color: #454652; line-height: 1.6;" id="biz-product-insight-text">Loading product data...</p>
             </div>
           </div>
         </div>

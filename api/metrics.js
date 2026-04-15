@@ -3,9 +3,13 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
 
-const ALLOWED_ORIGINS = [
-  'https://zentrix-improvements-dashboard.vercel.app'
-]
+const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
+
+const PRODUCT_NAMES = {
+  'prod_UIcJaRWyvLj3hG': 'Zentrix OS',
+  'prod_UIXWsz46FekvcE': 'Zentrix CRM',
+  'prod_UIF93vwI9NzXpI': 'Zentrix Insights'
+}
 
 function getPeriodStart(period) {
   const now = new Date()
@@ -29,7 +33,7 @@ function getPeriodStart(period) {
     case 'year': {
       const d = new Date(now); d.setMonth(0, 1); d.setHours(0,0,0,0); return d
     }
-    default:         return new Date(now - 7*24*60*60*1000)
+    default: return new Date(now - 7*24*60*60*1000)
   }
 }
 
@@ -40,7 +44,6 @@ export default async function handler(req, res) {
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
@@ -53,6 +56,7 @@ export default async function handler(req, res) {
     totalPaidAccounts: null,
     newPayingCustomers: null,
     mrr: null,
+    productBreakdown: null,
     ventureCount: 3,
     ventures: ['Business OS', 'Insights', 'CRM'],
     period,
@@ -88,18 +92,19 @@ export default async function handler(req, res) {
     console.error('Supabase metrics error:', err.message)
   }
 
-  // ── Stripe: MRR + Paid Accounts + New Paying Customers ──
+  // ── Stripe: MRR + Paid Accounts + New Paying Customers + Product Breakdown ──
   const stripeKeys = [STRIPE_SECRET_KEY, STRIPE_SECRET_KEY_NEW].filter(Boolean)
 
   if (stripeKeys.length > 0) {
     let totalMRR = 0
     const paidCustomers = new Set()
     const newCustomers = new Set()
+    const productCounts = {}
 
     for (const stripeKey of stripeKeys) {
       const keyTag = stripeKey.slice(-8)
 
-      // ── All active subscriptions (for MRR + total paid) ──
+      // ── All active subscriptions (MRR + total paid + product breakdown) ──
       try {
         let hasMore = true
         let startingAfter = undefined
@@ -116,13 +121,22 @@ export default async function handler(req, res) {
             if (customerId) paidCustomers.add(keyTag + ':' + customerId)
             for (const item of sub.items.data) {
               const price = item.price
-              if (!price || !price.unit_amount) continue
-              const quantity = item.quantity || 1
-              const amount = (price.unit_amount / 100) * quantity
-              const interval = price.recurring?.interval
-              if (interval === 'month') totalMRR += amount
-              else if (interval === 'year') totalMRR += amount / 12
-              else if (interval === 'week') totalMRR += amount * 4.33
+              if (!price) continue
+              // MRR calculation
+              if (price.unit_amount) {
+                const quantity = item.quantity || 1
+                const amount = (price.unit_amount / 100) * quantity
+                const interval = price.recurring?.interval
+                if (interval === 'month') totalMRR += amount
+                else if (interval === 'year') totalMRR += amount / 12
+                else if (interval === 'week') totalMRR += amount * 4.33
+              }
+              // Product breakdown
+              const productId = price.product
+              if (productId && PRODUCT_NAMES[productId]) {
+                const name = PRODUCT_NAMES[productId]
+                productCounts[name] = (productCounts[name] || 0) + (item.quantity || 1)
+              }
             }
           }
           hasMore = data.has_more
@@ -157,6 +171,7 @@ export default async function handler(req, res) {
     results.mrr = Math.round(totalMRR * 100) / 100
     results.totalPaidAccounts = paidCustomers.size
     results.newPayingCustomers = newCustomers.size
+    results.productBreakdown = Object.keys(productCounts).length > 0 ? productCounts : null
     results.source = results.totalAccounts != null ? 'live' : 'partial'
   }
 
