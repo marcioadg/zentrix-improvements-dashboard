@@ -2232,9 +2232,11 @@ function switchPage(page) {
   var bizContent = document.getElementById('biz-metrics-view');
   var navDev = document.getElementById('nav-dev');
   var navBiz = document.getElementById('nav-biz');
+  var sharedHeader = document.getElementById('biz-shared-header');
   if (page === 'dev') {
     devContent.style.display = '';
     bizContent.style.display = 'none';
+    if (sharedHeader) sharedHeader.style.display = 'none';
     var ventureElDev = document.getElementById('biz-venture-view');
     if (ventureElDev) ventureElDev.style.display = 'none';
     navDev.classList.add('active');
@@ -2249,6 +2251,7 @@ function switchPage(page) {
     navBiz.style.borderLeft = '4px solid transparent';
   } else {
     devContent.style.display = 'none';
+    if (sharedHeader) sharedHeader.style.display = 'block';
     // Show whichever biz subtab was last active
     var ventureEl = document.getElementById('biz-venture-view');
     var productSelector = document.getElementById('venture-product-selector');
@@ -2562,6 +2565,11 @@ async function loadMRRHistory() {
 
 loadBizMetrics()
 loadMRRHistory()
+// Show shared header on initial load (Portfolio Overview is default)
+;(function() {
+  var h = document.getElementById('biz-shared-header')
+  if (h) h.style.display = 'block'
+})()
 
 // ── Venture Performance ────────────────────────────────────────────────────────────
 let currentVentureProduct = 'Zentrix OS'
@@ -2577,6 +2585,7 @@ const VENTURE_META = {
 function showBizSubtab(subtab) {
   const overviewEl = document.getElementById('biz-metrics-view')
   const ventureEl  = document.getElementById('biz-venture-view')
+  const sharedHeader = document.getElementById('biz-shared-header')
   const subnavOverview = document.getElementById('subnav-overview')
   const subnavVenture  = document.getElementById('subnav-venture')
   const productSelector = document.getElementById('venture-product-selector')
@@ -2587,7 +2596,6 @@ function showBizSubtab(subtab) {
     if (ventureEl)  ventureEl.style.display  = 'none'
     if (productSelector) productSelector.style.display = 'none'
     if (sectionTitle) sectionTitle.textContent = 'Portfolio Overview'
-    // Style sub-nav buttons
     if (subnavOverview) { subnavOverview.style.color = '#ffffff'; subnavOverview.style.borderLeftColor = '#002fbb'; subnavOverview.style.background = 'rgba(255,255,255,0.04)' }
     if (subnavVenture)  { subnavVenture.style.color  = '#94a3b8'; subnavVenture.style.borderLeftColor  = 'transparent'; subnavVenture.style.background = 'none' }
   } else {
@@ -2758,34 +2766,36 @@ function closeSidebar() {
 }
 
 </script>
+<!-- Shared Portfolio Header (persists across both subtabs) -->
+<div id="biz-shared-header" style="display:none; background:#f8f9ff; padding: 32px 32px 0 32px; font-family: 'Inter', sans-serif;">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-bottom: 24px; border-bottom: 1px solid #e5eeff;">
+    <h2 id="biz-section-title" style="font-size: 22px; font-weight: 800; color: #213145; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.01em;">Portfolio Overview</h2>
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <!-- Product dropdown — only shown on Venture Performance subtab -->
+      <div id="venture-product-selector" style="display: none;">
+        <select id="venture-product-select" onchange="setVentureProduct(this.value)" style="padding: 8px 36px 8px 14px; border-radius: 8px; border: 1.5px solid #dce9ff; background: #ffffff; font-size: 12px; font-weight: 700; color: #0b1c30; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; appearance: none; -webkit-appearance: none; background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23454652' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; outline: none; min-width: 160px;">
+          <option value="Zentrix OS">Zentrix OS</option>
+          <option value="Zentrix Insights">Zentrix Insights</option>
+          <option value="Zentrix CRM">Zentrix CRM</option>
+          <option value="Zentrix Agents">Zentrix Agents</option>
+        </select>
+      </div>
+      <nav style="display: flex; gap: 2px; align-items: center; background: #eff4ff; border-radius: 8px; padding: 4px;" id="biz-period-nav">
+        <button onclick="setBizPeriod('day')" data-period="day" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Day</button>
+        <button onclick="setBizPeriod('7d')" data-period="7d" style="padding: 6px 12px; border-radius: 6px; border: none; background: #ffffff; font-size: 11px; font-weight: 700; color: #002fbb; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 150ms;">7D</button>
+        <button onclick="setBizPeriod('14d')" data-period="14d" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">14D</button>
+        <button onclick="setBizPeriod('30d')" data-period="30d" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">30D</button>
+        <button onclick="setBizPeriod('month')" data-period="month" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Month</button>
+        <button onclick="setBizPeriod('quarter')" data-period="quarter" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Quarter</button>
+        <button onclick="setBizPeriod('semester')" data-period="semester" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Semester</button>
+        <button onclick="setBizPeriod('year')" data-period="year" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Year</button>
+      </nav>
+    </div>
+  </div>
+</div>
+
 <div id="biz-metrics-view" style="display:block; flex-direction:column; background:#f8f9ff; min-height:100vh; overflow-y:auto;">
   <div style="padding: 32px; display: flex; flex-direction: column; gap: 24px; font-family: 'Inter', sans-serif; background-color: #f8f9ff; min-height: 100vh;">
-    
-    <!-- Portfolio Overview Header -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
-      <h2 id="biz-section-title" style="font-size: 22px; font-weight: 800; color: #213145; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.01em;">Portfolio Overview</h2>
-      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <!-- Product dropdown — only shown on Venture Performance subtab -->
-        <div id="venture-product-selector" style="display: none;">
-          <select id="venture-product-select" onchange="setVentureProduct(this.value)" style="padding: 6px 32px 6px 12px; border-radius: 8px; border: 1.5px solid #dce9ff; background: #ffffff; font-size: 12px; font-weight: 700; color: #0b1c30; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; appearance: none; -webkit-appearance: none; background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23454652' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 10px center; outline: none;">
-            <option value="Zentrix OS">Zentrix OS</option>
-            <option value="Zentrix Insights">Zentrix Insights</option>
-            <option value="Zentrix CRM">Zentrix CRM</option>
-            <option value="Zentrix Agents">Zentrix Agents</option>
-          </select>
-        </div>
-        <nav style="display: flex; gap: 2px; align-items: center; background: #eff4ff; border-radius: 8px; padding: 4px;" id="biz-period-nav">
-          <button onclick="setBizPeriod('day')" data-period="day" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Day</button>
-          <button onclick="setBizPeriod('7d')" data-period="7d" style="padding: 6px 12px; border-radius: 6px; border: none; background: #ffffff; font-size: 11px; font-weight: 700; color: #002fbb; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 150ms;">7D</button>
-          <button onclick="setBizPeriod('14d')" data-period="14d" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">14D</button>
-          <button onclick="setBizPeriod('30d')" data-period="30d" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">30D</button>
-          <button onclick="setBizPeriod('month')" data-period="month" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Month</button>
-          <button onclick="setBizPeriod('quarter')" data-period="quarter" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Quarter</button>
-          <button onclick="setBizPeriod('semester')" data-period="semester" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Semester</button>
-          <button onclick="setBizPeriod('year')" data-period="year" style="padding: 6px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 700; color: #454652; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; transition: all 150ms;">Year</button>
-        </nav>
-      </div>
-    </div>
 
     <!-- Hero Stats Grid -->
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;">
