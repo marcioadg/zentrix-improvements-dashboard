@@ -2392,6 +2392,51 @@ async function loadBizMetrics(period) {
       }).join('')
     }
 
+    // Product Comparison Table
+    const tableBody = document.getElementById('biz-comparison-table-body')
+    if (tableBody && data.productMRR) {
+      const PRODUCTS = ['Zentrix OS', 'Zentrix Insights', 'Zentrix CRM', 'Zentrix Agents']
+      const VENTURE_META = {
+        'Zentrix OS':      { initials: 'OS', color: '#002fbb', bgColor: 'rgba(0,47,187,0.1)', desc: 'Business Operating System' },
+        'Zentrix Insights':{ initials: 'IN', color: '#284ad8', bgColor: 'rgba(40,74,216,0.1)', desc: 'Analytics & Reporting' },
+        'Zentrix CRM':     { initials: 'CR', color: '#545f73', bgColor: 'rgba(84,95,115,0.1)', desc: 'Customer Relationship Mgmt' },
+        'Zentrix Agents':  { initials: 'AG', color: '#8b9bb4', bgColor: 'rgba(139,155,180,0.1)', desc: 'AI Agent Platform' }
+      }
+      const breakdown = data.productBreakdown || {}
+      tableBody.innerHTML = PRODUCTS.map((name, i) => {
+        const meta = VENTURE_META[name]
+        const d = data.productMRR[name] || { mrr: 0, growth: null }
+        const mrrDisplay = d.mrr > 0 ? '$' + d.mrr.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '—'
+        const accounts = breakdown[name] || (name === 'Zentrix OS' || name === 'Zentrix Insights' || name === 'Zentrix CRM' ? '—' : '—')
+        const newCustomers = d.growth !== null && d.mrr > 0 ? (d.growth > 0 ? '+' + Math.round(d.growth) : String(Math.round(d.growth))) : '—'
+        const isActive = d.mrr > 0
+        const rowBg = i % 2 === 1 ? 'background: rgba(239,244,255,0.4);' : ''
+        // Status icon
+        let statusIcon, statusColor
+        if (!isActive) { statusIcon = 'rocket_launch'; statusColor = '#8b9bb4' }
+        else if (d.growth > 10) { statusIcon = 'trending_up'; statusColor = '#22c55e' }
+        else if (d.growth < 0) { statusIcon = 'warning'; statusColor = '#ef4444' }
+        else { statusIcon = 'verified'; statusColor = '#22c55e' }
+        return `<tr style="${rowBg} transition: background 0.15s; cursor: default;" onmouseover="this.style.background='#f8f9ff'" onmouseout="this.style.background='${i%2===1?'rgba(239,244,255,0.4)':'transparent'}'">
+          <td style="padding: 24px 32px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 40px; height: 40px; border-radius: 6px; background: ${meta.bgColor}; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: ${meta.color};">${meta.initials}</div>
+              <div>
+                <p style="font-size: 13px; font-weight: 700; color: #0b1c30;">${name.replace('Zentrix ', '')}</p>
+                <p style="font-size: 11px; color: #454652;">${meta.desc}</p>
+              </div>
+            </div>
+          </td>
+          <td style="padding: 24px 32px; text-align: right; font-size: 13px; font-weight: 500; color: #0b1c30;">${accounts}</td>
+          <td style="padding: 24px 32px; text-align: right; font-size: 13px; font-weight: 700; color: #0b1c30;">${mrrDisplay}</td>
+          <td style="padding: 24px 32px; text-align: center;"><span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #f1f5f9; color: #454652;">—</span></td>
+          <td style="padding: 24px 32px; text-align: center; font-size: 13px; font-weight: 500; color: #0b1c30;">—</td>
+          <td style="padding: 24px 32px; text-align: right; font-size: 13px; font-weight: 500; color: #0b1c30;">${newCustomers}</td>
+          <td style="padding: 24px 32px; text-align: center;"><span class="material-symbols-outlined" style="color: ${statusColor}; font-size: 20px;">${statusIcon}</span></td>
+        </tr>`
+      }).join('')
+    }
+
   } catch (e) {
     console.warn('Biz metrics load failed:', e)
     const accountsEl = document.getElementById('biz-total-accounts-value')
@@ -2614,7 +2659,42 @@ function closeSidebar() {
         <!-- filled by JS -->
       </div>
     </div>
-    
+
+    <!-- Product Comparison Table -->
+    <div style="background: #ffffff; border-radius: 12px; box-shadow: 0 20px 40px rgba(11,28,48,0.06); overflow: hidden;">
+      <div style="padding: 24px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5eeff;">
+        <div>
+          <h2 style="font-size: 16px; font-weight: 700; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; margin-bottom: 4px;">Product Comparison</h2>
+          <p style="font-size: 12px; color: #454652;">Real-time performance metrics across the entire SaaS portfolio.</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button style="padding: 8px 16px; background: #dce9ff; border: none; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #0b1c30; cursor: pointer;">Filters</button>
+          <button style="padding: 8px 16px; background: #002fbb; border: none; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #ffffff; cursor: pointer;">Add Product</button>
+        </div>
+      </div>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="background: #eff4ff;">
+              <th style="padding: 20px 32px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em;">Product Name</th>
+              <th style="padding: 20px 32px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: right;">Total Accounts</th>
+              <th style="padding: 20px 32px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: right;">MRR</th>
+              <th style="padding: 20px 32px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Churn Rate</th>
+              <th style="padding: 20px 32px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Conv. Rate</th>
+              <th style="padding: 20px 32px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: right;">New Customers</th>
+              <th style="padding: 20px 32px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="biz-comparison-table-body">
+            <!-- filled by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div style="padding: 16px 32px; border-top: 1px solid #e5eeff; display: flex; align-items: center; justify-content: space-between;">
+        <p style="font-size: 11px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em;">Showing all products</p>
+      </div>
+    </div>
+
   </div>
 </div>
 </div><!-- /.main-content -->
