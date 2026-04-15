@@ -119,6 +119,40 @@ export default async function handler(req, res) {
           results.lastUpdated = snapshot.snapshot_date
         }
       }
+
+      // Per-product account counts
+      const productAccountCounts = {}
+      const productTables = {
+        'Zentrix OS': 'company_subscriptions',
+        'Zentrix Insights': 'subscribers',
+        'Zentrix CRM': 'companies'
+      }
+      for (const [product, table] of Object.entries(productTables)) {
+        try {
+          const countResp = await fetch(
+            `${SUPABASE_URL}/rest/v1/${table}?select=id`,
+            {
+              method: 'HEAD',
+              headers: {
+                'apikey': SUPABASE_SERVICE_ROLE_KEY,
+                'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                'Prefer': 'count=exact'
+              }
+            }
+          )
+          if (countResp.ok) {
+            const contentRange = countResp.headers.get('content-range')
+            // content-range format: "0-24/356" — we want the total after "/"
+            if (contentRange) {
+              const total = parseInt(contentRange.split('/')[1], 10)
+              if (!isNaN(total)) productAccountCounts[product] = total
+            }
+          }
+        } catch (e) {
+          console.error(`Count error for ${table}:`, e.message)
+        }
+      }
+      results.productAccountCounts = productAccountCounts
     }
   } catch (err) {
     console.error('Supabase metrics error:', err.message)
@@ -260,8 +294,9 @@ export default async function handler(req, res) {
 
     // Build productMRR response
     const productMRR = {}
+    // convRate calculated per-product below using productAccountCounts
     const convRate = results.totalAccounts > 0
-      ? Math.round((paidCustomers.size / results.totalAccounts) * 1000) / 10  // e.g. 3.9
+      ? Math.round((paidCustomers.size / results.totalAccounts) * 1000) / 10
       : null
 
     for (const p of ALL_PRODUCTS) {
@@ -281,7 +316,11 @@ export default async function handler(req, res) {
 
       const newCount = productNewCustomers[p].size
 
-      productMRR[p] = { mrr: current, growth, churnRate, newCustomers: newCount, convRate }
+      const productAccounts = results.productAccountCounts?.[p] ?? null
+      const productConvRate = productAccounts != null && productAccounts > 0
+        ? Math.round(((productCustomers[p]?.size || 0) / productAccounts) * 1000) / 10
+        : convRate  // fall back to portfolio-level if no per-product count
+      productMRR[p] = { mrr: current, growth, churnRate, newCustomers: newCount, convRate: productConvRate }
     }
 
     results.mrr = Math.round(totalMRR * 100) / 100
