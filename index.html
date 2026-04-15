@@ -2680,6 +2680,38 @@ async function loadVentureMetrics() {
   }
   loadVentureGrowthChart(meta.slug)
   loadVentureAccountsTable(meta.slug)
+  loadVentureFunnelCards(meta.slug)
+}
+
+async function loadVentureFunnelCards(slug) {
+  try {
+    const resp = await fetch('/api/venture-funnel?product=' + slug + '&period=' + currentBizPeriod)
+    const data = await resp.json()
+
+    // Avg time to paid
+    const avgEl = document.getElementById('funnel-avg-days')
+    if (avgEl) avgEl.textContent = data.avgTimeToPaid != null ? data.avgTimeToPaid + 'd' : '—'
+
+    // New trials in period
+    const trialsEl = document.getElementById('funnel-new-trials')
+    if (trialsEl) trialsEl.textContent = data.newTrials != null ? '+' + data.newTrials : '—'
+
+    // Potential MRR = trial portion + current product MRR
+    const potMrrEl  = document.getElementById('funnel-potential-mrr')
+    const potSubEl  = document.getElementById('funnel-potential-mrr-sub')
+    // Current MRR comes from venture-mrr-value already set
+    const currentMrrText = document.getElementById('venture-mrr-value')?.textContent || ''
+    const currentMrr = parseInt(currentMrrText.replace(/[^0-9]/g, ''), 10) || 0
+    if (data.potentialMrr != null) {
+      const total = data.potentialMrr + currentMrr
+      if (potMrrEl) potMrrEl.textContent = '$' + total.toLocaleString('en-US', { maximumFractionDigits: 0 })
+      if (potSubEl) potSubEl.textContent = 'Current $' + currentMrr.toLocaleString() + ' + trials $' + data.potentialMrr.toLocaleString()
+    } else {
+      if (potMrrEl) potMrrEl.textContent = '—'
+    }
+  } catch (e) {
+    console.warn('funnel cards error:', e)
+  }
 }
 
 async function loadVentureGrowthChart(slug) {
@@ -3214,30 +3246,37 @@ function closeSidebar() {
         </div>
       </div>
 
-      <!-- Right: 3 small cards -->
+      <!-- Right: 3 stat cards -->
       <div style="display: flex; flex-direction: column; gap: 16px;">
 
         <!-- Avg. Time to Paid -->
         <div style="background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex: 1;">
-          <p style="font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Avg. Time to Paid</p>
-          <p style="font-size: 28px; font-weight: 800; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif;">—</p>
-          <p style="font-size: 11px; color: #8b9bb4; margin-top: 4px;">Days from trial start</p>
-        </div>
-
-        <!-- Expansion Revenue -->
-        <div style="background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex: 1;">
-          <p style="font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Expansion Revenue</p>
-          <p style="font-size: 28px; font-weight: 800; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif;">—</p>
-          <p style="font-size: 11px; color: #8b9bb4; margin-top: 4px;">Upsells &amp; upgrades</p>
-        </div>
-
-        <!-- Insight Alpha callout -->
-        <div style="background: #213145; border-radius: 12px; padding: 24px; flex: 1;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <span class="material-symbols-outlined" style="color: #bac3ff; font-size: 18px;">lightbulb</span>
-            <p style="font-size: 10px; font-weight: 700; color: #bac3ff; text-transform: uppercase; letter-spacing: 0.1em;">Insight Alpha</p>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <p style="font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em;">Avg. Time to Paid</p>
+            <span class="material-symbols-outlined" style="font-size: 16px; color: #bac3ff;">schedule</span>
           </div>
-          <p style="font-size: 12px; color: #e2e8f0; line-height: 1.6;">Conversion data will populate as trials mature. Check back after 30+ days of activity.</p>
+          <p id="funnel-avg-days" style="font-size: 32px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em;">—</p>
+          <p style="font-size: 11px; color: #8b9bb4; margin-top: 4px;">Days from trial to paid</p>
+        </div>
+
+        <!-- New Trials in Period -->
+        <div style="background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <p style="font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em;">New Trials</p>
+            <span class="material-symbols-outlined" style="font-size: 16px; color: #bac3ff;">person_add</span>
+          </div>
+          <p id="funnel-new-trials" style="font-size: 32px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em;">—</p>
+          <p style="font-size: 11px; color: #8b9bb4; margin-top: 4px;">Started in selected period</p>
+        </div>
+
+        <!-- Potential MRR -->
+        <div style="background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <p style="font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em;">Potential MRR</p>
+            <span class="material-symbols-outlined" style="font-size: 16px; color: #4edea3;">trending_up</span>
+          </div>
+          <p id="funnel-potential-mrr" style="font-size: 32px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em;">—</p>
+          <p id="funnel-potential-mrr-sub" style="font-size: 11px; color: #8b9bb4; margin-top: 4px;">If all trials convert</p>
         </div>
 
       </div>
