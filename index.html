@@ -2837,24 +2837,26 @@ function renderVentureAccountRows(accounts) {
     `<span style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: ${bg}; color: ${color}; white-space: nowrap;">${text}</span>`
 
   const planBadge = (plan, planStatus) => {
-    if (!plan) return '<span style="color:#c4cfe4;">—</span>'
+    if (!plan || plan === 'Unknown') return '<span style="color:#c4cfe4;">—</span>'
     switch (planStatus) {
-      case 'paid':    return badge(plan, '#dcfce7', '#16a34a')
-      case 'trial':   return badge(plan, '#fef9c3', '#92400e')
-      case 'expired': return badge(plan, '#fee2e2', '#dc2626')
-      case 'free':    return badge(plan, '#f1f5f9', '#8b9bb4')
-      default:        return badge(plan, '#e5eeff', '#454652')
+      case 'paid':      return badge(plan, '#dcfce7', '#16a34a')
+      case 'trial':     return badge(plan, '#fef9c3', '#92400e')
+      case 'expired':   return badge(plan, '#fee2e2', '#dc2626')
+      case 'cancelled': return badge(plan, '#fee2e2', '#dc2626')
+      case 'free':      return badge(plan, '#e5eeff', '#002fbb')
+      default:          return badge(plan, '#f1f5f9', '#8b9bb4')
     }
   }
 
   const statusBadge = (status) => {
     if (!status) return '<span style="color:#c4cfe4;">—</span>'
     const s = status.toLowerCase()
-    if (s === 'active')                    return badge(status, '#dcfce7', '#16a34a')
-    if (s === 'churn risk')                return badge(status, '#fee2e2', '#dc2626')
-    if (s === 'trial' || s === 'onboarding') return badge(status, '#fef9c3', '#92400e')
-    if (s === 'expired' || s === 'done')   return badge(status, '#f1f5f9', '#8b9bb4')
-    if (s === 'test' || s === 'internal')  return badge(status, '#e5eeff', '#454652')
+    if (s === 'active')                         return badge(status, '#dcfce7', '#16a34a')
+    if (s === 'churn risk' || s === 'cancelled') return badge(status, '#fee2e2', '#dc2626')
+    if (s === 'trial' || s === 'onboarding')    return badge(status, '#fef9c3', '#92400e')
+    if (s === 'expired')                         return badge(status, '#f1f5f9', '#8b9bb4')
+    if (s === 'free')                            return badge(status, '#e5eeff', '#002fbb')
+    if (s === 'test' || s === 'internal' || s === 'done') return badge(status, '#e5eeff', '#454652')
     return badge(status, '#f1f5f9', '#545f73')
   }
 

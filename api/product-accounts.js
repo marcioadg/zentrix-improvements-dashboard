@@ -134,46 +134,52 @@ export default async function handler(req, res) {
       const firstUserId = userIds[0]
       const device = firstUserId ? profileMap[firstUserId]?.first_device_type || null : null
 
-      // ── Plan: derive from subs_status + subscription_tier + subscribed ──────
-      // subs_status from customer_success_tracking is the most accurate billing state:
-      //   'Premium' = active paid, 'Free Trial' = active trial, 'Expired' = expired trial/cancelled
-      // subscription_tier gives the tier name (Premium, Trial, Free)
-      // subscribed=true means manually granted access (not necessarily Stripe paid)
-      const subsStatus = health.subs_status   // 'Premium' | 'Free Trial' | 'Expired' | null
-      const tier = sub.subscription_tier || null
+      // ── Plan: derived purely from company_subscriptions (source of truth) ──────
+      // subscription_tier: 'Premium' | 'Trial' | 'Free'
+      // trial_end: date when trial expires (null for Free/Premium)
+      // cancelled_at: set if explicitly cancelled
+      // NOTE: subs_status in customer_success_tracking is manually maintained
+      // and stale — do NOT use it for plan display.
+      const tier = (sub.subscription_tier || '').trim()
       const subscribed = sub.subscribed ?? false
-      const trialExpired = sub.trial_end ? new Date(sub.trial_end) < new Date() : false
+      const cancelled = sub.cancelled_at
+      const trialEndDate = sub.trial_end ? new Date(sub.trial_end) : null
+      const now = new Date()
+      const trialExpired = trialEndDate ? trialEndDate < now : false
 
       let plan, planStatus
-      if (subsStatus === 'Premium' || tier === 'Premium') {
+      if (cancelled) {
+        plan = 'Cancelled'; planStatus = 'cancelled'
+      } else if (tier === 'Premium') {
         plan = 'Premium'; planStatus = 'paid'
-      } else if (subsStatus === 'Expired' || (subsStatus === null && trialExpired && !subscribed)) {
-        plan = 'Expired'; planStatus = 'expired'
-      } else if (subsStatus === 'Free Trial' || tier === 'Trial') {
-        plan = trialExpired ? 'Expired' : 'Trial'; planStatus = trialExpired ? 'expired' : 'trial'
       } else if (tier === 'Free') {
         plan = 'Free'; planStatus = 'free'
+      } else if (tier === 'Trial') {
+        if (trialExpired) { plan = 'Expired'; planStatus = 'expired' }
+        else              { plan = 'Trial';   planStatus = 'trial'   }
       } else {
-        plan = tier || 'Unknown'; planStatus = 'unknown'
+        // No subscription row or unknown
+        plan = 'Unknown'; planStatus = 'unknown'
       }
 
-      // ── Status: use account_stage (meaningful CS status), not companies.status ──
-      // account_stage: 'Active Subscription', 'Free Trial', 'At churn Risk',
-      //   'Onboarding', 'Test Company', 'Internal Company', 'Done', null
+      // ── Status: derive from account_stage + plan ────────────────────────────
+      // account_stage is hand-managed by CS; use it when set, fallback to plan-derived
       const accountStage = health.account_stage || null
-      // Derive a clean status label
       let status
       if (accountStage === 'Active Subscription') status = 'Active'
       else if (accountStage === 'At churn Risk')   status = 'Churn Risk'
-      else if (accountStage === 'Free Trial')       status = 'Trial'
       else if (accountStage === 'Onboarding')       status = 'Onboarding'
       else if (accountStage === 'Test Company')     status = 'Test'
       else if (accountStage === 'Internal Company') status = 'Internal'
       else if (accountStage === 'Done')             status = 'Done'
-      else if (planStatus === 'expired')            status = 'Expired'
-      else if (planStatus === 'paid')               status = 'Active'
-      else if (planStatus === 'trial')              status = 'Trial'
-      else                                          status = null
+      else if (accountStage === 'Free Trial')       status = planStatus === 'expired' ? 'Expired' : 'Trial'
+      // No account_stage set — derive from plan
+      else if (planStatus === 'cancelled') status = 'Cancelled'
+      else if (planStatus === 'paid')      status = 'Active'
+      else if (planStatus === 'trial')     status = 'Trial'
+      else if (planStatus === 'expired')   status = 'Expired'
+      else if (planStatus === 'free')      status = 'Free'
+      else                                 status = null
 
       // ── Score: customer_health ────────────────────────────────────────────
       const score = health.customer_health || null
