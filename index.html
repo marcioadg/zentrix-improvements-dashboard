@@ -2346,6 +2346,52 @@ async function loadBizMetrics(period) {
       breakdownEl.innerHTML = '<div style="color: #454652; font-size: 13px;">No product data available</div>'
     }
 
+    // Active Portfolio Ventures cards
+    const venturesGrid = document.getElementById('biz-ventures-grid')
+    if (venturesGrid && data.productMRR) {
+      const VENTURE_META = {
+        'Zentrix OS':      { icon: 'computer',   color: '#002fbb', desc: 'Business Operating System' },
+        'Zentrix Insights':{ icon: 'analytics',  color: '#284ad8', desc: 'Analytics & Reporting' },
+        'Zentrix CRM':     { icon: 'contacts',   color: '#545f73', desc: 'Customer Relationship Mgmt' },
+        'Zentrix Agents':  { icon: 'smart_toy',  color: '#8b9bb4', desc: 'AI Agent Platform' }
+      }
+      const PRODUCTS = ['Zentrix OS', 'Zentrix Insights', 'Zentrix CRM', 'Zentrix Agents']
+
+      venturesGrid.innerHTML = PRODUCTS.map(name => {
+        const meta = VENTURE_META[name]
+        const d = data.productMRR[name] || { mrr: 0, growth: null }
+        const mrrDisplay = d.mrr > 0 ? '$' + d.mrr.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '—'
+        const growthDisplay = d.growth !== null
+          ? `<span style="color: ${d.growth >= 0 ? '#22c55e' : '#ef4444'}; font-size: 12px; font-weight: 700;">${d.growth >= 0 ? '+' : ''}${d.growth}%</span>`
+          : `<span style="color: #8b9bb4; font-size: 12px;">—</span>`
+        const isActive = d.mrr > 0
+        return `<div style="background: #ffffff; border-radius: 12px; padding: 24px; border: 1px solid #e8ecf4; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; background: ${meta.color}15; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+            <span class="material-symbols-outlined" style="color: ${meta.color}; font-size: 20px;">${meta.icon}</span>
+          </div>
+          <div>
+            <div style="font-size: 13px; font-weight: 700; color: #0b1c30;">${name.replace('Zentrix ', '')}</div>
+            <div style="font-size: 10px; color: #8b9bb4;">${meta.desc}</div>
+          </div>
+        </div>
+        <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 999px; background: ${isActive ? '#dcfce7' : '#f1f5f9'}; color: ${isActive ? '#16a34a' : '#8b9bb4'}">${isActive ? 'Active' : 'Pre-launch'}</span>
+      </div>
+      <div style="display: flex; gap: 24px;">
+        <div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8b9bb4; letter-spacing: 0.08em; margin-bottom: 4px;">MRR</div>
+          <div style="font-size: 20px; font-weight: 800; color: #0b1c30;">${mrrDisplay}</div>
+        </div>
+        <div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8b9bb4; letter-spacing: 0.08em; margin-bottom: 4px;">Growth</div>
+          <div style="font-size: 20px; font-weight: 800;">${growthDisplay}</div>
+        </div>
+      </div>
+    </div>`
+      }).join('')
+    }
+
   } catch (e) {
     console.warn('Biz metrics load failed:', e)
     const accountsEl = document.getElementById('biz-total-accounts-value')
@@ -2564,116 +2610,8 @@ function closeSidebar() {
         <h2 style="font-size: 20px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; color: #213145;">Active Portfolio Ventures</h2>
         <a href="#" style="color: #002fbb; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid rgba(0,47,187,0.2); padding-bottom: 2px; text-decoration: none;">View All Ventures</a>
       </div>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;">
-        
-        <!-- NeoLedger -->
-        <div style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid transparent; cursor: pointer;">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-            <div style="width: 48px; height: 48px; border-radius: 8px; background: #dce9ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <span class="material-symbols-outlined" style="color: #002fbb; font-size: 22px;">account_balance</span>
-            </div>
-            <div>
-              <h5 style="font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; color: #0b1c30; font-size: 14px;">NeoLedger</h5>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 500; letter-spacing: 0.08em;">FinTech</p>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-            <div>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">MRR</p>
-              <p style="font-size: 18px; font-weight: 900; color: #0b1c30;">$240K</p>
-            </div>
-            <div>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">Growth</p>
-              <p style="font-size: 18px; font-weight: 900; color: #006846;">+18%</p>
-            </div>
-          </div>
-          <div style="padding-top: 24px; border-top: 1px solid #e5eeff; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 10px; font-weight: 700; color: #454652;">4.8k Users</span>
-            <span style="font-size: 10px; padding: 4px 8px; background: #6ffbbe; color: #002113; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Series A</span>
-          </div>
-        </div>
-        
-        <!-- StackFlow -->
-        <div style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid transparent; cursor: pointer;">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-            <div style="width: 48px; height: 48px; border-radius: 8px; background: #dce9ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <span class="material-symbols-outlined" style="color: #002fbb; font-size: 22px;">code</span>
-            </div>
-            <div>
-              <h5 style="font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; color: #0b1c30; font-size: 14px;">StackFlow</h5>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 500; letter-spacing: 0.08em;">DevOps</p>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-            <div>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">MRR</p>
-              <p style="font-size: 18px; font-weight: 900; color: #0b1c30;">$115K</p>
-            </div>
-            <div>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">Growth</p>
-              <p style="font-size: 18px; font-weight: 900; color: #006846;">+22%</p>
-            </div>
-          </div>
-          <div style="padding-top: 24px; border-top: 1px solid #e5eeff; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 10px; font-weight: 700; color: #454652;">2.1k Users</span>
-            <span style="font-size: 10px; padding: 4px 8px; background: #dee1ff; color: #001159; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Seed</span>
-          </div>
-        </div>
-        
-        <!-- CloudNode -->
-        <div style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid transparent; cursor: pointer;">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-            <div style="width: 48px; height: 48px; border-radius: 8px; background: #dce9ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <span class="material-symbols-outlined" style="color: #002fbb; font-size: 22px;">cloud</span>
-            </div>
-            <div>
-              <h5 style="font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; color: #0b1c30; font-size: 14px;">CloudNode</h5>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 500; letter-spacing: 0.08em;">Infra</p>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-            <div>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">MRR</p>
-              <p style="font-size: 18px; font-weight: 900; color: #0b1c30;">$480K</p>
-            </div>
-            <div>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">Growth</p>
-              <p style="font-size: 18px; font-weight: 900; color: #454652;">+4%</p>
-            </div>
-          </div>
-          <div style="padding-top: 24px; border-top: 1px solid #e5eeff; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 10px; font-weight: 700; color: #454652;">12k Users</span>
-            <span style="font-size: 10px; padding: 4px 8px; background: #d8e3fb; color: #111c2d; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Matured</span>
-          </div>
-        </div>
-        
-        <!-- SkillForge -->
-        <div style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid transparent; cursor: pointer;">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-            <div style="width: 48px; height: 48px; border-radius: 8px; background: #dce9ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <span class="material-symbols-outlined" style="color: #002fbb; font-size: 22px;">school</span>
-            </div>
-            <div>
-              <h5 style="font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; color: #0b1c30; font-size: 14px;">SkillForge</h5>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 500; letter-spacing: 0.08em;">EdTech</p>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-            <div>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">MRR</p>
-              <p style="font-size: 18px; font-weight: 900; color: #0b1c30;">$52K</p>
-            </div>
-            <div>
-              <p style="font-size: 10px; color: #454652; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">Growth</p>
-              <p style="font-size: 18px; font-weight: 900; color: #93000a;">-3%</p>
-            </div>
-          </div>
-          <div style="padding-top: 24px; border-top: 1px solid #e5eeff; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 10px; font-weight: 700; color: #454652;">800 Users</span>
-            <span style="font-size: 10px; padding: 4px 8px; background: #ffdad6; color: #93000a; border-radius: 4px; font-weight: 700; text-transform: uppercase;">At Risk</span>
-          </div>
-        </div>
-        
+      <div id="biz-ventures-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+        <!-- filled by JS -->
       </div>
     </div>
     

@@ -16,6 +16,8 @@ const PRODUCT_NAMES = {
   'prod_T4vLmff0Cdl34d': 'Zentrix OS'
 }
 
+const ALL_PRODUCTS = ['Zentrix OS', 'Zentrix Insights', 'Zentrix CRM', 'Zentrix Agents']
+
 function getPeriodStart(period) {
   const now = new Date()
   switch (period) {
@@ -42,6 +44,32 @@ function getPeriodStart(period) {
   }
 }
 
+function calcSubMRR(sub) {
+  let mrr = 0
+  for (const item of sub.items?.data || []) {
+    const price = item.price
+    if (!price?.unit_amount) continue
+    const qty = item.quantity || 1
+    const amount = (price.unit_amount / 100) * qty
+    const interval = price.recurring?.interval
+    if (interval === 'month') mrr += amount
+    else if (interval === 'year') mrr += amount / 12
+    else if (interval === 'week') mrr += amount * 4.33
+  }
+  return mrr
+}
+
+function getSubProducts(sub) {
+  const names = new Set()
+  for (const item of sub.items?.data || []) {
+    const productId = item.price?.product
+    if (productId && PRODUCT_NAMES[productId]) {
+      names.add(PRODUCT_NAMES[productId])
+    }
+  }
+  return names
+}
+
 export default async function handler(req, res) {
   const origin = req.headers.origin
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
@@ -62,6 +90,7 @@ export default async function handler(req, res) {
     newPayingCustomers: null,
     mrr: null,
     productBreakdown: null,
+    productMRR: null,
     ventureCount: 3,
     ventures: ['Business OS', 'Insights', 'CRM'],
     period,
@@ -89,69 +118,91 @@ export default async function handler(req, res) {
           results.totalAccounts = snapshot.total_users
           results.lastUpdated = snapshot.snapshot_date
         }
-      } else {
-        console.error('Supabase metrics error:', await response.text())
       }
     }
   } catch (err) {
     console.error('Supabase metrics error:', err.message)
   }
 
-  // ── Stripe: MRR + Paid Accounts + New Paying Customers + Product Breakdown ──
+  // ── Stripe ──
   const stripeKeys = [STRIPE_SECRET_KEY, STRIPE_SECRET_KEY_NEW].filter(Boolean)
 
   if (stripeKeys.length > 0) {
     let totalMRR = 0
     const paidCustomers = new Set()
     const newCustomers = new Set()
-    const productCustomers = {} // product name → Set of unique customer IDs
+    const productCustomers = {}
+
+    // Per-product MRR: current and at period start
+    const productCurrentMRR = {}
+    const productStartMRR = {}
+    for (const p of ALL_PRODUCTS) {
+      productCurrentMRR[p] = 0
+      productStartMRR[p] = 0
+    }
 
     for (const stripeKey of stripeKeys) {
       const keyTag = stripeKey.slice(-8)
 
-      // ── All active subscriptions (MRR + total paid + product breakdown) ──
+      // ── Fetch ALL subscriptions (status=all) for full MRR picture ──
       try {
         let hasMore = true
         let startingAfter = undefined
         while (hasMore) {
-          const params = new URLSearchParams({ limit: '100', status: 'active' })
+          const params = new URLSearchParams({ limit: '100', status: 'all' })
           if (startingAfter) params.append('starting_after', startingAfter)
           const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
             headers: { 'Authorization': `Bearer ${stripeKey}` }
           })
           if (!response.ok) { console.error('Stripe error:', await response.text()); break }
           const data = await response.json()
+
           for (const sub of data.data) {
             const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
-            if (customerId) paidCustomers.add(keyTag + ':' + customerId)
-            for (const item of sub.items.data) {
-              const price = item.price
-              if (!price) continue
-              // MRR calculation
-              if (price.unit_amount) {
-                const quantity = item.quantity || 1
-                const amount = (price.unit_amount / 100) * quantity
-                const interval = price.recurring?.interval
-                if (interval === 'month') totalMRR += amount
-                else if (interval === 'year') totalMRR += amount / 12
-                else if (interval === 'week') totalMRR += amount * 4.33
+            const createdAt = sub.created || 0
+            const canceledAt = sub.canceled_at || null
+            const endedAt = sub.ended_at || null
+            const subProducts = getSubProducts(sub)
+            const subMRR = calcSubMRR(sub)
+
+            // Is this sub currently active?
+            const isCurrentlyActive = sub.status === 'active'
+
+            // Was this sub active at period start?
+            const wasActiveAtStart =
+              createdAt < periodStartUnix &&
+              (canceledAt === null || canceledAt > periodStartUnix) &&
+              (endedAt === null || endedAt > periodStartUnix)
+
+            if (isCurrentlyActive) {
+              totalMRR += subMRR
+              if (customerId) paidCustomers.add(keyTag + ':' + customerId)
+              for (const name of subProducts) {
+                // Distribute MRR proportionally if sub spans multiple products (rare)
+                const share = subProducts.size > 0 ? subMRR / subProducts.size : 0
+                productCurrentMRR[name] = (productCurrentMRR[name] || 0) + share
               }
-              // Product breakdown — count unique customers per product
-              const productId = price.product
-              if (productId && PRODUCT_NAMES[productId] && customerId) {
-                const name = PRODUCT_NAMES[productId]
+              for (const name of subProducts) {
                 if (!productCustomers[name]) productCustomers[name] = new Set()
-                productCustomers[name].add(keyTag + ':' + customerId)
+                if (customerId) productCustomers[name].add(keyTag + ':' + customerId)
+              }
+            }
+
+            if (wasActiveAtStart) {
+              for (const name of subProducts) {
+                const share = subProducts.size > 0 ? subMRR / subProducts.size : 0
+                productStartMRR[name] = (productStartMRR[name] || 0) + share
               }
             }
           }
+
           hasMore = data.has_more
           if (hasMore && data.data.length > 0) startingAfter = data.data[data.data.length - 1].id
           else hasMore = false
         }
-      } catch (err) { console.error('Stripe MRR error:', err.message) }
+      } catch (err) { console.error('Stripe all-subs error:', err.message) }
 
-      // ── New subscriptions in period ──
+      // ── New subscriptions in period (for newPayingCustomers) ──
       try {
         let hasMore = true
         let startingAfter = undefined
@@ -180,10 +231,25 @@ export default async function handler(req, res) {
       productCounts[name] = set.size
     }
 
+    // Build productMRR response
+    const productMRR = {}
+    for (const p of ALL_PRODUCTS) {
+      const current = Math.round((productCurrentMRR[p] || 0) * 100) / 100
+      const start = productStartMRR[p] || 0
+      let growth = null
+      if (start > 0) {
+        growth = Math.round(((current - start) / start) * 100 * 10) / 10
+      } else if (current > 0) {
+        growth = null // new revenue, no prior baseline
+      }
+      productMRR[p] = { mrr: current, growth }
+    }
+
     results.mrr = Math.round(totalMRR * 100) / 100
     results.totalPaidAccounts = paidCustomers.size
     results.newPayingCustomers = newCustomers.size
     results.productBreakdown = Object.keys(productCounts).length > 0 ? productCounts : null
+    results.productMRR = productMRR
     results.source = results.totalAccounts != null ? 'live' : 'partial'
   }
 
