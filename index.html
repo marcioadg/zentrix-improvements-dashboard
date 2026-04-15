@@ -2275,7 +2275,13 @@ async function loadBizMetrics() {
       }
     }
 
-    // Total Paid Accounts — placeholder until Stripe
+    // Total MRR
+    const mrrEl = document.getElementById('biz-mrr-value')
+    if (mrrEl && data.mrr != null) {
+      mrrEl.textContent = '$' + Math.round(data.mrr).toLocaleString()
+    }
+
+    // Total Paid Accounts
     const paidEl = document.getElementById('biz-paid-accounts-value')
     const paidLabel = document.getElementById('biz-paid-accounts-label')
     if (paidEl) {
@@ -2323,8 +2329,8 @@ function closeSidebar() {
             <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">trending_up</span>12.4%
           </span>
         </div>
-        <h3 style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;">$1,248,500</h3>
-        <p style="color: #454652; font-size: 14px;">Target: $1.5M by EOY</p>
+        <h3 id="biz-mrr-value" style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;">$1,248,500</h3>
+        <p id="biz-mrr-label" style="color: #454652; font-size: 14px;">Target: $1.5M by EOY</p>
       </div>
       
       <!-- Total Accounts Card -->

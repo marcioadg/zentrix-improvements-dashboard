@@ -115,62 +115,119 @@ app.get('/api/health', (req, res) => {
 
 // ── Metrics endpoint ──────────────────────────────────────────────────────────
 app.get('/api/metrics', async (req, res) => {
+  const results = {
+    totalAccounts: null,
+    totalPaidAccounts: null,
+    mrr: null,
+    ventureCount: 3,
+    ventures: ['Business OS', 'Insights', 'CRM'],
+    source: 'partial',
+    lastUpdated: null
+  }
+
+  // ── Supabase: Total Accounts ──
   try {
     const supabaseUrl = process.env.SUPABASE_URL || 'https://bprlchkedecbyoaqlbfz.supabase.co'
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseServiceKey) {
-      // Return placeholder data when no service key configured
-      return res.json({
-        totalAccounts: null,
-        totalPaidAccounts: null,
-        ventureCount: 3,
-        ventures: ['Business OS', 'Insights', 'CRM'],
-        source: 'placeholder',
-        lastUpdated: null
-      })
-    }
-
-    // Query the latest platform_analytics_snapshot from BOS Supabase
-    // (BOS, Insights, and CRM all share the same Supabase project)
-    const response = await fetch(
-      `${supabaseUrl}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
-      {
-        headers: {
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json'
+    if (supabaseServiceKey) {
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
+        {
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json'
+          }
         }
+      )
+      if (response.ok) {
+        const data = await response.json()
+        const snapshot = data[0]
+        if (snapshot) {
+          results.totalAccounts = snapshot.total_users
+          results.lastUpdated = snapshot.snapshot_date
+        }
+      } else {
+        console.error('Supabase metrics error:', await response.text())
       }
-    )
-
-    if (!response.ok) {
-      const err = await response.text()
-      console.error('Supabase metrics error:', err)
-      return res.json({ totalAccounts: null, totalPaidAccounts: null, ventureCount: 3, source: 'error', error: err })
     }
-
-    const data = await response.json()
-    const snapshot = data[0]
-
-    if (!snapshot) {
-      return res.json({ totalAccounts: null, totalPaidAccounts: null, ventureCount: 3, source: 'no_data' })
-    }
-
-    return res.json({
-      totalAccounts: snapshot.total_users,
-      totalCompanies: snapshot.total_companies,
-      totalPaidAccounts: null, // Will be filled once Stripe keys are available
-      ventureCount: 3,
-      ventures: ['Business OS', 'Insights', 'CRM'],
-      source: 'live',
-      lastUpdated: snapshot.snapshot_date
-    })
-
   } catch (err) {
-    console.error('Metrics endpoint error:', err)
-    res.status(500).json({ error: 'Failed to fetch metrics', totalAccounts: null, totalPaidAccounts: null })
+    console.error('Supabase metrics error:', err.message)
   }
+
+  // ── Stripe: MRR + Paid Accounts ──
+  const stripeKeys = [
+    process.env.STRIPE_SECRET_KEY,
+    process.env.STRIPE_SECRET_KEY_NEW
+  ].filter(Boolean)
+
+  if (stripeKeys.length > 0) {
+    let totalMRR = 0
+    const paidCustomers = new Set()
+
+    for (const stripeKey of stripeKeys) {
+      try {
+        let hasMore = true
+        let startingAfter = undefined
+
+        while (hasMore) {
+          const params = new URLSearchParams({ limit: '100', status: 'active' })
+          if (startingAfter) params.append('starting_after', startingAfter)
+
+          const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
+            headers: {
+              'Authorization': `Bearer ${stripeKey}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          })
+
+          if (!response.ok) {
+            console.error('Stripe error:', await response.text())
+            break
+          }
+
+          const data = await response.json()
+
+          for (const sub of data.data) {
+            // Track unique paid customers
+            const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
+            if (customerId) paidCustomers.add(stripeKey + ':' + customerId)
+
+            // Sum MRR
+            for (const item of sub.items.data) {
+              const price = item.price
+              if (!price || !price.unit_amount) continue
+              const quantity = item.quantity || 1
+              const amount = (price.unit_amount / 100) * quantity
+              const interval = price.recurring?.interval
+              if (interval === 'month') {
+                totalMRR += amount
+              } else if (interval === 'year') {
+                totalMRR += amount / 12
+              } else if (interval === 'week') {
+                totalMRR += amount * 4.33
+              }
+            }
+          }
+
+          hasMore = data.has_more
+          if (hasMore && data.data.length > 0) {
+            startingAfter = data.data[data.data.length - 1].id
+          } else {
+            hasMore = false
+          }
+        }
+      } catch (err) {
+        console.error('Stripe key error:', err.message)
+      }
+    }
+
+    results.mrr = Math.round(totalMRR * 100) / 100
+    results.totalPaidAccounts = paidCustomers.size
+    results.source = results.totalAccounts != null ? 'live' : 'partial'
+  }
+
+  res.json(results)
 })
 
 // Agents data — read/write
