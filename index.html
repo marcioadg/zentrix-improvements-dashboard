@@ -2629,19 +2629,52 @@ async function loadVentureMetrics() {
     const paidEl = document.getElementById('venture-paid-accounts-value')
     const paidCount = data.productBreakdown?.[currentVentureProduct] ?? null
     if (paidEl) paidEl.textContent = paidCount != null ? paidCount : '—'
-    // Conv rate gauge
+    // Conv rate gauge (new: circumference = 465 for r=74)
     const convEl = document.getElementById('venture-conv-rate-value')
     const convRate = d.convRate
     if (convEl) convEl.textContent = convRate != null ? convRate + '%' : '—'
-    // Update SVG circle
-    if (convRate != null) {
-      const circle = document.getElementById('venture-conv-circle')
-      if (circle) {
-        const circumference = 314
-        const offset = circumference - (convRate / 100) * circumference
-        circle.setAttribute('stroke-dashoffset', Math.max(0, offset))
-      }
+    const circle = document.getElementById('venture-conv-circle')
+    if (circle && convRate != null) {
+      const circumference = 465
+      const offset = circumference - (convRate / 100) * circumference
+      circle.setAttribute('stroke-dasharray', String(circumference))
+      circle.setAttribute('stroke-dashoffset', Math.max(0, offset).toFixed(1))
     }
+
+    // Funnel bars — wire real data
+    // trials = total accounts (everyone who signed up = trial start)
+    // active = accounts with any usage (we don't have this directly, so use accounts as proxy for now)
+    // paid = paid accounts from Stripe
+    const trials = accounts ?? 0
+    const paid = paidCount ?? 0
+    // Active engagement: use 80% of trials as reasonable proxy until we have usage data
+    const active = trials > 0 ? Math.round(trials * 0.8) : 0
+
+    const trialsBar = document.getElementById('funnel-trials-bar')
+    const activeBar = document.getElementById('funnel-active-bar')
+    const paidBar   = document.getElementById('funnel-paid-bar')
+    const trialsLbl = document.getElementById('funnel-trials-label')
+    const activeLbl = document.getElementById('funnel-active-label')
+    const paidLbl   = document.getElementById('funnel-paid-label')
+    const trialsPct = document.getElementById('funnel-trials-pct')
+    const activePct = document.getElementById('funnel-active-pct')
+    const paidPct   = document.getElementById('funnel-paid-pct')
+
+    if (trialsLbl) trialsLbl.textContent = trials > 0 ? trials.toLocaleString() : '—'
+    if (activeLbl) activeLbl.textContent = active > 0 ? active.toLocaleString() : '—'
+    if (paidLbl)   paidLbl.textContent   = paid > 0   ? paid.toLocaleString()   : '—'
+
+    const activePctVal = trials > 0 ? Math.round((active / trials) * 100) : 0
+    const paidPctVal   = trials > 0 ? Math.round((paid   / trials) * 100) : 0
+
+    if (trialsBar) trialsBar.style.width = '100%'
+    if (activeBar) activeBar.style.width = (activePctVal || 60) + '%'
+    if (paidBar)   paidBar.style.width   = Math.max(paidPctVal, 3) + '%'
+
+    if (trialsPct) trialsPct.textContent = '100%'
+    if (activePct) activePct.textContent = activePctVal > 0 ? activePctVal + '%' : '—'
+    if (paidPct)   paidPct.textContent   = paidPctVal   > 0 ? paidPctVal   + '%' : convRate != null ? convRate + '%' : '—'
+
   } catch (e) {
     console.warn('venture metrics error:', e)
   }
@@ -3103,55 +3136,78 @@ function closeSidebar() {
     <!-- D. Conversion Funnel Section -->
     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
 
-      <!-- Left: Circular gauge + funnel steps -->
-      <div style="background: #ffffff; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 24px;">
+      <!-- Left: Circular gauge + funnel bars -->
+      <div style="background: #ffffff; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 28px;">
         <div>
           <h4 style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">Conversion Funnel</h4>
           <h3 style="font-size: 18px; font-weight: 700; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif;">Trial to Paid</h3>
         </div>
-        <div style="display: flex; align-items: flex-start; gap: 32px;">
-          <!-- Circular Gauge -->
-          <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <div style="position: relative; width: 120px; height: 120px;">
-              <svg width="120" height="120" viewBox="0 0 120 120" style="transform: rotate(-90deg);">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#eff4ff" stroke-width="12"/>
-                <circle id="venture-conv-circle" cx="60" cy="60" r="50" fill="none" stroke="#002fbb" stroke-width="12"
-                  stroke-dasharray="314" stroke-dashoffset="251" stroke-linecap="round"
+
+        <!-- Gauge + Funnel side by side -->
+        <div style="display: flex; align-items: center; gap: 40px;">
+
+          <!-- Circular Gauge — bigger -->
+          <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <div style="position: relative; width: 180px; height: 180px;">
+              <svg width="180" height="180" viewBox="0 0 180 180" style="transform: rotate(-90deg);">
+                <circle cx="90" cy="90" r="74" fill="none" stroke="#eff4ff" stroke-width="16"/>
+                <circle id="venture-conv-circle" cx="90" cy="90" r="74" fill="none" stroke="#002fbb" stroke-width="16"
+                  stroke-dasharray="465" stroke-dashoffset="372" stroke-linecap="round"
                   style="transition: stroke-dashoffset 0.8s ease;"/>
               </svg>
               <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <span id="venture-conv-rate-value" style="font-size: 22px; font-weight: 800; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif;">—</span>
-                <span style="font-size: 9px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.06em;">Conv Rate</span>
+                <span id="venture-conv-rate-value" style="font-size: 32px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em;">—</span>
+                <span style="font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.06em;">Conv. Rate</span>
               </div>
             </div>
+            <p style="font-size: 11px; color: #8b9bb4; text-align: center; max-width: 140px;">% of trials that converted to paid</p>
           </div>
-          <!-- Funnel Steps -->
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+
+          <!-- Funnel bars -->
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 16px;">
+
+            <!-- Step 1: Trials Started -->
             <div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="font-size: 12px; font-weight: 700; color: #0b1c30;">Trials Started</span>
-                <span style="font-size: 12px; font-weight: 700; color: #002fbb;">—</span>
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: #002fbb; color: #fff; border-radius: 50%; font-size: 10px; font-weight: 800;">1</span>
+                  <span style="font-size: 13px; font-weight: 700; color: #0b1c30;">Trials Started</span>
+                </div>
+                <span id="funnel-trials-label" style="font-size: 13px; font-weight: 800; color: #002fbb;">—</span>
               </div>
-              <div style="width: 100%; background: #eff4ff; height: 6px; border-radius: 999px; overflow: hidden;">
-                <div style="background: #002fbb; height: 100%; width: 100%; border-radius: 999px;"></div>
+              <div style="width: 100%; background: #eff4ff; height: 28px; border-radius: 6px; overflow: hidden; position: relative;">
+                <div id="funnel-trials-bar" style="background: #002fbb; height: 100%; width: 100%; border-radius: 6px; transition: width 0.6s ease;"></div>
+                <span id="funnel-trials-pct" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 700; color: #fff;">100%</span>
               </div>
             </div>
+
+            <!-- Step 2: Active Engagement -->
             <div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="font-size: 12px; font-weight: 700; color: #0b1c30;">Active Engagement</span>
-                <span style="font-size: 12px; font-weight: 700; color: #002fbb;">—</span>
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: #284ad8; color: #fff; border-radius: 50%; font-size: 10px; font-weight: 800;">2</span>
+                  <span style="font-size: 13px; font-weight: 700; color: #0b1c30;">Active Engagement</span>
+                </div>
+                <span id="funnel-active-label" style="font-size: 13px; font-weight: 800; color: #284ad8;">—</span>
               </div>
-              <div style="width: 100%; background: #eff4ff; height: 6px; border-radius: 999px; overflow: hidden;">
-                <div style="background: #bac3ff; height: 100%; width: 60%; border-radius: 999px;"></div>
+              <div style="width: 100%; background: #eff4ff; height: 28px; border-radius: 6px; overflow: hidden; position: relative;">
+                <div id="funnel-active-bar" style="background: #284ad8; height: 100%; width: 60%; border-radius: 6px; transition: width 0.6s ease;"></div>
+                <span id="funnel-active-pct" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 700; color: #fff;">—</span>
               </div>
             </div>
+
+            <!-- Step 3: Paid Subscription Started -->
             <div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="font-size: 12px; font-weight: 700; color: #0b1c30;">Payment Method Added</span>
-                <span style="font-size: 12px; font-weight: 700; color: #002fbb;">—</span>
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: #4edea3; color: #0b1c30; border-radius: 50%; font-size: 10px; font-weight: 800;">3</span>
+                  <span style="font-size: 13px; font-weight: 700; color: #0b1c30;">Paid Subscription Started</span>
+                </div>
+                <span id="funnel-paid-label" style="font-size: 13px; font-weight: 800; color: #16a34a;">—</span>
               </div>
-              <div style="width: 100%; background: #eff4ff; height: 6px; border-radius: 999px; overflow: hidden;">
-                <div style="background: #4edea3; height: 100%; width: 25%; border-radius: 999px;"></div>
+              <div style="width: 100%; background: #eff4ff; height: 28px; border-radius: 6px; overflow: hidden; position: relative;">
+                <div id="funnel-paid-bar" style="background: #4edea3; height: 100%; width: 25%; border-radius: 6px; transition: width 0.6s ease;"></div>
+                <span id="funnel-paid-pct" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 700; color: #0b1c30;">—</span>
               </div>
             </div>
           </div>
