@@ -2820,23 +2820,73 @@ function renderVentureAccountRows(accounts) {
   const tbody = document.getElementById('venture-accounts-table-body')
   if (!tbody) return
   if (accounts.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: #8b9bb4; font-size: 13px;">No accounts found</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="18" style="padding: 24px; text-align: center; color: #8b9bb4; font-size: 13px;">No accounts found</td></tr>'
     return
   }
+
+  const td = (val, opts = {}) => {
+    const { right, center, bold, mono, wrap } = opts
+    const align = right ? 'right' : center ? 'center' : 'left'
+    const fw = bold ? '600' : '400'
+    const ws = wrap ? '' : 'white-space: nowrap; '
+    const display = val != null && val !== '' ? String(val) : '<span style="color:#c4cfe4;">—</span>'
+    return `<td style="padding: 10px 14px; font-size: 12px; font-weight: ${fw}; color: #0b1c30; text-align: ${align}; ${ws}">${display}</td>`
+  }
+
+  const badge = (text, bg, color) =>
+    `<span style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: ${bg}; color: ${color}; white-space: nowrap;">${text}</span>`
+
+  const planBadge = (plan, subscribed) => {
+    const p = (plan || 'Free').toLowerCase()
+    if (subscribed || p === 'premium' || p === 'paid') return badge(plan, '#dcfce7', '#16a34a')
+    if (p === 'trial') return badge(plan, '#fef9c3', '#92400e')
+    if (p === 'free') return badge(plan, '#f1f5f9', '#8b9bb4')
+    return badge(plan, '#e5eeff', '#002fbb')
+  }
+
+  const statusBadge = (status) => {
+    if (!status) return '<span style="color:#c4cfe4;">—</span>'
+    const s = status.toLowerCase()
+    if (s === 'active')   return badge(status, '#dcfce7', '#16a34a')
+    if (s === 'inactive' || s === 'blocked') return badge(status, '#fee2e2', '#dc2626')
+    return badge(status, '#f1f5f9', '#545f73')
+  }
+
+  const scoreBadge = (score) => {
+    if (!score) return '<span style="color:#c4cfe4;">—</span>'
+    const s = score.toLowerCase()
+    if (s.includes('health') || s.includes('good')) return badge(score, '#dcfce7', '#16a34a')
+    if (s.includes('risk') || s.includes('warn'))   return badge(score, '#fef9c3', '#92400e')
+    if (s.includes('churn') || s.includes('bad'))   return badge(score, '#fee2e2', '#dc2626')
+    return badge(score, '#e5eeff', '#002fbb')
+  }
+
+  const fmtDate = (dt) => dt ? new Date(dt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : null
+  const fmtLogin = (dt) => dt ? new Date(dt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null
+  const truncate = (s, n = 20) => s ? (s.length > n ? s.slice(0, n) + '…' : s) : null
+
   tbody.innerHTML = accounts.map((a, i) => {
     const rowBg = i % 2 === 1 ? 'background: rgba(239,244,255,0.4);' : ''
-    const tier = a.subscription_tier || 'Free'
-    const tierColor = tier === 'Paid' ? '#16a34a' : tier === 'Trial' ? '#92400e' : (tier === 'Blocked' || tier === 'Cancelled') ? '#dc2626' : '#8b9bb4'
-    const tierBg    = tier === 'Paid' ? '#dcfce7' : tier === 'Trial' ? '#fef9c3' : (tier === 'Blocked' || tier === 'Cancelled') ? '#fee2e2' : '#f1f5f9'
-    const created = a.created_at ? new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
     const rowRestore = i % 2 === 1 ? 'rgba(239,244,255,0.4)' : 'transparent'
-    return `<tr style="${rowBg}" onmouseover="this.style.background='#f8f9ff'" onmouseout="this.style.background='${rowRestore}'">
-      <td style="padding: 16px 24px; font-size: 13px; font-weight: 600; color: #0b1c30;">${a.name || '—'}</td>
-      <td style="padding: 16px 24px; text-align: right; font-size: 13px; color: #0b1c30;">${a.users != null ? a.users : '—'}</td>
-      <td style="padding: 16px 24px; text-align: right; font-size: 13px; color: #0b1c30;">${a.teams != null ? a.teams : '—'}</td>
-      <td style="padding: 16px 24px; text-align: center;"><span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: ${tierBg}; color: ${tierColor};">${tier}</span></td>
-      <td style="padding: 16px 24px; text-align: center; font-size: 12px; color: #454652;">${created}</td>
-      <td style="padding: 16px 24px; text-align: right; font-size: 13px; color: #0b1c30;">${a.usage_7d != null ? a.usage_7d.toFixed(1) + 'h' : '—'}</td>
+    return `<tr style="${rowBg}" onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='${rowRestore}'">
+      ${td(a.name || '—', { bold: true })}
+      <td style="padding: 10px 14px;">${statusBadge(a.status)}</td>
+      <td style="padding: 10px 14px;">${scoreBadge(a.score)}</td>
+      <td style="padding: 10px 14px;">${planBadge(a.plan, a.subscribed)}</td>
+      ${td(a.usage_7d_hrs != null && a.usage_7d_hrs > 0 ? a.usage_7d_hrs.toFixed(1) + 'h' : null, { right: true })}
+      ${td(a.users != null ? a.users : null, { right: true })}
+      ${td(fmtLogin(a.median_login))}
+      ${td(fmtDate(a.created_at))}
+      ${td(a.device)}
+      ${td(a.utm_source)}
+      ${td(a.utm_medium)}
+      ${td(truncate(a.utm_campaign, 18))}
+      ${td(truncate(a.utm_content, 18))}
+      ${td(a.utm_term)}
+      ${td(a.utm_adset)}
+      ${td(a.utm_ad)}
+      <td style="padding: 10px 14px; font-size: 11px; color: #454652; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${a.landing_page || ''}">${a.landing_page ? '<a href="' + a.landing_page + '" target="_blank" style="color:#002fbb;text-decoration:none;">' + truncate(a.landing_page.replace(/https?:\/\/[^/]+/, ''), 22) + '</a>' : '<span style="color:#c4cfe4;">—</span>'}</td>
+      ${td(a.referral)}
     </tr>`
   }).join('')
 }
@@ -3294,19 +3344,31 @@ function closeSidebar() {
         </div>
       </div>
       <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 1400px;">
           <thead>
             <tr style="background: #eff4ff;">
-              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em;">Company</th>
-              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: right;">Users</th>
-              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: right;">Teams</th>
-              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Subscription</th>
-              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Created</th>
-              <th style="padding: 16px 24px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; text-align: right;">Usage (7d hrs)</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Company</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Status</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Score</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Plan</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; text-align: right; white-space: nowrap;">7d Usage</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; text-align: right; white-space: nowrap;">Users</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Median Login</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Created</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Device</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Source</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Medium</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Campaign</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Content</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Term</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Adset</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Ad</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Landing Page</th>
+              <th style="padding: 12px 16px; font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Referral</th>
             </tr>
           </thead>
           <tbody id="venture-accounts-table-body">
-            <tr><td colspan="6" style="padding: 24px; text-align: center; color: #8b9bb4; font-size: 13px;">Loading...</td></tr>
+            <tr><td colspan="18" style="padding: 24px; text-align: center; color: #8b9bb4; font-size: 13px;">Loading...</td></tr>
           </tbody>
         </table>
       </div>
