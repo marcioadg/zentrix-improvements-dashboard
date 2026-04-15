@@ -8,6 +8,78 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "secondary-fixed": "#d8e3fb",
+        "surface-container-highest": "#d3e4fe",
+        "surface-container": "#e5eeff",
+        "error-container": "#ffdad6",
+        "on-error": "#ffffff",
+        "on-error-container": "#93000a",
+        "error": "#ba1a1a",
+        "on-surface-variant": "#454652",
+        "on-primary-fixed-variant": "#0031c4",
+        "surface-container-high": "#dce9ff",
+        "on-secondary-fixed-variant": "#3c475a",
+        "background": "#f8f9ff",
+        "on-primary-container": "#c9d0ff",
+        "surface-container-lowest": "#ffffff",
+        "tertiary-fixed": "#6ffbbe",
+        "on-tertiary": "#ffffff",
+        "surface-bright": "#f8f9ff",
+        "surface-variant": "#d3e4fe",
+        "primary-fixed": "#dee1ff",
+        "tertiary-fixed-dim": "#4edea3",
+        "surface": "#f8f9ff",
+        "tertiary-container": "#006846",
+        "outline-variant": "#c5c5d4",
+        "on-tertiary-fixed": "#002113",
+        "secondary-fixed-dim": "#bcc7de",
+        "on-primary": "#ffffff",
+        "on-primary-fixed": "#001159",
+        "primary-fixed-dim": "#bac3ff",
+        "on-secondary": "#ffffff",
+        "surface-tint": "#2e4edc",
+        "on-secondary-container": "#586377",
+        "primary-container": "#284ad8",
+        "on-surface": "#0b1c30",
+        "on-tertiary-container": "#5debaf",
+        "inverse-primary": "#bac3ff",
+        "surface-dim": "#cbdbf5",
+        "on-secondary-fixed": "#111c2d",
+        "on-tertiary-fixed-variant": "#005236",
+        "outline": "#757684",
+        "on-background": "#0b1c30",
+        "surface-container-low": "#eff4ff",
+        "secondary-container": "#d5e0f8",
+        "inverse-on-surface": "#eaf1ff",
+        "tertiary": "#004e33",
+        "inverse-surface": "#213145",
+        "primary": "#002fbb",
+        "secondary": "#545f73"
+      },
+      borderRadius: {
+        "DEFAULT": "0.125rem",
+        "lg": "0.25rem",
+        "xl": "0.5rem",
+        "full": "0.75rem"
+      },
+      fontFamily: {
+        "headline": ["Plus Jakarta Sans"],
+        "body": ["Inter"],
+        "label": ["Inter"]
+      }
+    }
+  }
+}
+</script>
 <style>
   :root {
     color-scheme: dark;
@@ -401,7 +473,7 @@
 
   /* ── Sidebar navigation ── */
   .app-shell { display: flex; height: 100vh; overflow: hidden; }
-  .sidebar { width: 200px; flex-shrink: 0; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100; transition: transform 200ms ease; }
+  .sidebar { width: 256px; flex-shrink: 0; background: #213145; border-right: none; display: flex; flex-direction: column; height: 100vh; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100; transition: transform 200ms ease; }
   .sidebar-brand { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .sidebar-brand .brand { font-size: 13px; font-weight: 600; color: var(--text-primary); }
   .sidebar-nav { padding: 8px 8px; flex: 1; overflow-y: auto; }
@@ -412,18 +484,15 @@
   .sidebar-nav-item svg { flex-shrink: 0; opacity: 0.8; }
   .sidebar-nav-item.active svg { opacity: 1; }
   .sidebar-nav-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-  .main-content { margin-left: 200px; flex: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; min-width: 0; }
+  .main-content { margin-left: 256px; flex: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; min-width: 0; }
   /* Sidebar overlay for mobile */
   .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
   .sidebar-overlay.visible { display: block; }
   /* Hamburger button for mobile */
   .sidebar-toggle { display: none; background: none; border: none; border-radius: 5px; cursor: pointer; padding: 0; width: 30px; height: 30px; align-items: center; justify-content: center; color: var(--text-muted); transition: color 120ms, background 120ms; }
   .sidebar-toggle:hover { color: var(--text-primary); background: var(--hover); }
-  /* Business metrics placeholder */
-  #biz-metrics-view { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 52px); padding: 48px 24px; text-align: center; }
-  #biz-metrics-view .biz-icon { width: 48px; height: 48px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-raised); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
-  #biz-metrics-view h2 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
-  #biz-metrics-view p { font-size: 13px; color: var(--text-muted); max-width: 280px; line-height: 1.6; }
+  /* Portfolio Overview view */
+  #biz-metrics-view { display: none; flex-direction: column; background: #f8f9ff; min-height: 100vh; overflow-y: auto; }
   /* Mobile responsive adjustments for sidebar */
   @media (max-width: 768px) {
     .sidebar { transform: translateX(-100%); }
@@ -435,24 +504,37 @@
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
-<nav class="sidebar" id="sidebar" aria-label="Main navigation">
-  <div class="sidebar-brand">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 0.5L14.5 4.25V11.75L8 15.5L1.5 11.75V4.25L8 0.5Z" fill="var(--accent)" opacity="0.9"/></svg>
-    <span class="brand">Zentrix</span>
+<nav class="sidebar" id="sidebar" aria-label="Main navigation" style="background: #213145; width: 256px;">
+  <div style="padding: 32px 24px 16px;">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 0.5L14.5 4.25V11.75L8 15.5L1.5 11.75V4.25L8 0.5Z" fill="#5c84fe" opacity="0.9"/></svg>
+      <span style="font-size:15px; font-weight:700; color:#ffffff; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:-0.01em;">Zentrix</span>
+    </div>
+    <p style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.1em; margin-top:4px;">Venture Builder</p>
   </div>
-  <div class="sidebar-nav">
-    <button class="sidebar-nav-item active" id="nav-dev" onclick="switchPage('dev')" aria-current="page">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+  <div style="flex:1; padding: 8px;">
+    <button class="sidebar-nav-item" id="nav-dev" onclick="switchPage('dev')" aria-current="false" style="color:#94a3b8; width:100%; padding:12px 16px; border-left:4px solid transparent; border-radius:0; background:none; border-top:none; border-right:none; border-bottom:none; display:flex; align-items:center; gap:12px; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; transition: all 150ms; cursor:pointer;">
+      <span class="material-symbols-outlined" style="font-size:20px;">terminal</span>
       AI Dev Dashboard
     </button>
-    <button class="sidebar-nav-item" id="nav-biz" onclick="switchPage('biz')">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      Business Metrics
+    <button class="sidebar-nav-item active" id="nav-biz" onclick="switchPage('biz')" aria-current="page" style="color:#ffffff; background:rgba(255,255,255,0.05); border-left:4px solid #002fbb; width:100%; padding:12px 16px; border-radius:0; border-top:none; border-right:none; border-bottom:none; display:flex; align-items:center; gap:12px; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; transition: all 150ms; cursor:pointer;">
+      <span class="material-symbols-outlined" style="font-size:20px;">dashboard</span>
+      Portfolio Overview
     </button>
+  </div>
+  <div style="margin-top:auto; border-top: 1px solid rgba(255,255,255,0.05); padding-bottom:24px;">
+    <div style="display:flex; align-items:center; gap:12px; padding:16px 24px; color:#94a3b8; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em;">
+      <span class="material-symbols-outlined" style="font-size:20px;">account_circle</span>
+      Profile
+    </div>
+    <div style="display:flex; align-items:center; gap:12px; padding:16px 24px; color:#94a3b8; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em;">
+      <span class="material-symbols-outlined" style="font-size:20px;">help_outline</span>
+      Support
+    </div>
   </div>
 </nav>
 <div class="main-content" id="main-content">
-<div id="dev-dashboard-content">
+<div id="dev-dashboard-content" style="display:none;">
 <header>
   <h1>
     <svg class="logo-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2210,15 +2292,27 @@ function switchPage(page) {
     bizContent.style.display = 'none';
     navDev.classList.add('active');
     navDev.setAttribute('aria-current', 'page');
+    navDev.style.color = '#ffffff';
+    navDev.style.background = 'rgba(255,255,255,0.05)';
+    navDev.style.borderLeft = '4px solid #002fbb';
     navBiz.classList.remove('active');
     navBiz.removeAttribute('aria-current');
+    navBiz.style.color = '#94a3b8';
+    navBiz.style.background = 'none';
+    navBiz.style.borderLeft = '4px solid transparent';
   } else {
     devContent.style.display = 'none';
-    bizContent.style.display = 'flex';
+    bizContent.style.display = 'block';
     navBiz.classList.add('active');
     navBiz.setAttribute('aria-current', 'page');
+    navBiz.style.color = '#ffffff';
+    navBiz.style.background = 'rgba(255,255,255,0.05)';
+    navBiz.style.borderLeft = '4px solid #002fbb';
     navDev.classList.remove('active');
     navDev.removeAttribute('aria-current');
+    navDev.style.color = '#94a3b8';
+    navDev.style.background = 'none';
+    navDev.style.borderLeft = '4px solid transparent';
   }
   // close sidebar on mobile after navigation
   if (window.innerWidth <= 768) closeSidebar();
@@ -2237,12 +2331,109 @@ function closeSidebar() {
 }
 
 </script>
-<div id="biz-metrics-view" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; padding:48px 24px; text-align:center;">
-  <div style="width:48px;height:48px;border:1px solid var(--border);border-radius:10px;background:var(--surface-raised);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+<div id="biz-metrics-view" style="display:block; flex-direction:column; background:#f8f9ff; min-height:100vh; overflow-y:auto;">
+  <div class="p-8 space-y-8" style="font-family: 'Inter', sans-serif; background-color: #f8f9ff; min-height: 100vh;">
+    <!-- Hero Stats Grid -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Total MRR Card -->
+      <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm hover:shadow-md transition-all group">
+        <div class="flex justify-between items-start mb-4">
+          <span class="text-on-surface-variant text-[11px] font-bold uppercase tracking-[0.1em]">Total MRR</span>
+          <span class="flex items-center text-tertiary-container text-xs font-bold bg-tertiary-fixed/30 px-2 py-1 rounded">
+            <span class="material-symbols-outlined text-sm mr-1">trending_up</span>12.4%
+          </span>
+        </div>
+        <h3 class="text-4xl font-black text-on-surface font-headline tracking-tighter mb-1">$1,248,500</h3>
+        <p class="text-on-surface-variant text-sm">Target: $1.5M by EOY</p>
+      </div>
+      <!-- Total Accounts Card -->
+      <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm hover:shadow-md transition-all group">
+        <div class="flex justify-between items-start mb-4">
+          <span class="text-on-surface-variant text-[11px] font-bold uppercase tracking-[0.1em]">Total Accounts</span>
+          <span class="flex items-center text-tertiary-container text-xs font-bold bg-tertiary-fixed/30 px-2 py-1 rounded">
+            <span class="material-symbols-outlined text-sm mr-1">trending_up</span>8.2%
+          </span>
+        </div>
+        <h3 class="text-4xl font-black text-on-surface font-headline tracking-tighter mb-1">42,890</h3>
+        <p class="text-on-surface-variant text-sm">Across 14 active ventures</p>
+      </div>
+      <!-- New Customers Card -->
+      <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm hover:shadow-md transition-all group">
+        <div class="flex justify-between items-start mb-4">
+          <span class="text-on-surface-variant text-[11px] font-bold uppercase tracking-[0.1em]">New Customers</span>
+          <span class="flex items-center text-on-error-container text-xs font-bold bg-error-container px-2 py-1 rounded">
+            <span class="material-symbols-outlined text-sm mr-1">trending_down</span>2.1%
+          </span>
+        </div>
+        <h3 class="text-4xl font-black text-on-surface font-headline tracking-tighter mb-1">1,402</h3>
+        <p class="text-on-surface-variant text-sm">This billing cycle</p>
+      </div>
+    </section>
+    <!-- Chart + Sector Allocation -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 bg-surface-container-lowest p-8 rounded-xl shadow-sm overflow-hidden flex flex-col">
+        <div class="flex justify-between items-end mb-12">
+          <div>
+            <h4 class="text-on-surface-variant text-[11px] font-bold uppercase tracking-[0.1em] mb-2">Portfolio Growth Trajectory</h4>
+            <h2 class="text-2xl font-bold font-headline text-on-surface">Venture Pulse Consolidated</h2>
+          </div>
+          <div class="flex gap-4">
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-primary"></div><span class="text-[11px] font-medium text-on-surface-variant uppercase">Current Year</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-secondary-fixed"></div><span class="text-[11px] font-medium text-on-surface-variant uppercase">Previous Year</span></div>
+          </div>
+        </div>
+        <div class="flex-1 relative min-h-[300px] flex items-end">
+          <div class="absolute inset-0 flex items-end justify-between px-2">
+            <div class="w-[8%] bg-surface-container-low h-[40%] rounded-t-lg relative group transition-all hover:bg-primary/20"><div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">$420k</div></div>
+            <div class="w-[8%] bg-surface-container-low h-[55%] rounded-t-lg"></div>
+            <div class="w-[8%] bg-surface-container-low h-[48%] rounded-t-lg"></div>
+            <div class="w-[8%] bg-surface-container-low h-[72%] rounded-t-lg"></div>
+            <div class="w-[8%] bg-primary h-[85%] rounded-t-lg relative group shadow-lg shadow-primary/20"><div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">$1.2M</div></div>
+            <div class="w-[8%] bg-surface-container-low h-[65%] rounded-t-lg"></div>
+            <div class="w-[8%] bg-surface-container-low h-[78%] rounded-t-lg"></div>
+            <div class="w-[8%] bg-surface-container-low h-[90%] rounded-t-lg"></div>
+            <div class="w-[8%] bg-surface-container-low h-[82%] rounded-t-lg"></div>
+          </div>
+          <div class="w-full border-t border-outline-variant/20 pt-4 flex justify-between">
+            <span class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">Jan</span>
+            <span class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">Mar</span>
+            <span class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">May</span>
+            <span class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">Jul</span>
+            <span class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">Sep</span>
+            <span class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">Nov</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-surface-container-low p-8 rounded-xl shadow-sm border border-outline-variant/10">
+        <h4 class="text-on-surface-variant text-[11px] font-bold uppercase tracking-[0.1em] mb-6">Sector Allocation</h4>
+        <div class="space-y-6">
+          <div class="space-y-2"><div class="flex justify-between text-xs font-bold uppercase"><span>FinTech SaaS</span><span>42%</span></div><div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden"><div class="bg-primary h-full w-[42%]"></div></div></div>
+          <div class="space-y-2"><div class="flex justify-between text-xs font-bold uppercase"><span>Developer Tools</span><span>28%</span></div><div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden"><div class="bg-primary-container h-full w-[28%]"></div></div></div>
+          <div class="space-y-2"><div class="flex justify-between text-xs font-bold uppercase"><span>EdTech</span><span>18%</span></div><div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden"><div class="bg-secondary h-full w-[18%]"></div></div></div>
+          <div class="space-y-2"><div class="flex justify-between text-xs font-bold uppercase"><span>Infrastructure</span><span>12%</span></div><div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden"><div class="bg-secondary-fixed-dim h-full w-[12%]"></div></div></div>
+        </div>
+        <div class="mt-12 p-6 bg-surface-container-lowest rounded-lg">
+          <div class="flex items-center gap-4">
+            <span class="material-symbols-outlined text-primary">auto_awesome</span>
+            <div><p class="text-xs font-bold text-on-surface uppercase tracking-tight">Alpha Insight</p><p class="text-[11px] text-on-surface-variant leading-relaxed">FinTech sector seeing 2.4x retention vs other verticals this quarter.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Active Portfolio Ventures -->
+    <section class="space-y-6">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-bold font-headline text-[#213145]">Active Portfolio Ventures</h2>
+        <a class="text-primary font-bold text-[11px] uppercase tracking-widest border-b border-primary/20 pb-0.5" href="#">View All Ventures</a>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-transparent hover:border-primary/20 transition-all cursor-pointer"><div class="flex items-center gap-3 mb-6"><div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-primary">account_balance</span></div><div><h5 class="font-bold font-headline text-on-surface">NeoLedger</h5><p class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">FinTech</p></div></div><div class="grid grid-cols-2 gap-4"><div><p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">MRR</p><p class="text-lg font-black text-on-surface">$240K</p></div><div><p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">Growth</p><p class="text-lg font-black text-tertiary-container">+18%</p></div></div><div class="mt-6 pt-6 border-t border-surface-container flex justify-between items-center"><span class="text-[10px] font-bold text-on-surface-variant">4.8k Users</span><span class="text-[10px] py-1 px-2 bg-tertiary-fixed text-on-tertiary-fixed rounded font-bold uppercase">Series A</span></div></div>
+        <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-transparent hover:border-primary/20 transition-all cursor-pointer"><div class="flex items-center gap-3 mb-6"><div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-primary">code</span></div><div><h5 class="font-bold font-headline text-on-surface">StackFlow</h5><p class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">DevOps</p></div></div><div class="grid grid-cols-2 gap-4"><div><p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">MRR</p><p class="text-lg font-black text-on-surface">$115K</p></div><div><p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">Growth</p><p class="text-lg font-black text-tertiary-container">+22%</p></div></div><div class="mt-6 pt-6 border-t border-surface-container flex justify-between items-center"><span class="text-[10px] font-bold text-on-surface-variant">2.1k Users</span><span class="text-[10px] py-1 px-2 bg-primary-fixed text-on-primary-fixed rounded font-bold uppercase">Seed</span></div></div>
+        <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-transparent hover:border-primary/20 transition-all cursor-pointer"><div class="flex items-center gap-3 mb-6"><div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-primary">cloud</span></div><div><h5 class="font-bold font-headline text-on-surface">CloudNode</h5><p class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">Infra</p></div></div><div class="grid grid-cols-2 gap-4"><div><p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">MRR</p><p class="text-lg font-black text-on-surface">$480K</p></div><div><p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">Growth</p><p class="text-lg font-black text-on-surface-variant">+4%</p></div></div><div class="mt-6 pt-6 border-t border-surface-container flex justify-between items-center"><span class="text-[10px] font-bold text-on-surface-variant">12k Users</span><span class="text-[10px] py-1 px-2 bg-secondary-fixed text-on-secondary-fixed rounded font-bold uppercase">Matured</span></div></div>
+        <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-transparent hover:border-primary/20 transition-all cursor-pointer"><div class="flex items-center gap-3 mb-6"><div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-primary">school</span></div><div><h5 class="font-bold font-headline text-on-surface">SkillForge</h5><p class="text-[10px] text-on-surface-variant uppercase font-medium tracking-wider">EdTech</p></div></div><div class="grid grid-cols-2 gap-4"><div><p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">MRR</p><p class="text-lg font-black text-on-surface">$52K</p></div><div><p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">Growth</p><p class="text-lg font-black text-on-error-container">-3%</p></div></div><div class="mt-6 pt-6 border-t border-surface-container flex justify-between items-center"><span class="text-[10px] font-bold text-on-surface-variant">800 Users</span><span class="text-[10px] py-1 px-2 bg-error-container text-on-error-container rounded font-bold uppercase">At Risk</span></div></div>
+      </div>
+    </section>
   </div>
-  <h2 style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">Business Metrics</h2>
-  <p style="font-size:13px;color:var(--text-muted);max-width:280px;line-height:1.6;">Coming soon — business metrics and KPIs will appear here.</p>
 </div>
 </div><!-- /.main-content -->
 
