@@ -50,9 +50,10 @@ export default async function handler(req, res) {
 
     // ── Fetch base data in parallel ──────────────────────────────────────────
     const [companies, subscriptions, healthRows, usageRows] = await Promise.all([
-      supabase(`/companies?select=id,name,slug,created_at,status,subscription_tier&order=created_at.desc&limit=200`),
-      supabase(`/company_subscriptions?select=company_id,subscribed,subscription_tier,user_count,base_price_per_user,created_at&limit=500`),
-      supabase(`/customer_success_tracking?select=company_id,customer_health,account_stage&limit=500`),
+      supabase(`/companies?select=id,name,slug,created_at,status&order=created_at.desc&limit=200`),
+      supabase(`/company_subscriptions?select=company_id,subscribed,subscription_tier,user_count,base_price_per_user,created_at,trial_end&limit=500`),
+      // customer_success_tracking has subs_status (Expired/Free Trial/Premium) and account_stage
+      supabase(`/customer_success_tracking?select=company_id,customer_health,account_stage,subs_status&limit=500`),
       // 7d usage: sum total_minutes per company for last 7 days
       supabase(`/company_usage_stats?select=company_id,stat_date,total_minutes&stat_date=gte.${sevenDaysAgo()}&limit=2000`),
     ])
@@ -133,19 +134,57 @@ export default async function handler(req, res) {
       const firstUserId = userIds[0]
       const device = firstUserId ? profileMap[firstUserId]?.first_device_type || null : null
 
-      // Plan: prefer subscription_tier from subscriptions, fallback to company
-      const plan = sub.subscription_tier || c.subscription_tier || 'Free'
+      // ── Plan: derive from subs_status + subscription_tier + subscribed ──────
+      // subs_status from customer_success_tracking is the most accurate billing state:
+      //   'Premium' = active paid, 'Free Trial' = active trial, 'Expired' = expired trial/cancelled
+      // subscription_tier gives the tier name (Premium, Trial, Free)
+      // subscribed=true means manually granted access (not necessarily Stripe paid)
+      const subsStatus = health.subs_status   // 'Premium' | 'Free Trial' | 'Expired' | null
+      const tier = sub.subscription_tier || null
       const subscribed = sub.subscribed ?? false
+      const trialExpired = sub.trial_end ? new Date(sub.trial_end) < new Date() : false
 
-      // Score: customer_health (e.g. "Healthy", "At Risk", "Churned")
+      let plan, planStatus
+      if (subsStatus === 'Premium' || tier === 'Premium') {
+        plan = 'Premium'; planStatus = 'paid'
+      } else if (subsStatus === 'Expired' || (subsStatus === null && trialExpired && !subscribed)) {
+        plan = 'Expired'; planStatus = 'expired'
+      } else if (subsStatus === 'Free Trial' || tier === 'Trial') {
+        plan = trialExpired ? 'Expired' : 'Trial'; planStatus = trialExpired ? 'expired' : 'trial'
+      } else if (tier === 'Free') {
+        plan = 'Free'; planStatus = 'free'
+      } else {
+        plan = tier || 'Unknown'; planStatus = 'unknown'
+      }
+
+      // ── Status: use account_stage (meaningful CS status), not companies.status ──
+      // account_stage: 'Active Subscription', 'Free Trial', 'At churn Risk',
+      //   'Onboarding', 'Test Company', 'Internal Company', 'Done', null
+      const accountStage = health.account_stage || null
+      // Derive a clean status label
+      let status
+      if (accountStage === 'Active Subscription') status = 'Active'
+      else if (accountStage === 'At churn Risk')   status = 'Churn Risk'
+      else if (accountStage === 'Free Trial')       status = 'Trial'
+      else if (accountStage === 'Onboarding')       status = 'Onboarding'
+      else if (accountStage === 'Test Company')     status = 'Test'
+      else if (accountStage === 'Internal Company') status = 'Internal'
+      else if (accountStage === 'Done')             status = 'Done'
+      else if (planStatus === 'expired')            status = 'Expired'
+      else if (planStatus === 'paid')               status = 'Active'
+      else if (planStatus === 'trial')              status = 'Trial'
+      else                                          status = null
+
+      // ── Score: customer_health ────────────────────────────────────────────
       const score = health.customer_health || null
 
       return {
         id: c.id,
         name: c.name,
-        status: c.status || null,
+        status,
         score,
         plan,
+        planStatus,
         subscribed,
         usage_7d_hrs: usageHours,
         users: sub.user_count ?? null,

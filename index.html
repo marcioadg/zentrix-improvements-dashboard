@@ -2836,29 +2836,35 @@ function renderVentureAccountRows(accounts) {
   const badge = (text, bg, color) =>
     `<span style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: ${bg}; color: ${color}; white-space: nowrap;">${text}</span>`
 
-  const planBadge = (plan, subscribed) => {
-    const p = (plan || 'Free').toLowerCase()
-    if (subscribed || p === 'premium' || p === 'paid') return badge(plan, '#dcfce7', '#16a34a')
-    if (p === 'trial') return badge(plan, '#fef9c3', '#92400e')
-    if (p === 'free') return badge(plan, '#f1f5f9', '#8b9bb4')
-    return badge(plan, '#e5eeff', '#002fbb')
+  const planBadge = (plan, planStatus) => {
+    if (!plan) return '<span style="color:#c4cfe4;">—</span>'
+    switch (planStatus) {
+      case 'paid':    return badge(plan, '#dcfce7', '#16a34a')
+      case 'trial':   return badge(plan, '#fef9c3', '#92400e')
+      case 'expired': return badge(plan, '#fee2e2', '#dc2626')
+      case 'free':    return badge(plan, '#f1f5f9', '#8b9bb4')
+      default:        return badge(plan, '#e5eeff', '#454652')
+    }
   }
 
   const statusBadge = (status) => {
     if (!status) return '<span style="color:#c4cfe4;">—</span>'
     const s = status.toLowerCase()
-    if (s === 'active')   return badge(status, '#dcfce7', '#16a34a')
-    if (s === 'inactive' || s === 'blocked') return badge(status, '#fee2e2', '#dc2626')
+    if (s === 'active')                    return badge(status, '#dcfce7', '#16a34a')
+    if (s === 'churn risk')                return badge(status, '#fee2e2', '#dc2626')
+    if (s === 'trial' || s === 'onboarding') return badge(status, '#fef9c3', '#92400e')
+    if (s === 'expired' || s === 'done')   return badge(status, '#f1f5f9', '#8b9bb4')
+    if (s === 'test' || s === 'internal')  return badge(status, '#e5eeff', '#454652')
     return badge(status, '#f1f5f9', '#545f73')
   }
 
   const scoreBadge = (score) => {
     if (!score) return '<span style="color:#c4cfe4;">—</span>'
     const s = score.toLowerCase()
-    if (s.includes('health') || s.includes('good')) return badge(score, '#dcfce7', '#16a34a')
-    if (s.includes('risk') || s.includes('warn'))   return badge(score, '#fef9c3', '#92400e')
-    if (s.includes('churn') || s.includes('bad'))   return badge(score, '#fee2e2', '#dc2626')
-    return badge(score, '#e5eeff', '#002fbb')
+    if (s.includes('fine') || s.includes('good'))       return badge(score, '#dcfce7', '#16a34a')
+    if (s.includes('not bad') || s.includes('not good')) return badge(score, '#fef9c3', '#92400e')
+    if (s.includes('unhealthy') || s.includes('not good') || s.includes('risk')) return badge(score, '#fee2e2', '#dc2626')
+    return badge(score, '#e5eeff', '#454652')
   }
 
   const fmtDate = (dt) => dt ? new Date(dt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : null
@@ -2872,7 +2878,7 @@ function renderVentureAccountRows(accounts) {
       ${td(a.name || '—', { bold: true })}
       <td style="padding: 10px 14px;">${statusBadge(a.status)}</td>
       <td style="padding: 10px 14px;">${scoreBadge(a.score)}</td>
-      <td style="padding: 10px 14px;">${planBadge(a.plan, a.subscribed)}</td>
+      <td style="padding: 10px 14px;">${planBadge(a.plan, a.planStatus)}</td>
       ${td(a.usage_7d_hrs != null && a.usage_7d_hrs > 0 ? a.usage_7d_hrs.toFixed(1) + 'h' : null, { right: true })}
       ${td(a.users != null ? a.users : null, { right: true })}
       ${td(fmtLogin(a.median_login))}
