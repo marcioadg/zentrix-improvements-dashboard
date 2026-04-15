@@ -317,9 +317,12 @@ export default async function handler(req, res) {
       const newCount = productNewCustomers[p].size
 
       const productAccounts = results.productAccountCounts?.[p] ?? null
+      const productPaidCount = productCustomers[p]?.size || 0
+      // Only show conv rate if this product has paying customers OR has a known account count
+      // Never fall back to portfolio-level — that would show a misleading % for pre-launch products
       const productConvRate = productAccounts != null && productAccounts > 0
-        ? Math.round(((productCustomers[p]?.size || 0) / productAccounts) * 1000) / 10
-        : convRate  // fall back to portfolio-level if no per-product count
+        ? Math.round((productPaidCount / productAccounts) * 1000) / 10
+        : (productPaidCount > 0 ? convRate : null)  // null = pre-launch, no conv rate
       productMRR[p] = { mrr: current, growth, churnRate, newCustomers: newCount, convRate: productConvRate }
     }
 
