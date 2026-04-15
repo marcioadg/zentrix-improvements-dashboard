@@ -2405,18 +2405,35 @@ async function loadBizMetrics(period) {
       const breakdown = data.productBreakdown || {}
       tableBody.innerHTML = PRODUCTS.map((name, i) => {
         const meta = VENTURE_META[name]
-        const d = data.productMRR[name] || { mrr: 0, growth: null }
+        const d = data.productMRR[name] || { mrr: 0, growth: null, churnRate: null, newCustomers: 0, convRate: null }
         const mrrDisplay = d.mrr > 0 ? '$' + d.mrr.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '—'
-        const accounts = breakdown[name] || (name === 'Zentrix OS' || name === 'Zentrix Insights' || name === 'Zentrix CRM' ? '—' : '—')
-        const newCustomers = d.growth !== null && d.mrr > 0 ? (d.growth > 0 ? '+' + Math.round(d.growth) : String(Math.round(d.growth))) : '—'
+        const accounts = breakdown[name] != null ? breakdown[name] : '—'
+        const newCust = d.newCustomers > 0 ? '+' + d.newCustomers : (d.mrr > 0 ? '0' : '—')
         const isActive = d.mrr > 0
         const rowBg = i % 2 === 1 ? 'background: rgba(239,244,255,0.4);' : ''
+
+        // Churn rate badge
+        let churnDisplay
+        if (d.churnRate !== null && d.churnRate !== undefined) {
+          const churnBg = d.churnRate === 0 ? '#dcfce7' : d.churnRate < 3 ? '#dcfce7' : d.churnRate < 6 ? '#fef9c3' : '#fee2e2'
+          const churnColor = d.churnRate === 0 ? '#16a34a' : d.churnRate < 3 ? '#16a34a' : d.churnRate < 6 ? '#92400e' : '#dc2626'
+          churnDisplay = `<span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: ${churnBg}; color: ${churnColor};">${d.churnRate}%</span>`
+        } else {
+          churnDisplay = `<span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #f1f5f9; color: #8b9bb4;">—</span>`
+        }
+
+        // Conv. rate (portfolio-level, same for all)
+        const convDisplay = d.convRate !== null && d.convRate !== undefined
+          ? d.convRate + '%'
+          : '—'
+
         // Status icon
         let statusIcon, statusColor
         if (!isActive) { statusIcon = 'rocket_launch'; statusColor = '#8b9bb4' }
+        else if (d.churnRate !== null && d.churnRate > 5) { statusIcon = 'warning'; statusColor = '#ef4444' }
         else if (d.growth > 10) { statusIcon = 'trending_up'; statusColor = '#22c55e' }
-        else if (d.growth < 0) { statusIcon = 'warning'; statusColor = '#ef4444' }
         else { statusIcon = 'verified'; statusColor = '#22c55e' }
+
         return `<tr style="${rowBg} transition: background 0.15s; cursor: default;" onmouseover="this.style.background='#f8f9ff'" onmouseout="this.style.background='${i%2===1?'rgba(239,244,255,0.4)':'transparent'}'">
           <td style="padding: 24px 32px;">
             <div style="display: flex; align-items: center; gap: 16px;">
@@ -2429,9 +2446,9 @@ async function loadBizMetrics(period) {
           </td>
           <td style="padding: 24px 32px; text-align: right; font-size: 13px; font-weight: 500; color: #0b1c30;">${accounts}</td>
           <td style="padding: 24px 32px; text-align: right; font-size: 13px; font-weight: 700; color: #0b1c30;">${mrrDisplay}</td>
-          <td style="padding: 24px 32px; text-align: center;"><span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #f1f5f9; color: #454652;">—</span></td>
-          <td style="padding: 24px 32px; text-align: center; font-size: 13px; font-weight: 500; color: #0b1c30;">—</td>
-          <td style="padding: 24px 32px; text-align: right; font-size: 13px; font-weight: 500; color: #0b1c30;">${newCustomers}</td>
+          <td style="padding: 24px 32px; text-align: center;">${churnDisplay}</td>
+          <td style="padding: 24px 32px; text-align: center; font-size: 13px; font-weight: 500; color: #0b1c30;">${convDisplay}</td>
+          <td style="padding: 24px 32px; text-align: right; font-size: 13px; font-weight: 500; color: #0b1c30;">${newCust}</td>
           <td style="padding: 24px 32px; text-align: center;"><span class="material-symbols-outlined" style="color: ${statusColor}; font-size: 20px;">${statusIcon}</span></td>
         </tr>`
       }).join('')

@@ -136,9 +136,16 @@ export default async function handler(req, res) {
     // Per-product MRR: current and at period start
     const productCurrentMRR = {}
     const productStartMRR = {}
+    // Per-product churn and new customers (for period)
+    const productChurnedCustomers = {}  // customers who cancelled within period
+    const productStartCustomers = {}    // customers active at period start (denominator for churn)
+    const productNewCustomers = {}      // new paying customers in period
     for (const p of ALL_PRODUCTS) {
       productCurrentMRR[p] = 0
       productStartMRR[p] = 0
+      productChurnedCustomers[p] = new Set()
+      productStartCustomers[p] = new Set()
+      productNewCustomers[p] = new Set()
     }
 
     for (const stripeKey of stripeKeys) {
@@ -174,11 +181,18 @@ export default async function handler(req, res) {
               (canceledAt === null || canceledAt > periodStartUnix) &&
               (endedAt === null || endedAt > periodStartUnix)
 
+            // Was this sub created during the period (new customer)?
+            const isNewInPeriod = createdAt >= periodStartUnix && isCurrentlyActive
+
+            // Did this sub churn during the period?
+            const churnedInPeriod =
+              canceledAt !== null &&
+              canceledAt >= periodStartUnix
+
             if (isCurrentlyActive) {
               totalMRR += subMRR
               if (customerId) paidCustomers.add(keyTag + ':' + customerId)
               for (const name of subProducts) {
-                // Distribute MRR proportionally if sub spans multiple products (rare)
                 const share = subProducts.size > 0 ? subMRR / subProducts.size : 0
                 productCurrentMRR[name] = (productCurrentMRR[name] || 0) + share
               }
@@ -192,6 +206,19 @@ export default async function handler(req, res) {
               for (const name of subProducts) {
                 const share = subProducts.size > 0 ? subMRR / subProducts.size : 0
                 productStartMRR[name] = (productStartMRR[name] || 0) + share
+                if (customerId) productStartCustomers[name].add(keyTag + ':' + customerId)
+              }
+            }
+
+            if (isNewInPeriod) {
+              for (const name of subProducts) {
+                if (customerId) productNewCustomers[name].add(keyTag + ':' + customerId)
+              }
+            }
+
+            if (churnedInPeriod) {
+              for (const name of subProducts) {
+                if (customerId) productChurnedCustomers[name].add(keyTag + ':' + customerId)
               }
             }
           }
@@ -233,16 +260,28 @@ export default async function handler(req, res) {
 
     // Build productMRR response
     const productMRR = {}
+    const convRate = results.totalAccounts > 0
+      ? Math.round((paidCustomers.size / results.totalAccounts) * 1000) / 10  // e.g. 3.9
+      : null
+
     for (const p of ALL_PRODUCTS) {
       const current = Math.round((productCurrentMRR[p] || 0) * 100) / 100
       const start = productStartMRR[p] || 0
       let growth = null
       if (start > 0) {
         growth = Math.round(((current - start) / start) * 100 * 10) / 10
-      } else if (current > 0) {
-        growth = null // new revenue, no prior baseline
       }
-      productMRR[p] = { mrr: current, growth }
+
+      // Churn rate = churned in period / active at period start
+      const churned = productChurnedCustomers[p].size
+      const startCount = productStartCustomers[p].size
+      const churnRate = startCount > 0
+        ? Math.round((churned / startCount) * 1000) / 10  // e.g. 2.5 = 2.5%
+        : null
+
+      const newCount = productNewCustomers[p].size
+
+      productMRR[p] = { mrr: current, growth, churnRate, newCustomers: newCount, convRate }
     }
 
     results.mrr = Math.round(totalMRR * 100) / 100
@@ -250,6 +289,7 @@ export default async function handler(req, res) {
     results.newPayingCustomers = newCustomers.size
     results.productBreakdown = Object.keys(productCounts).length > 0 ? productCounts : null
     results.productMRR = productMRR
+    results.convRate = convRate
     results.source = results.totalAccounts != null ? 'live' : 'partial'
   }
 
