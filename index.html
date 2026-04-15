@@ -2355,20 +2355,21 @@ async function loadMRRHistory() {
     const maxMRR = Math.max(...values, 1)
     const currentMonth = history[history.length - 1]
 
-    // Render bars
+    // Render bars — flex children, no absolute positioning
     barsEl.innerHTML = history.map((point, idx) => {
       const pct = maxMRR > 0 ? Math.max(((point.mrr || 0) / maxMRR) * 90, 2) : 2
       const isCurrent = idx === history.length - 1
       const isHighest = point.mrr === maxMRR && maxMRR > 0
       const bg = isCurrent ? '#002fbb' : '#eff4ff'
       const tooltip = point.mrr != null ? '$' + Math.round(point.mrr).toLocaleString() : '\u2014'
-      return `<div style="width: 7%; background: ${bg}; height: ${pct}%; border-radius: 4px 4px 0 0; position: relative; cursor: pointer; transition: background 150ms;" title="${point.month} ${point.year}: ${tooltip}" onmouseenter="this.style.background='${isCurrent ? '#1a44d4' : '#dce9ff'}'" onmouseleave="this.style.background='${bg}'">${isHighest || isCurrent ? `<div style="position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#213145;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;">${tooltip}</div>` : ''}</div>`
+      const showLabel = isHighest || isCurrent
+      return `<div style="flex:1; min-width:0; background: ${bg}; height: ${pct}%; border-radius: 4px 4px 0 0; position: relative; cursor: pointer; transition: background 150ms;" title="${point.month} ${point.year}: ${tooltip}" onmouseenter="this.style.background='${isCurrent ? '#1a44d4' : '#dce9ff'}'" onmouseleave="this.style.background='${bg}'">${showLabel ? `<div style="position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#213145;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;z-index:10;">${tooltip}</div>` : ''}</div>`
     }).join('')
 
-    // Render month labels — show every other month to avoid crowding
+    // Render month labels — one per bar, flex:1 to align with bars
     labelsEl.innerHTML = history.map((point, idx) => {
-      const show = history.length <= 6 || idx % 2 === 0 || idx === history.length - 1
-      return `<span style="font-size: 10px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em; min-width: 24px; text-align: center; visibility: ${show ? 'visible' : 'hidden'};">${point.month}</span>`
+      const show = idx % 2 === 0 || idx === history.length - 1
+      return `<span style="flex:1; min-width:0; font-size: 9px; font-weight: 700; color: ${show ? '#454652' : 'transparent'}; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; overflow: hidden; white-space: nowrap;">${point.month}</span>`
     }).join('')
 
     // Update the MRR subtitle in the chart header
@@ -2490,11 +2491,11 @@ function closeSidebar() {
             </div>
           </div>
         </div>
-        <div style="flex: 1; position: relative; min-height: 300px; display: flex; align-items: flex-end;" id="biz-mrr-chart-wrap">
-          <div style="position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 8px;" id="biz-mrr-chart-bars">
+        <div style="flex: 1; min-height: 320px; display: flex; flex-direction: column;" id="biz-mrr-chart-wrap">
+          <div style="flex: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 4px; padding: 0 4px;" id="biz-mrr-chart-bars">
             <!-- bars injected by JS -->
           </div>
-          <div style="width: 100%; border-top: 1px solid rgba(197,197,212,0.2); padding-top: 16px; display: flex; justify-content: space-between;" id="biz-mrr-chart-labels">
+          <div style="border-top: 1px solid rgba(197,197,212,0.2); padding-top: 10px; margin-top: 8px; display: flex; justify-content: space-between; gap: 4px; padding-left: 4px; padding-right: 4px; overflow: hidden;" id="biz-mrr-chart-labels">
             <!-- labels injected by JS -->
           </div>
         </div>
