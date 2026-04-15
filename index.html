@@ -2657,28 +2657,79 @@ async function loadVentureGrowthChart(slug) {
     const json = await resp.json()
     const snapshots = json.data || []
     if (snapshots.length === 0) {
-      chartEl.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #8b9bb4; font-size: 13px;">No weekly data available yet</div>'
+      chartEl.style.display = 'flex'
+      chartEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8b9bb4;font-size:13px;">No weekly data available yet</div>'
       return
     }
-    const maxHours = Math.max(...snapshots.map(s => s.total_hours || 0), 1)
-    chartEl.innerHTML = snapshots.map((s) => {
-      const totalPct = Math.round(((s.total_hours || 0) / maxHours) * 100)
-      const paidPct  = Math.round(((s.paid_hours  || 0) / maxHours) * 100)
-      const freePct  = Math.round(((s.free_hours  || 0) / maxHours) * 100)
-      const trialPct = Math.round(((s.trial_hours || 0) / maxHours) * 100)
-      const label = s.week_start ? s.week_start.slice(5, 10) : ''
-      return `<div style="flex: 1; min-width:0; display: flex; flex-direction: column; align-items: center; gap: 2px;" title="Week of ${s.week_start}: ${(s.total_hours||0).toFixed(1)}h total">
-        <div style="width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 1px;">
-          <div style="width: 55%; background: #002fbb; height: ${totalPct}%; min-height: 2px; border-radius: 3px 3px 0 0; transition: height 0.4s ease;"></div>
-        </div>
-        <div style="font-size: 9px; color: #8b9bb4; font-weight: 600; white-space: nowrap;">${label}</div>
-      </div>`
+
+    // SVG line chart — matches OS admin panel style
+    const W = chartEl.offsetWidth || 800
+    const H = 280
+    const padL = 52, padR = 16, padT = 12, padB = 36
+    const plotW = W - padL - padR
+    const plotH = H - padT - padB
+    const n = snapshots.length
+
+    const maxVal = Math.max(...snapshots.map(s => s.total_hours || 0), 1)
+    // Round up to a nice ceiling
+    const niceMax = Math.ceil(maxVal / 50) * 50 || 50
+    const gridLines = 4
+    const step = niceMax / gridLines
+
+    const xPos = i => padL + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW)
+    const yPos = v => padT + plotH - ((v / niceMax) * plotH)
+
+    // Build polyline points for each series
+    const series = [
+      { key: 'total_hours', color: '#0b1c30',  label: 'Total',  dash: '' },
+      { key: 'paid_hours',  color: '#6c63ff',  label: 'Paid',   dash: '6,3' },
+      { key: 'free_hours',  color: '#4edea3',  label: 'Free',   dash: '4,4' },
+      { key: 'trial_hours', color: '#f4a24a',  label: 'Trial',  dash: '3,5' }
+    ]
+
+    const polylines = series.map(s => {
+      const pts = snapshots.map((snap, i) => `${xPos(i).toFixed(1)},${yPos(snap[s.key] || 0).toFixed(1)}`).join(' ')
+      const dots = snapshots.map((snap, i) => {
+        const cx = xPos(i).toFixed(1)
+        const cy = yPos(snap[s.key] || 0).toFixed(1)
+        const val = (snap[s.key] || 0).toFixed(1)
+        const label = snap.week_start ? snap.week_start.slice(5,10) : ''
+        return `<circle cx="${cx}" cy="${cy}" r="3.5" fill="${s.color}" stroke="#fff" stroke-width="1.5">
+          <title>${s.label}: ${val}h (${label})</title>
+        </circle>`
+      }).join('')
+      const dashAttr = s.dash ? `stroke-dasharray="${s.dash}"` : ''
+      return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2" ${dashAttr} stroke-linejoin="round" stroke-linecap="round"/>${dots}`
     }).join('')
-    chartEl.style.display = 'flex'
-    chartEl.style.alignItems = 'flex-end'
-    chartEl.style.gap = '4px'
+
+    // Y-axis gridlines + labels
+    let gridSvg = ''
+    for (let i = 0; i <= gridLines; i++) {
+      const v = i * step
+      const y = yPos(v).toFixed(1)
+      gridSvg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#e5eeff" stroke-width="1"/>`
+      gridSvg += `<text x="${padL - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" font-size="10" fill="#8b9bb4" font-family="Inter,sans-serif">${Math.round(v)}h</text>`
+    }
+
+    // X-axis labels — show every 2nd label if crowded
+    const showEvery = n > 10 ? 2 : 1
+    let xLabels = ''
+    snapshots.forEach((s, i) => {
+      if (i % showEvery !== 0) return
+      const label = s.week_start ? s.week_start.slice(5,10) : ''
+      xLabels += `<text x="${xPos(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="9" fill="#8b9bb4" font-family="Inter,sans-serif" font-weight="600">${label}</text>`
+    })
+
+    chartEl.style.display = 'block'
+    chartEl.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="overflow:visible;display:block;">
+      ${gridSvg}
+      ${polylines}
+      ${xLabels}
+    </svg>`
   } catch (e) {
     console.warn('venture growth chart error:', e)
+    const chartEl2 = document.getElementById('venture-growth-chart')
+    if (chartEl2) chartEl2.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ef4444;font-size:13px;">Failed to load chart</div>'
   }
 }
 
@@ -3043,7 +3094,7 @@ function closeSidebar() {
           </div>
         </div>
       </div>
-      <div id="venture-growth-chart" style="position: relative; height: 280px; overflow: hidden;">
+      <div id="venture-growth-chart" style="position: relative; height: 280px; overflow: visible;">
         <!-- filled by JS -->
         <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #8b9bb4; font-size: 13px;">Loading chart...</div>
       </div>
