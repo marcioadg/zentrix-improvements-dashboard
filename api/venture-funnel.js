@@ -1,16 +1,30 @@
 // /api/venture-funnel.js
-// Returns conversion funnel metrics: avg time to paid, new trials in period, potential MRR
+// Returns per-product conversion funnel metrics: avg time to paid, new signups, potential MRR
+//
+// Product → Supabase table mapping:
+//   os       → company_subscriptions  (subscription_tier: Free/Trial/Premium)
+//   insights → subscribers            (subscription_tier: Free/Trial/Enterprise/null)
+//   crm      → no data yet (pre-launch)
+//   agents   → no data yet (pre-launch)
+
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bprlchkedecbyoaqlbfz.supabase.co'
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
 
-// Price per seat per product (monthly)
-const PRICE_PER_SEAT = {
-  os: 15,
-  insights: 29,
-  crm: 19,
-  agents: 49
+// Default price per seat when base_price_per_user not in DB
+const DEFAULT_PRICE = { os: 5, insights: 29, crm: 19, agents: 49 }
+
+// Which Supabase table holds subscriber rows per product
+const PRODUCT_TABLE = {
+  os:       'company_subscriptions',
+  insights: 'subscribers',
+  crm:      null,
+  agents:   null
 }
+
+// Which tier values count as "trial" vs "paid" per table
+const TRIAL_TIERS  = { os: ['Trial'], insights: ['Trial'] }
+const PAID_TIERS   = { os: ['Premium'], insights: ['Enterprise', 'Premium', 'Pro'] }
 
 function getPeriodStart(period) {
   const now = new Date()
@@ -27,6 +41,23 @@ function getPeriodStart(period) {
   }
 }
 
+async function sbFetch(path, headers = {}) {
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+    headers: {
+      'apikey': SUPABASE_SERVICE_ROLE_KEY,
+      'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+      ...headers
+    }
+  })
+  if (!resp.ok && resp.status !== 206) return { rows: [], count: 0, ok: false }
+  const contentRange = resp.headers.get('content-range')
+  const count = contentRange ? parseInt((contentRange.match(/\/(\d+)$/) || [])[1] || '0', 10) : 0
+  let rows = []
+  try { rows = await resp.json() } catch (_) {}
+  return { rows, count, ok: true }
+}
+
 export default async function handler(req, res) {
   const origin = req.headers.origin
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
@@ -36,113 +67,86 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
   if (req.method === 'OPTIONS') return res.status(200).end()
 
-  const product = req.query.product || 'os'
+  const product = (req.query.product || 'os').toLowerCase()
   const period  = req.query.period  || '7d'
-  const pricePerSeat = PRICE_PER_SEAT[product] || 15
+  const table   = PRODUCT_TABLE[product]
+  const defaultPrice = DEFAULT_PRICE[product] || 15
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
-    return res.json({ avgTimeToPaid: null, newTrials: 0, potentialMrr: null, product, period })
+    return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period })
   }
 
-  const periodStart = getPeriodStart(period)
+  // Pre-launch products — no data yet
+  if (!table) {
+    return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period, prelaunch: true })
+  }
+
+  const periodStart    = getPeriodStart(period)
   const periodStartIso = periodStart.toISOString()
+  const trialTiers     = TRIAL_TIERS[product] || ['Trial']
+  const paidTiers      = PAID_TIERS[product]  || ['Premium']
+
+  // Build tier filter strings for Supabase "in" operator
+  const trialFilter = `subscription_tier=in.(${trialTiers.join(',')})`
+  const paidFilter  = `subscription_tier=in.(${paidTiers.join(',')})`
 
   try {
-    // ── 1. Avg time to paid ──────────────────────────────────────────────────
-    // Schema: one row per company in company_subscriptions.
-    // When a company converts from trial→paid, the SAME ROW is updated:
-    //   subscribed flips true, updated_at = conversion timestamp.
-    // So: avgTimeToPaid = mean( (updated_at - created_at) in days ) for subscribed=true rows
-    //   where the diff is > 0 (i.e. they were on trial before converting)
+    // ── 1. Avg time to paid ─────────────────────────────────────────────────
+    // For rows where they converted (paid tier), measure updated_at - created_at
+    const { rows: paidRows } = await sbFetch(
+      `/${table}?select=created_at,updated_at&${paidFilter}&limit=500`
+    )
     let avgTimeToPaid = null
-    const paidResp = await fetch(
-      `${SUPABASE_URL}/rest/v1/company_subscriptions?select=created_at,updated_at&subscribed=eq.true&limit=500`,
-      {
-        headers: {
-          'apikey': SUPABASE_SERVICE_ROLE_KEY,
-          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    if (paidResp.ok) {
-      const paidRows = await paidResp.json()
-      const diffs = []
-      paidRows.forEach(row => {
-        if (!row.created_at || !row.updated_at) return
-        const diffDays = (new Date(row.updated_at) - new Date(row.created_at)) / 86400000
-        // Only count meaningful conversions: > 0 days and < 730 days (2yr sanity cap)
-        if (diffDays > 0.5 && diffDays < 730) diffs.push(diffDays)
-      })
-      if (diffs.length > 0) {
-        avgTimeToPaid = Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length)
-      }
+    const diffs = []
+    paidRows.forEach(row => {
+      if (!row.created_at || !row.updated_at) return
+      const diffDays = (new Date(row.updated_at) - new Date(row.created_at)) / 86400000
+      if (diffDays > 0.5 && diffDays < 730) diffs.push(diffDays)
+    })
+    if (diffs.length > 0) {
+      avgTimeToPaid = Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length)
     }
 
-    // ── 2. New signups (trials) in period ───────────────────────────────────
-    // Count ALL new company_subscriptions rows created in period.
-    // subscribed=false = still on trial; subscribed=true = came in as direct paid.
-    // We report total new signups (both) as "new leads" for the period.
-    const trialsResp = await fetch(
-      `${SUPABASE_URL}/rest/v1/company_subscriptions?select=company_id&created_at=gte.${encodeURIComponent(periodStartIso)}`,
-      {
-        headers: {
-          'apikey': SUPABASE_SERVICE_ROLE_KEY,
-          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'count=exact',
-          'Range': '0-0'
-        }
-      }
+    // ── 2. New signups in period ────────────────────────────────────────────
+    // Count ALL new rows in this product's table created within the period
+    const { count: newSignups } = await sbFetch(
+      `/${table}?select=id&created_at=gte.${encodeURIComponent(periodStartIso)}`,
+      { 'Prefer': 'count=exact', 'Range': '0-0' }
     )
-    let newTrials = 0
-    if (trialsResp.ok || trialsResp.status === 206) {
-      const contentRange = trialsResp.headers.get('content-range')
-      if (contentRange) {
-        const match = contentRange.match(/\/(\d+)$/)
-        if (match) newTrials = parseInt(match[1], 10)
-      }
-    }
 
-    // ── 3. Potential MRR ────────────────────────────────────────────────────
-    // Fetch all trial (subscribed=false) companies with user_count + base_price_per_user
-    // potentialMrr = sum(max(user_count,1) * base_price_per_user) for all trials
-    // Frontend adds current MRR to get total potential
+    // ── 3. Active trial count + potential MRR ──────────────────────────────
+    // Trials = rows with trial tier; for OS include base_price_per_user
+    const trialSelect = table === 'company_subscriptions'
+      ? `${trialFilter}&select=user_count,base_price_per_user&subscribed=eq.false&limit=500`
+      : `${trialFilter}&select=id&limit=500`
+
+    const { rows: trialRows } = await sbFetch(`/${table}?${trialSelect}`)
+    const trialCount = trialRows.length
     let potentialMrr = null
-    let trialCount = 0
-    const trialCompResp = await fetch(
-      `${SUPABASE_URL}/rest/v1/company_subscriptions?select=user_count,base_price_per_user&subscribed=eq.false&limit=500`,
-      {
-        headers: {
-          'apikey': SUPABASE_SERVICE_ROLE_KEY,
-          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    if (trialCompResp.ok) {
-      const trialComps = await trialCompResp.json()
-      trialCount = trialComps.length
-      if (trialComps.length > 0) {
-        potentialMrr = trialComps.reduce((sum, c) => {
+    if (trialCount > 0) {
+      if (table === 'company_subscriptions') {
+        potentialMrr = trialRows.reduce((sum, c) => {
           const seats = Math.max(c.user_count || 0, 1)
-          const price = c.base_price_per_user || pricePerSeat
+          const price = c.base_price_per_user || defaultPrice
           return sum + (seats * price)
         }, 0)
+      } else {
+        // For other products, estimate: trialCount × 1 seat × defaultPrice
+        potentialMrr = trialCount * defaultPrice
       }
     }
 
     return res.json({
       avgTimeToPaid,
-      newTrials,
-      potentialMrr,   // trial portion only — frontend adds current MRR
-      trialCount,     // total companies currently on trial
+      newSignups,
+      potentialMrr,
+      trialCount,
       product,
       period
     })
 
   } catch (err) {
     console.error('venture-funnel error:', err.message)
-    return res.json({ avgTimeToPaid: null, newTrials: 0, potentialMrr: null, product, period, error: err.message })
+    return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period, error: err.message })
   }
 }
