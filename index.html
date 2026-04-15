@@ -2562,7 +2562,10 @@ loadMRRHistory()
 
 // ── Venture Performance ────────────────────────────────────────────────────────────
 let currentVentureProduct = 'Zentrix OS'
-let _ventureAllAccounts = [] // cache for client-side search
+let _ventureAllAccounts = []   // full dataset
+let _ventureFilteredAccounts = [] // after search filter
+let _venturePage = 1
+let _venturePageSize = 10  // 'all' or number
 
 const VENTURE_META = {
   'Zentrix OS':      { icon: 'computer',  color: '#002fbb', desc: 'Business Operating System', slug: 'os' },
@@ -2802,13 +2805,16 @@ async function loadVentureAccountsTable(slug) {
   const tbody = document.getElementById('venture-accounts-table-body')
   const countEl = document.getElementById('venture-accounts-count')
   if (!tbody) return
-  tbody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: #8b9bb4; font-size: 13px;">Loading...</td></tr>'
+  tbody.innerHTML = '<tr><td colspan="18" style="padding: 24px; text-align: center; color: #8b9bb4; font-size: 13px;">Loading...</td></tr>'
   try {
     const resp = await fetch('/api/product-accounts?product=' + slug)
     const json = await resp.json()
     const accounts = json.accounts || []
     _ventureAllAccounts = accounts
-    if (countEl) countEl.textContent = 'Showing ' + accounts.length + ' account' + (accounts.length !== 1 ? 's' : '')
+    _venturePage = 1  // reset to first page on fresh load
+    // sync page size selector back to default if needed
+    const pageSizeEl = document.getElementById('venture-page-size')
+    if (pageSizeEl && _venturePageSize !== 'all') pageSizeEl.value = String(_venturePageSize)
     renderVentureAccountRows(accounts)
   } catch (e) {
     console.warn('venture accounts table error:', e)
@@ -2816,10 +2822,47 @@ async function loadVentureAccountsTable(slug) {
   }
 }
 
+function setVenturePageSize(val) {
+  _venturePageSize = val === 'all' ? 'all' : parseInt(val, 10)
+  _venturePage = 1
+  renderVentureAccountRows(_ventureFilteredAccounts)
+}
+
+function venturePageNav(dir) {
+  if (_venturePageSize === 'all') return
+  const totalPages = Math.ceil(_ventureFilteredAccounts.length / _venturePageSize)
+  _venturePage = Math.max(1, Math.min(totalPages, _venturePage + dir))
+  renderVentureAccountRows(_ventureFilteredAccounts)
+}
+
 function renderVentureAccountRows(accounts) {
   const tbody = document.getElementById('venture-accounts-table-body')
   if (!tbody) return
-  if (accounts.length === 0) {
+
+  // Update pagination state
+  _ventureFilteredAccounts = accounts
+  const total = accounts.length
+  const pageSize = _venturePageSize === 'all' ? total : _venturePageSize
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  _venturePage = Math.min(_venturePage, totalPages)
+  const start = (_venturePage - 1) * pageSize
+  const pageAccounts = accounts.slice(start, start + pageSize)
+
+  // Update footer controls
+  const countEl = document.getElementById('venture-accounts-count')
+  if (countEl) {
+    const end = Math.min(start + pageSize, total)
+    countEl.textContent = total === 0 ? 'No accounts' :
+      `Showing ${start + 1}–${end} of ${total} account${total !== 1 ? 's' : ''}`
+  }
+  const pageInfo = document.getElementById('venture-page-info')
+  if (pageInfo) pageInfo.textContent = `${_venturePage} / ${totalPages}`
+  const prevBtn = document.getElementById('venture-page-prev')
+  const nextBtn = document.getElementById('venture-page-next')
+  if (prevBtn) prevBtn.style.opacity = _venturePage <= 1 ? '0.3' : '1'
+  if (nextBtn) nextBtn.style.opacity = _venturePage >= totalPages ? '0.3' : '1'
+
+  if (pageAccounts.length === 0) {
     tbody.innerHTML = '<tr><td colspan="18" style="padding: 24px; text-align: center; color: #8b9bb4; font-size: 13px;">No accounts found</td></tr>'
     return
   }
@@ -2873,7 +2916,7 @@ function renderVentureAccountRows(accounts) {
   const fmtLogin = (dt) => dt ? new Date(dt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null
   const truncate = (s, n = 20) => s ? (s.length > n ? s.slice(0, n) + '…' : s) : null
 
-  tbody.innerHTML = accounts.map((a, i) => {
+  tbody.innerHTML = pageAccounts.map((a, i) => {
     const rowBg = i % 2 === 1 ? 'background: rgba(239,244,255,0.4);' : ''
     const rowRestore = i % 2 === 1 ? 'rgba(239,244,255,0.4)' : 'transparent'
     return `<tr style="${rowBg}" onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='${rowRestore}'">
@@ -2901,11 +2944,17 @@ function renderVentureAccountRows(accounts) {
 
 function filterVentureAccountsTable(query) {
   const q = query.toLowerCase().trim()
+  _venturePage = 1  // reset to page 1 on new search
   if (!q) {
     renderVentureAccountRows(_ventureAllAccounts)
     return
   }
-  const filtered = _ventureAllAccounts.filter(a => (a.name || '').toLowerCase().includes(q))
+  const filtered = _ventureAllAccounts.filter(a =>
+    (a.name || '').toLowerCase().includes(q) ||
+    (a.plan || '').toLowerCase().includes(q) ||
+    (a.status || '').toLowerCase().includes(q) ||
+    (a.utm_source || '').toLowerCase().includes(q)
+  )
   renderVentureAccountRows(filtered)
 }
 function toggleSidebar() {
@@ -3380,8 +3429,22 @@ function closeSidebar() {
           </tbody>
         </table>
       </div>
-      <div style="padding: 16px 32px; border-top: 1px solid #e5eeff; display: flex; align-items: center; justify-content: space-between;">
-        <p id="venture-accounts-count" style="font-size: 11px; font-weight: 700; color: #454652; text-transform: uppercase; letter-spacing: 0.1em;">Loading...</p>
+      <div style="padding: 14px 24px; border-top: 1px solid #e5eeff; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <p id="venture-accounts-count" style="font-size: 12px; color: #454652;">Loading...</p>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <!-- Rows per page -->
+          <span style="font-size: 12px; color: #454652;">Rows:</span>
+          <select id="venture-page-size" onchange="setVenturePageSize(this.value)" style="padding: 5px 10px; border: 1.5px solid #dce9ff; border-radius: 6px; font-size: 12px; color: #0b1c30; background: #fff; cursor: pointer; outline: none;">
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="all">All</option>
+          </select>
+          <!-- Prev / page info / Next -->
+          <button id="venture-page-prev" onclick="venturePageNav(-1)" style="padding: 6px 12px; border: 1.5px solid #dce9ff; border-radius: 6px; background: #fff; font-size: 12px; font-weight: 700; color: #002fbb; cursor: pointer; transition: all 150ms;">‹ Prev</button>
+          <span id="venture-page-info" style="font-size: 12px; font-weight: 600; color: #0b1c30; min-width: 80px; text-align: center;">1 / 1</span>
+          <button id="venture-page-next" onclick="venturePageNav(1)" style="padding: 6px 12px; border: 1.5px solid #dce9ff; border-radius: 6px; background: #fff; font-size: 12px; font-weight: 700; color: #002fbb; cursor: pointer; transition: all 150ms;">Next ›</button>
+        </div>
       </div>
     </div>
 
