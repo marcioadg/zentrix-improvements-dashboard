@@ -104,7 +104,7 @@ export default async function handler(req, res) {
     let totalMRR = 0
     const paidCustomers = new Set()
     const newCustomers = new Set()
-    const productCounts = {}
+    const productCustomers = {} // product name → Set of unique customer IDs
 
     for (const stripeKey of stripeKeys) {
       const keyTag = stripeKey.slice(-8)
@@ -136,11 +136,12 @@ export default async function handler(req, res) {
                 else if (interval === 'year') totalMRR += amount / 12
                 else if (interval === 'week') totalMRR += amount * 4.33
               }
-              // Product breakdown
+              // Product breakdown — count unique customers per product
               const productId = price.product
-              if (productId && PRODUCT_NAMES[productId]) {
+              if (productId && PRODUCT_NAMES[productId] && customerId) {
                 const name = PRODUCT_NAMES[productId]
-                productCounts[name] = (productCounts[name] || 0) + (item.quantity || 1)
+                if (!productCustomers[name]) productCustomers[name] = new Set()
+                productCustomers[name].add(keyTag + ':' + customerId)
               }
             }
           }
@@ -171,6 +172,12 @@ export default async function handler(req, res) {
           else hasMore = false
         }
       } catch (err) { console.error('Stripe new customers error:', err.message) }
+    }
+
+    // Convert productCustomers Sets → counts
+    const productCounts = {}
+    for (const [name, set] of Object.entries(productCustomers)) {
+      productCounts[name] = set.size
     }
 
     results.mrr = Math.round(totalMRR * 100) / 100
