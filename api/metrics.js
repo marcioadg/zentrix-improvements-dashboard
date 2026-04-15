@@ -6,9 +6,14 @@ const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
 const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
 
 const PRODUCT_NAMES = {
+  // New Stripe account
   'prod_UIcJaRWyvLj3hG': 'Zentrix OS',
   'prod_UIXWsz46FekvcE': 'Zentrix CRM',
-  'prod_UIF93vwI9NzXpI': 'Zentrix Insights'
+  'prod_UIF93vwI9NzXpI': 'Zentrix Insights',
+  // Old Stripe account
+  'prod_T85Mmg99NDMaWP': 'Zentrix OS',
+  'prod_TU0tjFz2jR0OYg': 'Zentrix Insights',
+  'prod_T4vLmff0Cdl34d': 'Zentrix OS'
 }
 
 function getPeriodStart(period) {
