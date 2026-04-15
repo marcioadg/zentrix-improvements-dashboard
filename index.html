@@ -2237,6 +2237,7 @@ function switchPage(page) {
   } else {
     devContent.style.display = 'none';
     bizContent.style.display = 'block';
+    loadBizMetrics();
     navBiz.classList.add('active');
     navBiz.setAttribute('aria-current', 'page');
     navBiz.style.color = '#ffffff';
@@ -2251,6 +2252,49 @@ function switchPage(page) {
   // close sidebar on mobile after navigation
   if (window.innerWidth <= 768) closeSidebar();
 }
+// ── Portfolio Metrics ──────────────────────────────────────────────────────────────
+async function loadBizMetrics() {
+  try {
+    const res = await fetch('/api/metrics')
+    if (!res.ok) throw new Error('metrics fetch failed')
+    const data = await res.json()
+
+    // Total Accounts
+    const accountsEl = document.getElementById('biz-total-accounts-value')
+    const accountsLabel = document.getElementById('biz-total-accounts-label')
+    if (accountsEl) {
+      if (data.totalAccounts != null) {
+        accountsEl.textContent = data.totalAccounts.toLocaleString()
+        if (accountsLabel) {
+          const ventures = data.ventures || []
+          accountsLabel.textContent = `Across ${data.ventureCount || ventures.length} active product${(data.ventureCount || ventures.length) !== 1 ? 's' : ''}`
+        }
+      } else {
+        accountsEl.textContent = '—'
+        if (accountsLabel) accountsLabel.textContent = 'Awaiting service key'
+      }
+    }
+
+    // Total Paid Accounts — placeholder until Stripe
+    const paidEl = document.getElementById('biz-paid-accounts-value')
+    const paidLabel = document.getElementById('biz-paid-accounts-label')
+    if (paidEl) {
+      if (data.totalPaidAccounts != null) {
+        paidEl.textContent = data.totalPaidAccounts.toLocaleString()
+        if (paidLabel) paidLabel.textContent = 'Paying customers'
+      }
+      // else leave as — / "Awaiting Stripe access"
+    }
+
+  } catch (e) {
+    console.warn('Biz metrics load failed:', e)
+    const accountsEl = document.getElementById('biz-total-accounts-value')
+    if (accountsEl) accountsEl.textContent = '—'
+    const accountsLabel = document.getElementById('biz-total-accounts-label')
+    if (accountsLabel) accountsLabel.textContent = 'Could not load'
+  }
+}
+loadBizMetrics()
 function toggleSidebar() {
   var sidebar = document.getElementById('sidebar');
   var overlay = document.getElementById('sidebar-overlay');
@@ -2269,7 +2313,7 @@ function closeSidebar() {
   <div style="padding: 32px; display: flex; flex-direction: column; gap: 24px; font-family: 'Inter', sans-serif; background-color: #f8f9ff; min-height: 100vh;">
     
     <!-- Hero Stats Grid -->
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;">
       
       <!-- Total MRR Card -->
       <div style="background: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: box-shadow 200ms;">
@@ -2287,12 +2331,12 @@ function closeSidebar() {
       <div style="background: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
           <span style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">Total Accounts</span>
-          <span style="display: flex; align-items: center; color: #006846; font-size: 12px; font-weight: 700; background: rgba(111,251,190,0.3); padding: 4px 8px; border-radius: 4px;">
-            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">trending_up</span>8.2%
+          <span style="display: flex; align-items: center; color: #454652; font-size: 12px; font-weight: 700; background: #e5eeff; padding: 4px 8px; border-radius: 4px;" id="biz-total-accounts-badge">
+            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">people</span>All products
           </span>
         </div>
-        <h3 style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;">42,890</h3>
-        <p style="color: #454652; font-size: 14px;">Across 14 active ventures</p>
+        <h3 style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;" id="biz-total-accounts-value">—</h3>
+        <p style="color: #454652; font-size: 14px;" id="biz-total-accounts-label">Loading...</p>
       </div>
       
       <!-- New Customers Card -->
@@ -2305,6 +2349,18 @@ function closeSidebar() {
         </div>
         <h3 style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;">1,402</h3>
         <p style="color: #454652; font-size: 14px;">This billing cycle</p>
+      </div>
+
+      <!-- Total Paid Accounts Card -->
+      <div style="background: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);" id="biz-paid-accounts-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+          <span style="color: #454652; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">Total Paid Accounts</span>
+          <span style="display: flex; align-items: center; color: #454652; font-size: 12px; font-weight: 700; background: #e5eeff; padding: 4px 8px; border-radius: 4px;">
+            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">credit_card</span>Stripe
+          </span>
+        </div>
+        <h3 style="font-size: 36px; font-weight: 900; color: #0b1c30; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; margin-bottom: 4px;" id="biz-paid-accounts-value">—</h3>
+        <p style="color: #454652; font-size: 14px;" id="biz-paid-accounts-label">Awaiting Stripe access</p>
       </div>
       
     </div>

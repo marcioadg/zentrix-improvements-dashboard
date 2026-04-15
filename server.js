@@ -113,6 +113,66 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() })
 })
 
+// ── Metrics endpoint ──────────────────────────────────────────────────────────
+app.get('/api/metrics', async (req, res) => {
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://iftqwfqpplcfmxdrmzor.supabase.co'
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseServiceKey) {
+      // Return placeholder data when no service key configured
+      return res.json({
+        totalAccounts: null,
+        totalPaidAccounts: null,
+        ventureCount: 3,
+        ventures: ['Business OS', 'Insights', 'CRM'],
+        source: 'placeholder',
+        lastUpdated: null
+      })
+    }
+
+    // Query the latest platform_analytics_snapshot from BOS Supabase
+    // (BOS, Insights, and CRM all share the same Supabase project)
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
+      {
+        headers: {
+          'apikey': supabaseServiceKey,
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const err = await response.text()
+      console.error('Supabase metrics error:', err)
+      return res.json({ totalAccounts: null, totalPaidAccounts: null, ventureCount: 3, source: 'error', error: err })
+    }
+
+    const data = await response.json()
+    const snapshot = data[0]
+
+    if (!snapshot) {
+      return res.json({ totalAccounts: null, totalPaidAccounts: null, ventureCount: 3, source: 'no_data' })
+    }
+
+    return res.json({
+      totalAccounts: snapshot.total_users,
+      totalCompanies: snapshot.total_companies,
+      totalPaidAccounts: null, // Will be filled once Stripe keys are available
+      ventureCount: 3,
+      ventures: ['Business OS', 'Insights', 'CRM'],
+      source: 'live',
+      lastUpdated: snapshot.snapshot_date
+    })
+
+  } catch (err) {
+    console.error('Metrics endpoint error:', err)
+    res.status(500).json({ error: 'Failed to fetch metrics', totalAccounts: null, totalPaidAccounts: null })
+  }
+})
+
 // Agents data — read/write
 app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
   if (!validateAgentsJSON(req.body)) {
