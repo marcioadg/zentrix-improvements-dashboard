@@ -13,6 +13,14 @@ const SLACK_TOKEN = process.env.SLACK_TOKEN || ''
 const API_KEY = process.env.API_KEY || ''
 const SLACK_CHANNEL = 'C0ABH17F93L' // #ai-devs-zentrix
 
+// Warn on startup if critical env vars are missing
+if (!SLACK_TOKEN) {
+  console.warn('[WARN] SLACK_TOKEN not set — Slack posting will fail')
+}
+if (!API_KEY) {
+  console.warn('[WARN] API_KEY not set — Protected endpoints will be inaccessible')
+}
+
 // ── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({
   origin: function(origin, callback) {
@@ -117,6 +125,9 @@ function escapeSlackMarkdown(str) {
 }
 
 async function postSlack(text, blocks) {
+  if (!SLACK_TOKEN) {
+    throw new Error('SLACK_TOKEN not configured')
+  }
   const body = { channel: SLACK_CHANNEL, text }
   if (blocks) body.blocks = blocks
   const r = await fetch('https://slack.com/api/chat.postMessage', {
@@ -124,7 +135,17 @@ async function postSlack(text, blocks) {
     headers: { 'Authorization': 'Bearer ' + SLACK_TOKEN, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   })
-  return r.json()
+  if (!r.ok) {
+    const errorText = await r.text()
+    console.error(`[ERROR] Slack API returned ${r.status}: ${errorText}`)
+    throw new Error(`Slack API error: ${r.status}`)
+  }
+  const data = await r.json()
+  if (!data.ok) {
+    console.error(`[ERROR] Slack API error: ${data.error || 'unknown'}`)
+    throw new Error(`Slack API error: ${data.error || 'unknown'}`)
+  }
+  return data
 }
 
 // ── Response caching (10 min TTL for expensive queries) ──
