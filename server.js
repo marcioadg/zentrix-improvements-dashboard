@@ -44,7 +44,27 @@ app.use('/data', express.static(path.join(__dirname, 'data'), {
     res.setHeader('Pragma', 'no-cache')
   }
 }))
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')))
+
+// Cache index.html with ETag validation
+const _indexCache = (() => {
+  try {
+    const content = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8')
+    const etag = generateETag(content)
+    return { content, etag }
+  } catch (e) {
+    console.error('Failed to load index.html:', e.message)
+    return { content: '', etag: '' }
+  }
+})()
+
+app.get('/', (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=300')
+  res.setHeader('ETag', _indexCache.etag)
+  if (req.headers['if-none-match'] === _indexCache.etag) {
+    return res.status(304).end()
+  }
+  res.send(_indexCache.content)
+})
 
 // ── Auth middleware ──────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
