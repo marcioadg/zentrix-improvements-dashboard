@@ -3,6 +3,7 @@ const express = require('express')
 const cors = require('cors')
 const path = require('path')
 const fs = require('fs')
+const crypto = require('crypto')
 
 const app = express()
 const PORT = process.env.PORT || 3847
@@ -106,6 +107,14 @@ async function postSlack(text, blocks) {
   return r.json()
 }
 
+// ── Response caching (10 min TTL for expensive queries) ──
+const _metricsCache = { data: null, etag: null, timestamp: 0 }
+const METRICS_CACHE_TTL = 600000 // 10 minutes
+
+function generateETag(obj) {
+  return 'W/"' + crypto.createHash('md5').update(JSON.stringify(obj)).digest('hex') + '"'
+}
+
 // ── Routes ───────────────────────────────────────────────────────────────────
 
 // Health check (no auth)
@@ -115,6 +124,18 @@ app.get('/api/health', (req, res) => {
 
 // ── Metrics endpoint ──────────────────────────────────────────────────────────
 app.get('/api/metrics', async (req, res) => {
+  const now = Date.now()
+  const isCacheValid = _metricsCache.data && (now - _metricsCache.timestamp) < METRICS_CACHE_TTL
+
+  if (isCacheValid) {
+    res.setHeader('Cache-Control', 'public, max-age=600')
+    res.setHeader('ETag', _metricsCache.etag)
+    if (req.headers['if-none-match'] === _metricsCache.etag) {
+      return res.status(304).end()
+    }
+    return res.json(_metricsCache.data)
+  }
+
   const results = {
     totalAccounts: null,
     totalPaidAccounts: null,
@@ -227,6 +248,12 @@ app.get('/api/metrics', async (req, res) => {
     results.source = results.totalAccounts != null ? 'live' : 'partial'
   }
 
+  _metricsCache.data = results
+  _metricsCache.etag = generateETag(results)
+  _metricsCache.timestamp = now
+
+  res.setHeader('Cache-Control', 'public, max-age=600')
+  res.setHeader('ETag', _metricsCache.etag)
   res.json(results)
 })
 
