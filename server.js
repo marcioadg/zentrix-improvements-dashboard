@@ -255,13 +255,13 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
   const label = labels[action] || action
 
   const blocks = [
-    { type: 'section', text: { type: 'mrkdwn', text: `${label} — *${repoName || repo}*${route ? ` \`${route}\`` : ''}` } },
-    { type: 'section', text: { type: 'mrkdwn', text: `>${summary || '(no summary)'}` } },
+    { type: 'section', text: { type: 'mrkdwn', text: `${label} — *${escapeSlackMarkdown(repoName || repo)}*${route ? ` \`${escapeSlackMarkdown(route)}\`` : ''}` } },
+    { type: 'section', text: { type: 'mrkdwn', text: `>${escapeSlackMarkdown(summary || '(no summary)')}` } },
     { type: 'context', elements: [{ type: 'mrkdwn', text: `Card: ${escapeSlackMarkdown(cardId)} · ${new Date().toISOString().slice(0,16).replace('T',' ')} UTC` }] }
   ]
 
   try {
-    const result = await postSlack(`${label} — ${repoName || repo}`, blocks)
+    const result = await postSlack(`${label} — ${escapeSlackMarkdown(repoName || repo)}`, blocks)
     res.json({ ok: result.ok, ts: result.ts })
   } catch (e) {
     res.status(500).json({ error: e.message })
