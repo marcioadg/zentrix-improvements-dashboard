@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3847
 const SLACK_TOKEN = process.env.SLACK_TOKEN || ''
 const API_KEY = process.env.API_KEY || ''
 const SLACK_CHANNEL = 'C0ABH17F93L' // #ai-devs-zentrix
+const FETCH_TIMEOUT = 8000 // 8 seconds for external API calls
 
 // Warn on startup if critical env vars are missing
 if (!SLACK_TOKEN) {
@@ -132,22 +133,30 @@ async function postSlack(text, blocks) {
   }
   const body = { channel: SLACK_CHANNEL, text }
   if (blocks) body.blocks = blocks
-  const r = await fetch('https://slack.com/api/chat.postMessage', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + SLACK_TOKEN, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  })
-  if (!r.ok) {
-    const errorText = await r.text()
-    console.error(`[ERROR] Slack API returned ${r.status}: ${errorText}`)
-    throw new Error(`Slack API error: ${r.status}`)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+  try {
+    const r = await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + SLACK_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    })
+    clearTimeout(timeout)
+    if (!r.ok) {
+      const errorText = await r.text()
+      console.error(`[ERROR] Slack API returned ${r.status}: ${errorText}`)
+      throw new Error(`Slack API error: ${r.status}`)
+    }
+    const data = await r.json()
+    if (!data.ok) {
+      console.error(`[ERROR] Slack API error: ${data.error || 'unknown'}`)
+      throw new Error(`Slack API error: ${data.error || 'unknown'}`)
+    }
+    return data
+  } finally {
+    clearTimeout(timeout)
   }
-  const data = await r.json()
-  if (!data.ok) {
-    console.error(`[ERROR] Slack API error: ${data.error || 'unknown'}`)
-    throw new Error(`Slack API error: ${data.error || 'unknown'}`)
-  }
-  return data
 }
 
 // ── Response caching (10 min TTL for expensive queries) ──
@@ -194,6 +203,8 @@ app.get('/api/metrics', async (req, res) => {
     const supabaseUrl = process.env.SUPABASE_URL || 'https://bprlchkedecbyoaqlbfz.supabase.co'
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (supabaseServiceKey) {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
       const response = await fetch(
         `${supabaseUrl}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
         {
@@ -201,9 +212,11 @@ app.get('/api/metrics', async (req, res) => {
             'apikey': supabaseServiceKey,
             'Authorization': `Bearer ${supabaseServiceKey}`,
             'Content-Type': 'application/json'
-          }
+          },
+          signal: controller.signal
         }
       )
+      clearTimeout(timeout)
       if (response.ok) {
         const data = await response.json()
         const snapshot = data[0]
@@ -238,12 +251,16 @@ app.get('/api/metrics', async (req, res) => {
           const params = new URLSearchParams({ limit: '100', status: 'active' })
           if (startingAfter) params.append('starting_after', startingAfter)
 
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
           const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
             headers: {
               'Authorization': `Bearer ${stripeKey}`,
               'Content-Type': 'application/x-www-form-urlencoded'
-            }
+            },
+            signal: controller.signal
           })
+          clearTimeout(timeout)
 
           if (!response.ok) {
             console.error('Stripe error:', await response.text())
