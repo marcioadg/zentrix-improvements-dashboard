@@ -1,5 +1,6 @@
 require('dotenv').config()
 const express = require('express')
+const compression = require('compression')
 const cors = require('cors')
 const path = require('path')
 const fs = require('fs')
@@ -22,6 +23,7 @@ if (!API_KEY) {
 }
 
 // ── Middleware ───────────────────────────────────────────────────────────────
+app.use(compression())
 app.use(cors({
   origin: function(origin, callback) {
     // Allow same-origin requests (no Origin header) and requests from the deployment itself
@@ -34,7 +36,7 @@ app.use(cors({
     callback(new Error('Not allowed by CORS'))
   }
 }))
-app.use(express.json())
+app.use(express.json({ limit: '1mb' }))
 
 // Security headers
 app.use((req, res, next) => {
