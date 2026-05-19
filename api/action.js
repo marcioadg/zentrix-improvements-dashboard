@@ -14,12 +14,20 @@ function escapeSlackMarkdown(str) {
 async function postSlack(text, blocks) {
   const body = { channel: SLACK_CHANNEL, text }
   if (blocks) body.blocks = blocks
-  const r = await fetch('https://slack.com/api/chat.postMessage', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + SLACK_TOKEN, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  })
-  return r.json()
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 8000)
+  try {
+    const r = await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + SLACK_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    })
+    clearTimeout(timeout)
+    return r.json()
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 const ALLOWED_ORIGINS = [

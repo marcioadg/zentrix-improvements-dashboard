@@ -1,6 +1,7 @@
 // /api/weekly-usage.js
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bprlchkedecbyoaqlbfz.supabase.co'
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const FETCH_TIMEOUT = 8000
 const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
 
 export default async function handler(req, res) {
@@ -21,6 +22,8 @@ export default async function handler(req, res) {
 
     // ── OS (public schema) ────────────────────────────────────────────────────
     if (product === 'os') {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
       const response = await fetch(
         `${SUPABASE_URL}/rest/v1/weekly_usage_snapshots?select=*&order=week_start.asc&limit=16`,
         {
@@ -28,9 +31,11 @@ export default async function handler(req, res) {
             'apikey': SUPABASE_SERVICE_ROLE_KEY,
             'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
             'Content-Type': 'application/json'
-          }
+          },
+          signal: controller.signal
         }
       )
+      clearTimeout(timeout)
       if (!response.ok) {
         const err = await response.text()
         console.error('weekly_usage_snapshots (os) error:', err)
@@ -42,6 +47,8 @@ export default async function handler(req, res) {
 
     // ── Insights schema ───────────────────────────────────────────────────────
     if (product === 'insights') {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
       const response = await fetch(
         `${SUPABASE_URL}/rest/v1/weekly_usage_snapshots?select=week_start,week_end,total_hours,paid_hours,trial_hours,free_hours,avg_hours_per_user,total_users,paid_users,wow_hours_change_pct,top_users&order=week_start.asc&limit=16`,
         {
@@ -50,9 +57,11 @@ export default async function handler(req, res) {
             'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
             'Content-Type': 'application/json',
             'Accept-Profile': 'insights'
-          }
+          },
+          signal: controller.signal
         }
       )
+      clearTimeout(timeout)
       if (!response.ok) {
         const err = await response.text()
         console.error('weekly_usage_snapshots (insights) error:', err)
@@ -78,6 +87,8 @@ export default async function handler(req, res) {
 
     // ── CRM schema ────────────────────────────────────────────────────────────
     if (product === 'crm') {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
       const response = await fetch(
         `${SUPABASE_URL}/rest/v1/weekly_usage_snapshots?select=week_start,week_end,total_hours,paid_hours,trial_hours,free_hours,avg_hours_per_tenant,avg_hours_per_user,total_tenants,paid_tenants,wow_hours_change_pct,top_tenants,low_tenants&order=week_start.asc&limit=16`,
         {
@@ -86,9 +97,11 @@ export default async function handler(req, res) {
             'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
             'Content-Type': 'application/json',
             'Accept-Profile': 'crm'
-          }
+          },
+          signal: controller.signal
         }
       )
+      clearTimeout(timeout)
       if (!response.ok) {
         const err = await response.text()
         console.error('weekly_usage_snapshots (crm) error:', err)

@@ -2,6 +2,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bprlchkedecbyoaqlbfz.s
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
+const FETCH_TIMEOUT = 8000
 
 const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
 
@@ -101,6 +102,8 @@ export default async function handler(req, res) {
   // ── Supabase: Total Accounts ──
   try {
     if (SUPABASE_SERVICE_ROLE_KEY) {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
       const response = await fetch(
         `${SUPABASE_URL}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
         {
@@ -108,9 +111,11 @@ export default async function handler(req, res) {
             'apikey': SUPABASE_SERVICE_ROLE_KEY,
             'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
             'Content-Type': 'application/json'
-          }
+          },
+          signal: controller.signal
         }
       )
+      clearTimeout(timeout)
       if (response.ok) {
         const data = await response.json()
         const snapshot = data[0]
@@ -129,6 +134,8 @@ export default async function handler(req, res) {
       }
       for (const [product, table] of Object.entries(productTables)) {
         try {
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
           const countResp = await fetch(
             `${SUPABASE_URL}/rest/v1/${table}?select=id`,
             {
@@ -137,9 +144,11 @@ export default async function handler(req, res) {
                 'apikey': SUPABASE_SERVICE_ROLE_KEY,
                 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
                 'Prefer': 'count=exact'
-              }
+              },
+              signal: controller.signal
             }
           )
+          clearTimeout(timeout)
           if (countResp.ok) {
             const contentRange = countResp.headers.get('content-range')
             // content-range format: "0-24/356" — we want the total after "/"
@@ -192,9 +201,13 @@ export default async function handler(req, res) {
         while (hasMore) {
           const params = new URLSearchParams({ limit: '100', status: 'all' })
           if (startingAfter) params.append('starting_after', startingAfter)
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
           const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
-            headers: { 'Authorization': `Bearer ${stripeKey}` }
+            headers: { 'Authorization': `Bearer ${stripeKey}` },
+            signal: controller.signal
           })
+          clearTimeout(timeout)
           if (!response.ok) { console.error('Stripe error:', await response.text()); break }
           const data = await response.json()
 
@@ -270,9 +283,13 @@ export default async function handler(req, res) {
         while (hasMore) {
           const params = new URLSearchParams({ limit: '100', status: 'active', 'created[gte]': String(periodStartUnix) })
           if (startingAfter) params.append('starting_after', startingAfter)
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
           const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
-            headers: { 'Authorization': `Bearer ${stripeKey}` }
+            headers: { 'Authorization': `Bearer ${stripeKey}` },
+            signal: controller.signal
           })
+          clearTimeout(timeout)
           if (!response.ok) { console.error('Stripe new subs error:', await response.text()); break }
           const data = await response.json()
           for (const sub of data.data) {
