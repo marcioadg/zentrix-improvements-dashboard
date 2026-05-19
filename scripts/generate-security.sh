@@ -103,7 +103,7 @@ for repo in "${!REPOS[@]}"; do
 
   ENV_IN_GIT=$(git -C "$path" ls-files 2>/dev/null | grep -E "\.env$|\.env\.local$|\.env\.production$|\.env\.staging$" || echo "(none)")
 
-  OUTPUT_RAW=$(timeout 300 $CLAUDE --permission-mode bypassPermissions --print "
+  OUTPUT_RAW=$(timeout 300 $CLAUDE --permission-mode allow-all --print "
 You are a security auditor. DO NOT explore the filesystem. Score ONLY based on the pre-extracted data below.
 
 ## Repo: $repo

@@ -35,7 +35,7 @@ if [ -z "$FORMATTED" ]; then
   exit 0
 fi
 
-SUMMARY=$(cat <<PROMPT | claude --permission-mode bypassPermissions --print
+SUMMARY=$(cat <<PROMPT | claude --permission-mode allow-all --print
 You are the CTO of Zentrix, writing a daily product update for the founders. They are non-technical — do not use engineering jargon, file names, technical terms, or code references.
 
 Here are the AI-driven improvements made across Zentrix products in the last 24 hours:
