@@ -46,7 +46,7 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
   res.setHeader('X-XSS-Protection', '0')
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
+  res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'sha256-J/kkS/x5I2PdVTfIIIbu8mI6tMKhfOh0pFMZ6Icm6r0='; style-src 'sha256-twU6KozwNFRBwq/gjzeoMQjRyMBl+ySRLBUIWiG0Rc0=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
   next()
 })
 app.use('/data', express.static(path.join(__dirname, 'data'), {
