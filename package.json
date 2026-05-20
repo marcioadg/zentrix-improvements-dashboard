@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "node server.js",
     "build": "echo 'static site'",
-    "start": "node server.js"
+    "start": "node server.js",
+    "validate:csp": "node csp-validator.js"
   },
   "dependencies": {
     "compression": "^1.8.1",
