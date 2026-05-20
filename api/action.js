@@ -24,7 +24,17 @@ async function postSlack(text, blocks) {
       signal: controller.signal
     })
     clearTimeout(timeout)
-    return r.json()
+    if (!r.ok) {
+      const errorText = await r.text()
+      console.error(`[ERROR] Slack API returned ${r.status}: ${errorText}`)
+      throw new Error(`Slack API error: ${r.status}`)
+    }
+    const data = await r.json()
+    if (!data.ok) {
+      console.error(`[ERROR] Slack API error: ${data.error || 'unknown'}`)
+      throw new Error(`Slack API error: ${data.error || 'unknown'}`)
+    }
+    return data
   } finally {
     clearTimeout(timeout)
   }
