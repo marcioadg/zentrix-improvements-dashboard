@@ -198,6 +198,20 @@ function generateETag(obj) {
   return 'W/"' + crypto.createHash('md5').update(JSON.stringify(obj)).digest('hex') + '"'
 }
 
+// Validate Supabase analytics response structure
+function validateSupabaseSnapshot(data) {
+  if (!Array.isArray(data) || data.length === 0) return null
+  const snapshot = data[0]
+  if (typeof snapshot !== 'object' || !snapshot.total_users || !snapshot.snapshot_date) return null
+  return snapshot
+}
+
+// Validate Stripe subscriptions response structure
+function validateStripeSubscriptionsResponse(data) {
+  if (typeof data !== 'object' || !Array.isArray(data.data)) return null
+  return data
+}
+
 // ── Routes ───────────────────────────────────────────────────────────────────
 
 // Health check (no auth)
@@ -250,7 +264,7 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
       clearTimeout(timeout)
       if (response.ok) {
         const data = await response.json()
-        const snapshot = data[0]
+        const snapshot = validateSupabaseSnapshot(data)
         if (snapshot) {
           results.totalAccounts = snapshot.total_users
           results.lastUpdated = snapshot.snapshot_date
@@ -299,8 +313,13 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
           }
 
           const data = await response.json()
+          const validData = validateStripeSubscriptionsResponse(data)
+          if (!validData) {
+            console.error('Stripe response validation failed')
+            break
+          }
 
-          for (const sub of data.data) {
+          for (const sub of validData.data) {
             // Track unique paid customers
             const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
             if (customerId) paidCustomers.add(stripeKey + ':' + customerId)
@@ -322,9 +341,9 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
             }
           }
 
-          hasMore = data.has_more
-          if (hasMore && data.data.length > 0) {
-            startingAfter = data.data[data.data.length - 1].id
+          hasMore = validData.has_more || false
+          if (hasMore && validData.data.length > 0) {
+            startingAfter = validData.data[validData.data.length - 1].id
           } else {
             hasMore = false
           }
