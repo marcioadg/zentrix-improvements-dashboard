@@ -113,7 +113,7 @@ export default async function handler(req, res) {
   ]
 
   try {
-    const result = await postSlack(`${label} — ${repoName || repo}`, blocks)
+    const result = await postSlack(`${label} — ${escapeSlackMarkdown(repoName || repo)}`, blocks)
     res.json({ ok: result.ok, ts: result.ts })
   } catch(e) {
     res.status(500).json({ error: e.message })
