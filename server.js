@@ -206,7 +206,7 @@ app.get('/api/health', (req, res) => {
 })
 
 // ── Metrics endpoint ──────────────────────────────────────────────────────────
-app.get('/api/metrics', async (req, res) => {
+app.get('/api/metrics', rateLimit, async (req, res) => {
   const now = Date.now()
   const isCacheValid = _metricsCache.data && (now - _metricsCache.timestamp) < METRICS_CACHE_TTL
 
