@@ -118,16 +118,23 @@ function validateActionPayload(body) {
   return { valid: true }
 }
 
-// ── Rate limiting (in-memory, per-IP) ───────────────────────────────────────
+// ── Rate limiting (in-memory, per-IP, bounded with LRU eviction) ───────────
 const _rateLimitMap = new Map()
 const RATE_LIMIT_WINDOW = 60000 // 1 minute
 const RATE_LIMIT_MAX = 10       // max 10 actions per minute per IP
+const RATE_LIMIT_MAX_IPS = 10000 // max unique IPs before LRU eviction
 
 function rateLimit(req, res, next) {
   const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip
   const now = Date.now()
   const entry = _rateLimitMap.get(ip)
+
   if (!entry || now - entry.start > RATE_LIMIT_WINDOW) {
+    // Evict oldest entry if map exceeds max size (prevent memory exhaustion DoS)
+    if (!_rateLimitMap.has(ip) && _rateLimitMap.size >= RATE_LIMIT_MAX_IPS) {
+      const oldest = _rateLimitMap.entries().next().value
+      if (oldest) _rateLimitMap.delete(oldest[0])
+    }
     _rateLimitMap.set(ip, { start: now, count: 1 })
     return next()
   }
