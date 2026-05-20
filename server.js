@@ -368,7 +368,7 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
 })
 
 // Agents data — read/write
-app.get('/api/agents', rateLimit, (req, res) => {
+app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
   const filePath = path.join(__dirname, 'data', 'agents.json')
   try {
     const data = fs.readFileSync(filePath, 'utf8')
