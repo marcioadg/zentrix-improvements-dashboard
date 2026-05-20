@@ -318,6 +318,18 @@ app.get('/api/metrics', async (req, res) => {
 })
 
 // Agents data — read/write
+app.get('/api/agents', (req, res) => {
+  const filePath = path.join(__dirname, 'data', 'agents.json')
+  try {
+    const data = fs.readFileSync(filePath, 'utf8')
+    const agents = JSON.parse(data)
+    res.setHeader('Cache-Control', 'public, max-age=60')
+    res.json(agents)
+  } catch (e) {
+    res.status(404).json({ error: 'Agents data not found' })
+  }
+})
+
 app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
   if (!validateAgentsJSON(req.body)) {
     return res.status(400).json({ error: 'Invalid agents data structure' })
