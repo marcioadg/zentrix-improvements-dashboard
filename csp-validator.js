@@ -11,6 +11,7 @@ function validateCSPHashes() {
   const htmlPath = path.join(__dirname, 'index.html');
   const serverPath = path.join(__dirname, 'server.js');
   const vercelPath = path.join(__dirname, 'vercel.json');
+  const isStandalone = require.main === module;
 
   try {
     const htmlContent = fs.readFileSync(htmlPath, 'utf8');
@@ -37,16 +38,26 @@ function validateCSPHashes() {
     }
 
     if (errors.length > 0) {
-      console.error('❌ CSP Hash Validation Failed:');
-      errors.forEach(e => console.error('  ' + e));
+      const msg = '❌ CSP Hash Validation Failed:';
+      if (isStandalone) {
+        console.error(msg);
+        errors.forEach(e => console.error('  ' + e));
+      } else {
+        console.error(msg + ' — refusing to start:');
+        errors.forEach(e => console.error('  ' + e));
+      }
       process.exit(1);
     }
 
-    console.log('✅ CSP hashes are in sync');
-    console.log(`   Hash: ${expectedHash}`);
-    process.exit(0);
+    if (isStandalone) {
+      console.log('✅ CSP hashes are in sync');
+      console.log(`   Hash: ${expectedHash}`);
+      process.exit(0);
+    }
   } catch (e) {
-    console.error('Error validating CSP hashes:', e.message);
+    const msg = 'CSP validation error: ' + e.message;
+    if (isStandalone) console.error('Error validating CSP hashes:', e.message);
+    else console.error(msg);
     process.exit(1);
   }
 }

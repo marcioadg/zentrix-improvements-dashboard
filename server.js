@@ -418,40 +418,6 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
   }
 })
 
-// Validate CSP hashes before starting server
-try {
-  const htmlPath = path.join(__dirname, 'index.html')
-  const serverPath = path.join(__dirname, 'server.js')
-  const vercelPath = path.join(__dirname, 'vercel.json')
-
-  const htmlContent = fs.readFileSync(htmlPath, 'utf8')
-  const expectedHash = 'sha256-' + crypto.createHash('sha256').update(htmlContent).digest('base64')
-
-  const serverContent = fs.readFileSync(serverPath, 'utf8')
-  const vercelContent = fs.readFileSync(vercelPath, 'utf8')
-
-  const serverMatch = serverContent.match(/script-src '(sha256-[^']+)'/);
-  const vercelMatch = vercelContent.match(/script-src '(sha256-[^']+)'/);
-
-  const serverHash = serverMatch ? serverMatch[1] : null
-  const vercelHash = vercelMatch ? vercelMatch[1] : null
-
-  const errors = []
-  if (serverHash !== expectedHash) {
-    errors.push(`server.js hash mismatch: ${serverHash} (expected: ${expectedHash})`)
-  }
-  if (vercelHash !== expectedHash) {
-    errors.push(`vercel.json hash mismatch: ${vercelHash} (expected: ${expectedHash})`)
-  }
-
-  if (errors.length > 0) {
-    console.error('❌ CSP Hash Validation Failed — refusing to start:')
-    errors.forEach(e => console.error('  ' + e))
-    process.exit(1)
-  }
-} catch (e) {
-  console.error('CSP validation error:', e.message)
-  process.exit(1)
-}
+validateCSPHashes()
 
 app.listen(PORT, () => console.log(`Dashboard API running on :${PORT}`))
