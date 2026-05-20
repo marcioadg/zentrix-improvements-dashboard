@@ -208,7 +208,7 @@ export default async function handler(req, res) {
             signal: controller.signal
           })
           clearTimeout(timeout)
-          if (!response.ok) { console.error('Stripe error:', await response.text()); break }
+          if (!response.ok) { console.error('Stripe error:', response.status); break }
           const data = await response.json()
 
           for (const sub of data.data) {
@@ -290,7 +290,7 @@ export default async function handler(req, res) {
             signal: controller.signal
           })
           clearTimeout(timeout)
-          if (!response.ok) { console.error('Stripe new subs error:', await response.text()); break }
+          if (!response.ok) { console.error('Stripe new subs error:', response.status); break }
           const data = await response.json()
           for (const sub of data.data) {
             const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id

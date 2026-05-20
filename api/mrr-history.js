@@ -17,7 +17,7 @@ async function fetchAllSubscriptions(stripeKey) {
     })
 
     if (!response.ok) {
-      console.error('Stripe fetch error:', await response.text())
+      console.error('Stripe fetch error:', response.status)
       break
     }
 

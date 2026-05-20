@@ -225,7 +225,7 @@ app.get('/api/metrics', async (req, res) => {
           results.lastUpdated = snapshot.snapshot_date
         }
       } else {
-        console.error('Supabase metrics error:', await response.text())
+        console.error('Supabase metrics error:', response.status)
       }
     }
   } catch (err) {
@@ -263,7 +263,7 @@ app.get('/api/metrics', async (req, res) => {
           clearTimeout(timeout)
 
           if (!response.ok) {
-            console.error('Stripe error:', await response.text())
+            console.error('Stripe error:', response.status)
             break
           }
 
