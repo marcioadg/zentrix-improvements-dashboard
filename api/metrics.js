@@ -104,25 +104,28 @@ export default async function handler(req, res) {
     if (SUPABASE_SERVICE_ROLE_KEY) {
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-      const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
-        {
-          headers: {
-            'apikey': SUPABASE_SERVICE_ROLE_KEY,
-            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          signal: controller.signal
+      try {
+        const response = await fetch(
+          `${SUPABASE_URL}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
+          {
+            headers: {
+              'apikey': SUPABASE_SERVICE_ROLE_KEY,
+              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            signal: controller.signal
+          }
+        )
+        if (response.ok) {
+          const data = await response.json()
+          const snapshot = data[0]
+          if (snapshot) {
+            results.totalAccounts = snapshot.total_users
+            results.lastUpdated = snapshot.snapshot_date
+          }
         }
-      )
-      clearTimeout(timeout)
-      if (response.ok) {
-        const data = await response.json()
-        const snapshot = data[0]
-        if (snapshot) {
-          results.totalAccounts = snapshot.total_users
-          results.lastUpdated = snapshot.snapshot_date
-        }
+      } finally {
+        clearTimeout(timeout)
       }
 
       // Per-product account counts
@@ -133,9 +136,9 @@ export default async function handler(req, res) {
         'Zentrix CRM': 'companies'
       }
       for (const [product, table] of Object.entries(productTables)) {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
         try {
-          const controller = new AbortController()
-          const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
           const countResp = await fetch(
             `${SUPABASE_URL}/rest/v1/${table}?select=id`,
             {
@@ -148,7 +151,6 @@ export default async function handler(req, res) {
               signal: controller.signal
             }
           )
-          clearTimeout(timeout)
           if (countResp.ok) {
             const contentRange = countResp.headers.get('content-range')
             // content-range format: "0-24/356" — we want the total after "/"
@@ -159,6 +161,8 @@ export default async function handler(req, res) {
           }
         } catch (e) {
           console.error(`Count error for ${table}:`, e.message)
+        } finally {
+          clearTimeout(timeout)
         }
       }
       results.productAccountCounts = productAccountCounts
@@ -203,13 +207,17 @@ export default async function handler(req, res) {
           if (startingAfter) params.append('starting_after', startingAfter)
           const controller = new AbortController()
           const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-          const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
-            headers: { 'Authorization': `Bearer ${stripeKey}` },
-            signal: controller.signal
-          })
-          clearTimeout(timeout)
-          if (!response.ok) { console.error('Stripe error:', response.status); break }
-          const data = await response.json()
+          let data
+          try {
+            const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
+              headers: { 'Authorization': `Bearer ${stripeKey}` },
+              signal: controller.signal
+            })
+            if (!response.ok) { console.error('Stripe error:', response.status); break }
+            data = await response.json()
+          } finally {
+            clearTimeout(timeout)
+          }
 
           for (const sub of data.data) {
             const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
@@ -285,13 +293,17 @@ export default async function handler(req, res) {
           if (startingAfter) params.append('starting_after', startingAfter)
           const controller = new AbortController()
           const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-          const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
-            headers: { 'Authorization': `Bearer ${stripeKey}` },
-            signal: controller.signal
-          })
-          clearTimeout(timeout)
-          if (!response.ok) { console.error('Stripe new subs error:', response.status); break }
-          const data = await response.json()
+          let data
+          try {
+            const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
+              headers: { 'Authorization': `Bearer ${stripeKey}` },
+              signal: controller.signal
+            })
+            if (!response.ok) { console.error('Stripe new subs error:', response.status); break }
+            data = await response.json()
+          } finally {
+            clearTimeout(timeout)
+          }
           for (const sub of data.data) {
             const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
             if (customerId) newCustomers.add(keyTag + ':' + customerId)
