@@ -6,6 +6,7 @@ const SLACK_CHANNEL = 'C0ABH17F93L'
 const _rateLimitMap = new Map()
 const RATE_LIMIT_WINDOW = 60000
 const RATE_LIMIT_MAX = 10
+const RATE_LIMIT_MAX_IPS = 1000 // max unique IPs before LRU eviction
 
 function escapeSlackMarkdown(str) {
   return String(str || '').replace(/[*_~`\[\]]/g, '\\$&')
@@ -80,13 +81,19 @@ export default async function handler(req, res) {
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown'
   const now = Date.now()
   const entry = _rateLimitMap.get(ip)
-  if (entry && now - entry.start <= RATE_LIMIT_WINDOW) {
+
+  if (!entry || now - entry.start > RATE_LIMIT_WINDOW) {
+    // Evict oldest entry if map exceeds max size (prevent memory exhaustion DoS)
+    if (!_rateLimitMap.has(ip) && _rateLimitMap.size >= RATE_LIMIT_MAX_IPS) {
+      const oldest = _rateLimitMap.entries().next().value
+      if (oldest) _rateLimitMap.delete(oldest[0])
+    }
+    _rateLimitMap.set(ip, { start: now, count: 1 })
+  } else {
     entry.count++
     if (entry.count > RATE_LIMIT_MAX) {
       return res.status(429).json({ error: 'Too many requests — try again in a minute' })
     }
-  } else {
-    _rateLimitMap.set(ip, { start: now, count: 1 })
   }
 
   const key = req.headers['x-api-key']
