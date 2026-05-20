@@ -72,6 +72,10 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
+  // Validate critical env vars early
+  if (!SLACK_TOKEN) return res.status(500).json({ error: 'SLACK_TOKEN not configured' })
+  if (!API_KEY) return res.status(500).json({ error: 'API_KEY not configured' })
+
   // Rate limiting
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown'
   const now = Date.now()
@@ -86,7 +90,7 @@ export default async function handler(req, res) {
   }
 
   const key = req.headers['x-api-key']
-  if (API_KEY && key !== API_KEY) return res.status(401).json({ error: 'Unauthorized' })
+  if (key !== API_KEY) return res.status(401).json({ error: 'Unauthorized' })
 
   const validation = validateActionPayload(req.body)
   if (!validation.valid) return res.status(400).json({ error: validation.error })
