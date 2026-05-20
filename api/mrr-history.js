@@ -3,31 +3,56 @@ const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
 
 const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
 
+function validateStripeResponse(data) {
+  return data && typeof data === 'object' && Array.isArray(data.data) && typeof data.has_more === 'boolean'
+}
+
 async function fetchAllSubscriptions(stripeKey) {
   const subs = []
   let hasMore = true
   let startingAfter = undefined
+  const FETCH_TIMEOUT = 8000
 
   while (hasMore) {
     const params = new URLSearchParams({ limit: '100', status: 'all' })
     if (startingAfter) params.append('starting_after', startingAfter)
 
-    const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
-      headers: { 'Authorization': `Bearer ${stripeKey}` }
-    })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+    try {
+      const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
+        headers: { 'Authorization': `Bearer ${stripeKey}` },
+        signal: controller.signal
+      })
 
-    if (!response.ok) {
-      console.error('Stripe fetch error:', response.status)
+      if (!response.ok) {
+        console.error('Stripe fetch error:', response.status)
+        break
+      }
+
+      const data = await response.json()
+      if (!validateStripeResponse(data)) {
+        console.error('Stripe response validation failed')
+        break
+      }
+
+      for (const sub of data.data) {
+        if (sub && typeof sub === 'object' && Array.isArray(sub.items?.data)) {
+          subs.push(sub)
+        }
+      }
+
+      hasMore = data.has_more
+      if (hasMore && data.data.length > 0) {
+        startingAfter = data.data[data.data.length - 1].id
+      } else {
+        hasMore = false
+      }
+    } catch (err) {
+      console.error('Stripe fetch error:', err.message)
       break
-    }
-
-    const data = await response.json()
-    subs.push(...data.data)
-    hasMore = data.has_more
-    if (hasMore && data.data.length > 0) {
-      startingAfter = data.data[data.data.length - 1].id
-    } else {
-      hasMore = false
+    } finally {
+      clearTimeout(timeout)
     }
   }
 
@@ -37,15 +62,17 @@ async function fetchAllSubscriptions(stripeKey) {
 function calcMonthMRR(subscriptions, monthStart, monthEnd) {
   let mrr = 0
   for (const sub of subscriptions) {
-    const subStart = sub.created
+    if (!sub || typeof sub !== 'object') continue
+    const subStart = sub.created || 0
     const subEnd = sub.canceled_at || sub.ended_at || Number.MAX_SAFE_INTEGER
 
-    // Was this subscription active at any point during the month?
     if (subStart > monthEnd || subEnd < monthStart) continue
 
-    for (const item of sub.items.data) {
+    const items = sub.items?.data || []
+    for (const item of items) {
+      if (!item || typeof item !== 'object') continue
       const price = item.price
-      if (!price || !price.unit_amount) continue
+      if (!price || typeof price !== 'object' || !price.unit_amount) continue
       const quantity = item.quantity || 1
       const amount = (price.unit_amount / 100) * quantity
       const interval = price.recurring?.interval

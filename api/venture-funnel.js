@@ -42,20 +42,31 @@ function getPeriodStart(period) {
 }
 
 async function sbFetch(path, headers = {}) {
-  const resp = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
-    headers: {
-      'apikey': SUPABASE_SERVICE_ROLE_KEY,
-      'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      'Content-Type': 'application/json',
-      ...headers
-    }
-  })
-  if (!resp.ok && resp.status !== 206) return { rows: [], count: 0, ok: false }
-  const contentRange = resp.headers.get('content-range')
-  const count = contentRange ? parseInt((contentRange.match(/\/(\d+)$/) || [])[1] || '0', 10) : 0
-  let rows = []
-  try { rows = await resp.json() } catch (_) {}
-  return { rows, count, ok: true }
+  const FETCH_TIMEOUT = 8000
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+      headers: {
+        'apikey': SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      signal: controller.signal
+    })
+    if (!resp.ok && resp.status !== 206) return { rows: [], count: 0, ok: false }
+    const contentRange = resp.headers.get('content-range')
+    const count = contentRange ? parseInt((contentRange.match(/\/(\d+)$/) || [])[1] || '0', 10) : 0
+    let rows = []
+    try { rows = await resp.json() } catch (_) {}
+    return { rows, count, ok: true }
+  } catch (err) {
+    console.error(`Supabase fetch error for ${path}:`, err.message)
+    return { rows: [], count: 0, ok: false }
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 export default async function handler(req, res) {
@@ -99,7 +110,7 @@ export default async function handler(req, res) {
     let avgTimeToPaid = null
     const diffs = []
     paidRows.forEach(row => {
-      if (!row.created_at || !row.updated_at) return
+      if (!row || typeof row !== 'object' || !row.created_at || !row.updated_at) return
       const diffDays = (new Date(row.updated_at) - new Date(row.created_at)) / 86400000
       if (diffDays > 0.5 && diffDays < 730) diffs.push(diffDays)
     })
@@ -126,12 +137,12 @@ export default async function handler(req, res) {
     if (trialCount > 0) {
       if (table === 'company_subscriptions') {
         potentialMrr = trialRows.reduce((sum, c) => {
+          if (!c || typeof c !== 'object') return sum
           const seats = Math.max(c.user_count || 0, 1)
           const price = c.base_price_per_user || defaultPrice
           return sum + (seats * price)
         }, 0)
       } else {
-        // For other products, estimate: trialCount × 1 seat × defaultPrice
         potentialMrr = trialCount * defaultPrice
       }
     }

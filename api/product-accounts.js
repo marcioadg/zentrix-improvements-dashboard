@@ -7,20 +7,30 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
 
 async function supabase(path, headers = {}) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
-    headers: {
-      'apikey': SUPABASE_SERVICE_ROLE_KEY,
-      'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      'Content-Type': 'application/json',
-      ...headers
+  const FETCH_TIMEOUT = 8000
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+      headers: {
+        'apikey': SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      signal: controller.signal
+    })
+    if (!res.ok) {
+      console.error(`Supabase error for ${path}:`, res.status)
+      return []
     }
-  })
-  if (!res.ok) {
-    const err = await res.text()
-    console.error(`Supabase error for ${path}:`, err)
+    return res.json()
+  } catch (err) {
+    console.error(`Supabase fetch error for ${path}:`, err.message)
     return []
+  } finally {
+    clearTimeout(timeout)
   }
-  return res.json()
 }
 
 export default async function handler(req, res) {
