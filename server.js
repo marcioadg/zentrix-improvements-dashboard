@@ -88,10 +88,34 @@ function requireAuth(req, res, next) {
 function validateAgentsJSON(data) {
   if (!data || typeof data !== 'object') return false
   if (!Array.isArray(data.companies)) return false
-  return data.companies.every(c =>
-    c.id && c.name && Array.isArray(c.agents) &&
-    c.agents.every(a => a.id && a.name && a.role && Array.isArray(a.channels))
-  )
+  return data.companies.every(c => {
+    if (typeof c !== 'object' || !c.id || !c.name) return false
+    if (typeof c.id !== 'string' || typeof c.name !== 'string') return false
+    if (!Array.isArray(c.agents)) return false
+    return c.agents.every(a => {
+      if (typeof a !== 'object' || !a.id || !a.name || !a.role) return false
+      if (typeof a.id !== 'string' || typeof a.name !== 'string' || typeof a.role !== 'string') return false
+      return Array.isArray(a.channels)
+    })
+  })
+}
+
+function validateActionPayload(body) {
+  if (!body || typeof body !== 'object') return { valid: false, error: 'Body must be object' }
+  const { action, cardId, repo, repoName, summary, route } = body
+  if (typeof action !== 'string' || !action) return { valid: false, error: 'action must be non-empty string' }
+  if (typeof cardId !== 'string' || !cardId) return { valid: false, error: 'cardId must be non-empty string' }
+  if (action !== 'approve' && action !== 'deny' && action !== 'plan' && action !== 'sec_fix') {
+    return { valid: false, error: 'action must be approve|deny|plan|sec_fix' }
+  }
+  if (repo && typeof repo !== 'string') return { valid: false, error: 'repo must be string' }
+  if (repoName && typeof repoName !== 'string') return { valid: false, error: 'repoName must be string' }
+  if (summary && typeof summary !== 'string') return { valid: false, error: 'summary must be string' }
+  if (route && typeof route !== 'string') return { valid: false, error: 'route must be string' }
+  if ((action + cardId + (repo || '') + (repoName || '') + (summary || '') + (route || '')).length > 2000) {
+    return { valid: false, error: 'Payload exceeds maximum length' }
+  }
+  return { valid: true }
 }
 
 // ── Rate limiting (in-memory, per-IP) ───────────────────────────────────────
@@ -346,12 +370,12 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
 // Unified action endpoint — matches the Vercel serverless function (api/action.js)
 // The client exclusively calls this route for swipe actions and security fix requests
 app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
-  const { action, cardId, repo, repoName, summary, route } = req.body
-  if (!action || !cardId) return res.status(400).json({ error: 'Missing action or cardId' })
+  const validation = validateActionPayload(req.body)
+  if (!validation.valid) return res.status(400).json({ error: validation.error })
 
+  const { action, cardId, repo, repoName, summary, route } = req.body
   const labels = { approve: '✅ Approved', deny: '❌ Denied', plan: '📋 Plan Requested', sec_fix: '🔐 Security Fix Requested' }
-  if (!labels[action]) return res.status(400).json({ error: 'Invalid action' })
-  const label = labels[action] || action
+  const label = labels[action]
 
   const blocks = [
     { type: 'section', text: { type: 'mrkdwn', text: `${label} — *${escapeSlackMarkdown(repoName || repo)}*${route ? ` \`${escapeSlackMarkdown(route)}\`` : ''}` } },
