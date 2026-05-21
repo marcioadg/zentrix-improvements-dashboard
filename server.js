@@ -13,7 +13,8 @@ const {
   validateActionPayload,
   postSlack,
   getClientIP,
-  checkRateLimit
+  checkRateLimit,
+  cleanup: cleanupRateLimit
 } = require('./utils/slack.js')
 
 const app = express()
@@ -364,6 +365,7 @@ const server = app.listen(PORT, () => console.log(`Dashboard API running on :${P
 // Graceful shutdown: close HTTP server on process termination
 function gracefulShutdown(signal) {
   console.log(`[${signal}] Shutting down gracefully...`)
+  cleanupRateLimit()
   server.close(() => {
     console.log('HTTP server closed')
     process.exit(0)

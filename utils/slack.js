@@ -116,5 +116,6 @@ module.exports = {
   validateActionPayload,
   postSlack,
   getClientIP,
-  checkRateLimit
+  checkRateLimit,
+  cleanup
 }
