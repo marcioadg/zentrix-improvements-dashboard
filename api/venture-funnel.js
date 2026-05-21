@@ -69,7 +69,7 @@ async function sbFetch(path, headers = {}) {
   }
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const origin = req.headers.origin
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)

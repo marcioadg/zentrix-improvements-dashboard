@@ -69,7 +69,7 @@ function getSubProducts(sub) {
   return names
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const origin = req.headers.origin
   // Allow localhost for development and any Vercel domain for preview/production
   if (origin && (origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app'))) {

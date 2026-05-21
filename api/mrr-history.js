@@ -84,7 +84,7 @@ function calcMonthMRR(subscriptions, monthStart, monthEnd) {
   return Math.round(mrr * 100) / 100
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const origin = req.headers.origin
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)

@@ -4,7 +4,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const FETCH_TIMEOUT = 8000
 const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const origin = req.headers.origin
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
