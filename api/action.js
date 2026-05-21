@@ -1,10 +1,10 @@
-import {
+const {
   escapeSlackMarkdown,
   validateActionPayload,
   postSlack,
   getClientIP,
   checkRateLimit
-} from '../utils/slack.js'
+} = require('../utils/slack.js')
 
 const SLACK_TOKEN = process.env.SLACK_TOKEN
 const API_KEY = process.env.API_KEY
@@ -13,7 +13,7 @@ const ALLOWED_ORIGINS = [
   'https://zentrix-improvements-dashboard.vercel.app'
 ]
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const origin = req.headers.origin
   if (ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
@@ -57,3 +57,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: e.message })
   }
 }
+
