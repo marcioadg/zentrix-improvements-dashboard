@@ -186,9 +186,9 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
 
   // ── Supabase: Total Accounts ──
   try {
-    const supabaseUrl = process.env.SUPABASE_URL || 'https://bprlchkedecbyoaqlbfz.supabase.co'
+    const supabaseUrl = process.env.SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (supabaseServiceKey) {
+    if (supabaseUrl && supabaseServiceKey) {
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
       const response = await fetch(
