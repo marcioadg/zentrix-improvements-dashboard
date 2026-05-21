@@ -14,7 +14,11 @@ function validateCSPHashes() {
 
   try {
     const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-    const expectedHash = calculateHash(htmlContent);
+    const scriptMatch = htmlContent.match(/<script[^>]*>([\s\S]*?)<\/script>/);
+    if (!scriptMatch || !scriptMatch[1]) {
+      throw new Error('No inline script found in index.html');
+    }
+    const expectedHash = calculateHash(scriptMatch[1]);
 
     const serverContent = fs.readFileSync(serverPath, 'utf8');
     const serverMatch = serverContent.match(/script-src '\$\{_scriptHash\}'/);
@@ -25,7 +29,7 @@ function validateCSPHashes() {
 
     if (isStandalone) {
       console.log('✅ CSP using dynamic hash calculation');
-      console.log(`   Current index.html hash: ${expectedHash}`);
+      console.log(`   Current index.html script hash: ${expectedHash}`);
       process.exit(0);
     }
   } catch (e) {

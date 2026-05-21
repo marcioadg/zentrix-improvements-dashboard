@@ -51,7 +51,12 @@ app.use(express.json({ limit: '1mb' }))
 const _scriptHash = (() => {
   try {
     const content = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8')
-    return 'sha256-' + crypto.createHash('sha256').update(content).digest('base64')
+    const scriptMatch = content.match(/<script[^>]*>([\s\S]*?)<\/script>/)
+    if (!scriptMatch || !scriptMatch[1]) {
+      throw new Error('No inline script found in index.html')
+    }
+    const scriptContent = scriptMatch[1]
+    return 'sha256-' + crypto.createHash('sha256').update(scriptContent).digest('base64')
   } catch (e) {
     console.error('[ERROR] Failed to calculate CSP hash:', e.message)
     process.exit(1)
