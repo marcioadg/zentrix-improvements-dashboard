@@ -1,10 +1,10 @@
-const {
+import {
   escapeSlackMarkdown,
   validateActionPayload,
   postSlack,
   getClientIP,
   checkRateLimit
-} = require('../utils/slack.js')
+} from '../utils/slack.js'
 
 const SLACK_TOKEN = process.env.SLACK_TOKEN
 const API_KEY = process.env.API_KEY
