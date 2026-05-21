@@ -2,7 +2,7 @@
 // Returns full company list with all columns matching the OS admin panel:
 // Company, Status, Score, Plan, 7d Usage, Users, Median Login, Created,
 // Device, Source, Medium, Campaign, Content, Term, Adset, Ad, Landing Page, Referral
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bprlchkedecbyoaqlbfz.supabase.co'
+const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
 

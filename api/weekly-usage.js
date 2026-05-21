@@ -1,5 +1,5 @@
 // /api/weekly-usage.js
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bprlchkedecbyoaqlbfz.supabase.co'
+const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const FETCH_TIMEOUT = 8000
 const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
