@@ -36,13 +36,12 @@ if (!API_KEY) {
 app.use(compression())
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow same-origin requests (no Origin header) and requests from the deployment itself
+    // Allow same-origin requests (no Origin header)
     if (!origin) return callback(null, true)
-    const allowed = [
-      'http://localhost:' + PORT,
-      'https://zentrix-improvements-dashboard.vercel.app'
-    ]
-    if (allowed.includes(origin)) return callback(null, true)
+    // Allow localhost for development
+    if (origin.startsWith('http://localhost:')) return callback(null, true)
+    // Allow any Vercel preview/production domain
+    if (origin.endsWith('.vercel.app')) return callback(null, true)
     callback(new Error('Not allowed by CORS'))
   }
 }))

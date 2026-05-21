@@ -9,14 +9,11 @@ const {
 const SLACK_TOKEN = process.env.SLACK_TOKEN
 const API_KEY = process.env.API_KEY
 
-const ALLOWED_ORIGINS = [
-  'https://zentrix-improvements-dashboard.vercel.app'
-]
-
 module.exports = async function handler(req, res) {
   const origin = req.headers.origin
-  if (ALLOWED_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin)
+  // Allow localhost for development and any Vercel domain for preview/production
+  if (!origin || origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app')) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*')
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-api-key')
