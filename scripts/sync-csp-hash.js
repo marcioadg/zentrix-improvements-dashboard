@@ -13,7 +13,11 @@ function syncCSPHash() {
 
   try {
     const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-    const expectedHash = calculateHash(htmlContent);
+    const scriptMatch = htmlContent.match(/<script[^>]*>([\s\S]*?)<\/script>/);
+    if (!scriptMatch || !scriptMatch[1]) {
+      throw new Error('No inline script found in index.html');
+    }
+    const expectedHash = calculateHash(scriptMatch[1]);
 
     const vercelContent = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
     const currentHash = vercelContent.headers?.[0]?.headers?.find(h => h.key === 'Content-Security-Policy')?.value?.match(/script-src '(sha256-[^']+)'/)?.[1];
