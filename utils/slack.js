@@ -88,12 +88,24 @@ function checkRateLimit(ip) {
 }
 
 // Prune stale rate-limit entries every 5 minutes
-setInterval(() => {
+const _rateLimitCleanup = setInterval(() => {
   const cutoff = Date.now() - RATE_LIMIT_WINDOW * 2
   for (const [ip, entry] of _rateLimitMap) {
     if (entry.start < cutoff) _rateLimitMap.delete(ip)
   }
 }, 300000)
+_rateLimitCleanup.unref()
+
+// Graceful shutdown: clear the cleanup interval on process termination
+function cleanup() {
+  clearInterval(_rateLimitCleanup)
+  _rateLimitMap.clear()
+}
+
+if (typeof process !== 'undefined' && process.on) {
+  process.on('SIGTERM', cleanup)
+  process.on('SIGINT', cleanup)
+}
 
 module.exports = {
   SLACK_CHANNEL,
