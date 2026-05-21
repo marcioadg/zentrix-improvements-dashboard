@@ -191,27 +191,30 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     if (supabaseUrl && supabaseServiceKey) {
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-      const response = await fetch(
-        `${supabaseUrl}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
-        {
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json'
-          },
-          signal: controller.signal
+      try {
+        const response = await fetch(
+          `${supabaseUrl}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
+          {
+            headers: {
+              'apikey': supabaseServiceKey,
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+              'Content-Type': 'application/json'
+            },
+            signal: controller.signal
+          }
+        )
+        if (response.ok) {
+          const data = await response.json()
+          const snapshot = validateSupabaseSnapshot(data)
+          if (snapshot) {
+            results.totalAccounts = snapshot.total_users
+            results.lastUpdated = snapshot.snapshot_date
+          }
+        } else {
+          console.error('Supabase metrics error:', response.status)
         }
-      )
-      clearTimeout(timeout)
-      if (response.ok) {
-        const data = await response.json()
-        const snapshot = validateSupabaseSnapshot(data)
-        if (snapshot) {
-          results.totalAccounts = snapshot.total_users
-          results.lastUpdated = snapshot.snapshot_date
-        }
-      } else {
-        console.error('Supabase metrics error:', response.status)
+      } finally {
+        clearTimeout(timeout)
       }
     }
   } catch (err) {
@@ -239,54 +242,57 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
 
           const controller = new AbortController()
           const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-          const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
-            headers: {
-              'Authorization': `Bearer ${stripeKey}`,
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            signal: controller.signal
-          })
-          clearTimeout(timeout)
+          try {
+            const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
+              headers: {
+                'Authorization': `Bearer ${stripeKey}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              signal: controller.signal
+            })
 
-          if (!response.ok) {
-            console.error('Stripe error:', response.status)
-            break
-          }
+            if (!response.ok) {
+              console.error('Stripe error:', response.status)
+              break
+            }
 
-          const data = await response.json()
-          const validData = validateStripeSubscriptionsResponse(data)
-          if (!validData) {
-            console.error('Stripe response validation failed')
-            break
-          }
+            const data = await response.json()
+            const validData = validateStripeSubscriptionsResponse(data)
+            if (!validData) {
+              console.error('Stripe response validation failed')
+              break
+            }
 
-          for (const sub of validData.data) {
-            // Track unique paid customers
-            const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
-            if (customerId) paidCustomers.add(stripeKey + ':' + customerId)
+            for (const sub of validData.data) {
+              // Track unique paid customers
+              const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
+              if (customerId) paidCustomers.add(stripeKey + ':' + customerId)
 
-            // Sum MRR
-            for (const item of sub.items.data) {
-              const price = item.price
-              if (!price || !price.unit_amount) continue
-              const quantity = item.quantity || 1
-              const amount = (price.unit_amount / 100) * quantity
-              const interval = price.recurring?.interval
-              if (interval === 'month') {
-                totalMRR += amount
-              } else if (interval === 'year') {
-                totalMRR += amount / 12
-              } else if (interval === 'week') {
-                totalMRR += amount * 4.33
+              // Sum MRR
+              for (const item of sub.items.data) {
+                const price = item.price
+                if (!price || !price.unit_amount) continue
+                const quantity = item.quantity || 1
+                const amount = (price.unit_amount / 100) * quantity
+                const interval = price.recurring?.interval
+                if (interval === 'month') {
+                  totalMRR += amount
+                } else if (interval === 'year') {
+                  totalMRR += amount / 12
+                } else if (interval === 'week') {
+                  totalMRR += amount * 4.33
+                }
               }
             }
-          }
 
-          hasMore = validData.has_more || false
-          if (hasMore && validData.data.length > 0) {
-            startingAfter = validData.data[validData.data.length - 1].id
-          } else {
-            hasMore = false
+            hasMore = validData.has_more || false
+            if (hasMore && validData.data.length > 0) {
+              startingAfter = validData.data[validData.data.length - 1].id
+            } else {
+              hasMore = false
+            }
+          } finally {
+            clearTimeout(timeout)
           }
         }
       } catch (err) {
