@@ -80,6 +80,10 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
+  const GLOBAL_TIMEOUT = 45000 // 45s deadline before returning partial results
+  const deadline = Date.now() + GLOBAL_TIMEOUT
+  const isDeadlineExceeded = () => Date.now() > deadline
+
   const period = req.query.period || '7d'
   const periodStart = getPeriodStart(period)
   const periodStartUnix = Math.floor(periodStart.getTime() / 1000)
@@ -100,9 +104,9 @@ module.exports = async function handler(req, res) {
 
   // ── Supabase: Total Accounts ──
   try {
-    if (SUPABASE_SERVICE_ROLE_KEY) {
+    if (SUPABASE_SERVICE_ROLE_KEY && !isDeadlineExceeded()) {
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+      const timeout = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT, deadline - Date.now()))
       try {
         const response = await fetch(
           `${SUPABASE_URL}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
@@ -135,8 +139,9 @@ module.exports = async function handler(req, res) {
         'Zentrix CRM': 'companies'
       }
       for (const [product, table] of Object.entries(productTables)) {
+        if (isDeadlineExceeded()) break
         const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+        const timeout = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT, deadline - Date.now()))
         try {
           const countResp = await fetch(
             `${SUPABASE_URL}/rest/v1/${table}?select=id`,
@@ -201,11 +206,11 @@ module.exports = async function handler(req, res) {
       try {
         let hasMore = true
         let startingAfter = undefined
-        while (hasMore) {
+        while (hasMore && !isDeadlineExceeded()) {
           const params = new URLSearchParams({ limit: '100', status: 'all' })
           if (startingAfter) params.append('starting_after', startingAfter)
           const controller = new AbortController()
-          const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+          const timeout = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT, deadline - Date.now()))
           let data
           try {
             const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
