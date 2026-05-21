@@ -72,8 +72,8 @@ function getSubProducts(sub) {
 export default async function handler(req, res) {
   const origin = req.headers.origin
   // Allow localhost for development and any Vercel domain for preview/production
-  if (!origin || origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app')) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*')
+  if (origin && (origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
