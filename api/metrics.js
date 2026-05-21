@@ -4,8 +4,6 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
 const FETCH_TIMEOUT = 8000
 
-const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
-
 const PRODUCT_NAMES = {
   // New Stripe account
   'prod_UIcJaRWyvLj3hG': 'Zentrix OS',
@@ -73,8 +71,9 @@ function getSubProducts(sub) {
 
 export default async function handler(req, res) {
   const origin = req.headers.origin
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin)
+  // Allow localhost for development and any Vercel domain for preview/production
+  if (!origin || origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app')) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*')
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
