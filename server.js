@@ -47,6 +47,17 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '1mb' }))
 
+// Calculate CSP hash from current index.html (prevents manual sync errors)
+const _scriptHash = (() => {
+  try {
+    const content = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8')
+    return 'sha256-' + crypto.createHash('sha256').update(content).digest('base64')
+  } catch (e) {
+    console.error('[ERROR] Failed to calculate CSP hash:', e.message)
+    process.exit(1)
+  }
+})()
+
 // Security headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff')
@@ -54,7 +65,7 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
   res.setHeader('X-XSS-Protection', '0')
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'sha256-zdkByNGoKEG3ioLgC4ksPP3F3EuA2k16VJWhfTYQi2c='; style-src 'sha256-twU6KozwNFRBwq/gjzeoMQjRyMBl+ySRLBUIWiG0Rc0=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
+  res.setHeader('Content-Security-Policy', `default-src 'none'; script-src '${_scriptHash}'; style-src 'sha256-twU6KozwNFRBwq/gjzeoMQjRyMBl+ySRLBUIWiG0Rc0=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
   next()
 })
 app.use('/data', express.static(path.join(__dirname, 'data'), {
