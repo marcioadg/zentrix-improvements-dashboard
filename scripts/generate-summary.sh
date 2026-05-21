@@ -31,7 +31,7 @@ print('\n'.join(recent))
 ")
 
 if [ -z "$FORMATTED" ]; then
-  echo '{"generated": "'$(TZ=America/New_York date -u +%Y-%m-%dT%H:%M:%S%z)'", "summary": "No improvements in the last 24 hours."}' > "$OUTPUT_FILE"
+  echo '{"generated": "'$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S%z)'", "summary": "No improvements in the last 24 hours."}' > "$OUTPUT_FILE"
   exit 0
 fi
 
