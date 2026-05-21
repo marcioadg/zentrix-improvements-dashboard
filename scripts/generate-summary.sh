@@ -35,7 +35,7 @@ if [ -z "$FORMATTED" ]; then
   exit 0
 fi
 
-SUMMARY=$(cat <<PROMPT | claude --permission-mode allow-all --print
+SUMMARY=$(timeout 60 bash -c "cat <<'PROMPT' | claude --permission-mode allow-all --print
 You are the CTO of Zentrix, writing a daily product update for the founders. They are non-technical — do not use engineering jargon, file names, technical terms, or code references.
 
 Here are the AI-driven improvements made across Zentrix products in the last 24 hours:
@@ -58,9 +58,9 @@ Rules:
 - No file names, no component names, no tech stack references
 - Max 200 words total
 - Bold the section headers
-- Start directly with the content — no greeting, no "Here is your report"
+- Start directly with the content — no greeting, no \"Here is your report\"
 PROMPT
-)
+" || echo "Failed to generate summary — Claude request timeout or error")
 
 TIMESTAMP=$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S%z)
 
