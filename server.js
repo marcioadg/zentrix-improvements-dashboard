@@ -9,13 +9,11 @@ const { validateCSPHashes } = require('./csp-validator.js')
 const {
   SLACK_CHANNEL,
   FETCH_TIMEOUT,
-  escapeSlackMarkdown,
-  validateActionPayload,
-  postSlack,
   getClientIP,
   checkRateLimit,
   logError,
-  cleanup: cleanupRateLimit
+  cleanup: cleanupRateLimit,
+  handleAction
 } = require('./utils/slack.js')
 
 const app = express()
@@ -362,29 +360,7 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
 // Unified action endpoint — matches the Vercel serverless function (api/action.js)
 // The client exclusively calls this route for swipe actions and security fix requests
 app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
-  const validation = validateActionPayload(req.body)
-  if (!validation.valid) {
-    logError('/api/action', 'VALIDATION_ERROR', validation.error, { action: req.body.action })
-    return res.status(400).json({ error: validation.error })
-  }
-
-  const { action, cardId, repo, repoName, summary, route } = req.body
-  const labels = { approve: '✅ Approved', deny: '❌ Denied', plan: '📋 Plan Requested', sec_fix: '🔐 Security Fix Requested' }
-  const label = labels[action]
-
-  const blocks = [
-    { type: 'section', text: { type: 'mrkdwn', text: `${label} — *${escapeSlackMarkdown(repoName || repo)}*${route ? ` \`${escapeSlackMarkdown(route)}\`` : ''}` } },
-    { type: 'section', text: { type: 'mrkdwn', text: `>${escapeSlackMarkdown(summary || '(no summary)')}` } },
-    { type: 'context', elements: [{ type: 'mrkdwn', text: `Card: ${escapeSlackMarkdown(cardId)} · ${new Date().toISOString().slice(0,16).replace('T',' ')} UTC` }] }
-  ]
-
-  try {
-    const result = await postSlack(SLACK_TOKEN, `${label} — ${escapeSlackMarkdown(repoName || repo)}`, blocks)
-    res.json({ ok: result.ok, ts: result.ts })
-  } catch (e) {
-    logError('/api/action', e.name || 'SLACK_ERROR', 'failed to post Slack action', { action, message: e.message })
-    res.status(500).json({ error: e.message })
-  }
+  await handleAction(req, res, SLACK_TOKEN)
 })
 
 validateCSPHashes()

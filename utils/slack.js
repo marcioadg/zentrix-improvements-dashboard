@@ -109,6 +109,32 @@ function cleanup() {
   _rateLimitMap.clear()
 }
 
+async function handleAction(req, res, slackToken) {
+  const validation = validateActionPayload(req.body)
+  if (!validation.valid) {
+    logError('/api/action', 'VALIDATION_ERROR', validation.error, { action: req.body?.action })
+    return res.status(400).json({ error: validation.error })
+  }
+
+  const { action, cardId, repo, repoName, summary, route } = req.body
+  const labels = { approve: '✅ Approved', deny: '❌ Denied', plan: '📋 Plan Requested', sec_fix: '🔐 Security Fix Requested' }
+  const label = labels[action]
+
+  const blocks = [
+    { type: 'section', text: { type: 'mrkdwn', text: `${label} — *${escapeSlackMarkdown(repoName || repo)}*${route ? ` \`${escapeSlackMarkdown(route)}\`` : ''}` } },
+    { type: 'section', text: { type: 'mrkdwn', text: `>${escapeSlackMarkdown(summary || '(no summary)')}` } },
+    { type: 'context', elements: [{ type: 'mrkdwn', text: `Card: ${escapeSlackMarkdown(cardId)} · ${new Date().toISOString().slice(0,16).replace('T',' ')} UTC` }] }
+  ]
+
+  try {
+    const result = await postSlack(slackToken, `${label} — ${escapeSlackMarkdown(repoName || repo)}`, blocks)
+    res.json({ ok: result.ok, ts: result.ts })
+  } catch (e) {
+    logError('/api/action', e.name || 'SLACK_ERROR', 'failed to post Slack action', { action, message: e.message })
+    res.status(500).json({ error: e.message })
+  }
+}
+
 module.exports = {
   SLACK_CHANNEL,
   FETCH_TIMEOUT,
@@ -120,5 +146,6 @@ module.exports = {
   getClientIP,
   checkRateLimit,
   logError,
-  cleanup
+  cleanup,
+  handleAction
 }

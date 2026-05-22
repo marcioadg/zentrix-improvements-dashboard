@@ -1,10 +1,7 @@
 const {
-  escapeSlackMarkdown,
-  validateActionPayload,
-  postSlack,
   getClientIP,
   checkRateLimit,
-  logError
+  handleAction
 } = require('../utils/slack.js')
 
 const SLACK_TOKEN = process.env.SLACK_TOKEN
@@ -35,25 +32,6 @@ module.exports = async function handler(req, res) {
   const key = req.headers['x-api-key']
   if (key !== API_KEY) return res.status(401).json({ error: 'Unauthorized' })
 
-  const validation = validateActionPayload(req.body)
-  if (!validation.valid) return res.status(400).json({ error: validation.error })
-
-  const { action, cardId, repo, repoName, summary, route } = req.body
-  const labels = { approve: '✅ Approved', deny: '❌ Denied', plan: '📋 Plan Requested', sec_fix: '🔐 Security Fix Requested' }
-  const label = labels[action]
-
-  const blocks = [
-    { type: 'section', text: { type: 'mrkdwn', text: `${label} — *${escapeSlackMarkdown(repoName || repo)}*${route ? ` \`${escapeSlackMarkdown(route)}\`` : ''}` } },
-    { type: 'section', text: { type: 'mrkdwn', text: `>${escapeSlackMarkdown(summary || '(no summary)')}` } },
-    { type: 'context', elements: [{ type: 'mrkdwn', text: `Card: ${escapeSlackMarkdown(cardId)} · ${new Date().toISOString().slice(0,16).replace('T',' ')} UTC` }] }
-  ]
-
-  try {
-    const result = await postSlack(SLACK_TOKEN, `${label} — ${escapeSlackMarkdown(repoName || repo)}`, blocks)
-    res.json({ ok: result.ok, ts: result.ts })
-  } catch(e) {
-    logError('/api/action', e.name || 'SLACK_ERROR', 'failed to post Slack action', { action, message: e.message })
-    res.status(500).json({ error: e.message })
-  }
+  await handleAction(req, res, SLACK_TOKEN)
 }
 
