@@ -148,8 +148,8 @@ function validateStripeSubscriptionsResponse(data) {
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 
-// Health check (no auth)
-app.get('/api/health', (req, res) => {
+// Health check (no auth but rate-limited to prevent DoS via health probes)
+app.get('/api/health', rateLimit, (req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() })
 })
 
