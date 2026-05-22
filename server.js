@@ -209,14 +209,18 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
             results.lastUpdated = snapshot.snapshot_date
           }
         } else {
-          console.error('Supabase metrics error:', response.status)
+          console.error(`Supabase total_accounts fetch failed: ${response.status}`)
         }
       } finally {
         clearTimeout(timeout)
       }
     }
   } catch (err) {
-    console.error('Supabase metrics error:', err.message)
+    if (err.name === 'AbortError') {
+      console.error('Supabase total_accounts request timed out')
+    } else {
+      console.error('Supabase total_accounts request failed:', err.message)
+    }
   }
 
   // ── Stripe: MRR + Paid Accounts ──
@@ -251,14 +255,14 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
             })
 
             if (!response.ok) {
-              console.error('Stripe error:', response.status)
+              console.error(`Stripe subscriptions fetch failed: ${response.status}`)
               break
             }
 
             const data = await response.json()
             const validData = validateStripeSubscriptionsResponse(data)
             if (!validData) {
-              console.error('Stripe response validation failed')
+              console.error('Stripe subscriptions response invalid: missing data array')
               break
             }
 
@@ -295,7 +299,11 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
           }
         }
       } catch (err) {
-        console.error('Stripe key error:', err.message)
+        if (err.name === 'AbortError') {
+          console.error('Stripe subscriptions request timed out')
+        } else {
+          console.error('Stripe subscriptions request failed:', err.message)
+        }
       }
     }
 
