@@ -178,6 +178,10 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     return res.json(_metricsCache.data)
   }
 
+  const GLOBAL_TIMEOUT = 45000
+  const deadline = Date.now() + GLOBAL_TIMEOUT
+  const isDeadlineExceeded = () => Date.now() > deadline
+
   const results = {
     totalAccounts: null,
     totalPaidAccounts: null,
@@ -192,9 +196,9 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
   try {
     const supabaseUrl = process.env.SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (supabaseUrl && supabaseServiceKey) {
+    if (supabaseUrl && supabaseServiceKey && !isDeadlineExceeded()) {
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+      const timeout = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT, deadline - Date.now()))
       try {
         const response = await fetch(
           `${supabaseUrl}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
@@ -231,21 +235,22 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     process.env.STRIPE_SECRET_KEY_NEW
   ].filter(Boolean)
 
-  if (stripeKeys.length > 0) {
+  if (stripeKeys.length > 0 && !isDeadlineExceeded()) {
     let totalMRR = 0
     const paidCustomers = new Set()
 
     for (const stripeKey of stripeKeys) {
+      if (isDeadlineExceeded()) break
       try {
         let hasMore = true
         let startingAfter = undefined
 
-        while (hasMore) {
+        while (hasMore && !isDeadlineExceeded()) {
           const params = new URLSearchParams({ limit: '100', status: 'active' })
           if (startingAfter) params.append('starting_after', startingAfter)
 
           const controller = new AbortController()
-          const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+          const timeout = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT, deadline - Date.now()))
           try {
             const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
               headers: {
