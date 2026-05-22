@@ -7,6 +7,8 @@
 //   crm      → no data yet (pre-launch)
 //   agents   → no data yet (pre-launch)
 
+const { logError } = require('../utils/slack.js')
+
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
@@ -62,7 +64,11 @@ async function sbFetch(path, headers = {}) {
     try { rows = await resp.json() } catch (_) {}
     return { rows, count, ok: true }
   } catch (err) {
-    console.error(`Supabase fetch error for ${path}:`, err.message)
+    if (err.name === 'AbortError') {
+      logError('/api/venture-funnel', 'SUPABASE_TIMEOUT', `supabase request timed out for ${path}`, { timeout: FETCH_TIMEOUT })
+    } else {
+      logError('/api/venture-funnel', err.name || 'SUPABASE_ERROR', `supabase request failed for ${path}`, { message: err.message })
+    }
     return { rows: [], count: 0, ok: false }
   } finally {
     clearTimeout(timeout)
@@ -157,7 +163,7 @@ module.exports = async function handler(req, res) {
     })
 
   } catch (err) {
-    console.error('venture-funnel error:', err.message)
+    logError('/api/venture-funnel', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message, product })
     return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period, error: err.message })
   }
 }

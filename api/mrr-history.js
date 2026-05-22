@@ -1,3 +1,5 @@
+const { logError } = require('../utils/slack.js')
+
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
 
@@ -26,13 +28,13 @@ async function fetchAllSubscriptions(stripeKey) {
       })
 
       if (!response.ok) {
-        console.error('Stripe fetch error:', response.status)
+        logError('/api/mrr-history', 'STRIPE_HTTP', 'subscriptions fetch failed', { status: response.status })
         break
       }
 
       const data = await response.json()
       if (!validateStripeResponse(data)) {
-        console.error('Stripe response validation failed')
+        logError('/api/mrr-history', 'STRIPE_INVALID', 'subscriptions response validation failed')
         break
       }
 
@@ -49,7 +51,11 @@ async function fetchAllSubscriptions(stripeKey) {
         hasMore = false
       }
     } catch (err) {
-      console.error('Stripe fetch error:', err.message)
+      if (err.name === 'AbortError') {
+        logError('/api/mrr-history', 'STRIPE_TIMEOUT', 'subscriptions request timed out', { timeout: FETCH_TIMEOUT })
+      } else {
+        logError('/api/mrr-history', err.name || 'STRIPE_ERROR', 'subscriptions request failed', { message: err.message })
+      }
       break
     } finally {
       clearTimeout(timeout)
@@ -119,7 +125,7 @@ module.exports = async function handler(req, res) {
       const subs = await fetchAllSubscriptions(key)
       allSubs.push(...subs)
     } catch (err) {
-      console.error('Error fetching from Stripe:', err.message)
+      logError('/api/mrr-history', err.name || 'STRIPE_ERROR', 'failed to fetch subscriptions', { message: err.message })
     }
   }
 

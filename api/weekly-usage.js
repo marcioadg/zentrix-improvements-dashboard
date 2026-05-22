@@ -1,4 +1,6 @@
 // /api/weekly-usage.js
+const { logError } = require('../utils/slack.js')
+
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const FETCH_TIMEOUT = 8000
@@ -38,7 +40,7 @@ module.exports = async function handler(req, res) {
         )
         if (!response.ok) {
           const err = await response.text()
-          console.error('weekly_usage_snapshots (os) error:', err)
+          logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (os) fetch failed', { status: response.status, product: 'os' })
           return res.json({ data: [], product, error: err })
         }
         const data = await response.json()
@@ -67,7 +69,7 @@ module.exports = async function handler(req, res) {
         )
         if (!response.ok) {
           const err = await response.text()
-          console.error('weekly_usage_snapshots (insights) error:', err)
+          logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (insights) fetch failed', { status: response.status, product: 'insights' })
           return res.json({ data: [], product, error: err })
         }
         const raw = await response.json()
@@ -110,7 +112,7 @@ module.exports = async function handler(req, res) {
         )
         if (!response.ok) {
           const err = await response.text()
-          console.error('weekly_usage_snapshots (crm) error:', err)
+          logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (crm) fetch failed', { status: response.status, product: 'crm' })
           return res.json({ data: [], product, error: err })
         }
         const raw = await response.json()
@@ -141,7 +143,7 @@ module.exports = async function handler(req, res) {
     return res.json({ data: [], product, note: 'No weekly data for this product yet' })
 
   } catch (err) {
-    console.error('weekly-usage handler error:', err.message)
+    logError('/api/weekly-usage', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message })
     return res.json({ data: [], product, error: err.message })
   }
 }

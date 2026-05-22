@@ -2,6 +2,8 @@
 // Returns full company list with all columns matching the OS admin panel:
 // Company, Status, Score, Plan, 7d Usage, Users, Median Login, Created,
 // Device, Source, Medium, Campaign, Content, Term, Adset, Ad, Landing Page, Referral
+const { logError } = require('../utils/slack.js')
+
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
@@ -21,12 +23,16 @@ async function supabase(path, headers = {}) {
       signal: controller.signal
     })
     if (!res.ok) {
-      console.error(`Supabase error for ${path}:`, res.status)
+      logError('/api/product-accounts', 'SUPABASE_HTTP', `supabase request failed for ${path}`, { status: res.status })
       return []
     }
     return res.json()
   } catch (err) {
-    console.error(`Supabase fetch error for ${path}:`, err.message)
+    if (err.name === 'AbortError') {
+      logError('/api/product-accounts', 'SUPABASE_TIMEOUT', `supabase request timed out for ${path}`, { timeout: FETCH_TIMEOUT })
+    } else {
+      logError('/api/product-accounts', err.name || 'SUPABASE_ERROR', `supabase request failed for ${path}`, { message: err.message })
+    }
     return []
   } finally {
     clearTimeout(timeout)
@@ -222,7 +228,7 @@ module.exports = async function handler(req, res) {
     return res.json({ accounts, product })
 
   } catch (err) {
-    console.error('product-accounts error:', err.message)
+    logError('/api/product-accounts', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message, product })
     return res.json({ accounts: [], product, error: err.message })
   }
 }
