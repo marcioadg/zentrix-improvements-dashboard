@@ -32,6 +32,13 @@ if (!API_KEY) {
   console.warn('[WARN] API_KEY not set — Protected endpoints will be inaccessible')
 }
 
+// ── Request logging helper ───────────────────────────────────────────────────
+function logError(route, code, message, context = {}) {
+  const timestamp = new Date().toISOString()
+  const details = Object.entries(context).map(([k, v]) => `${k}=${v}`).join(' ')
+  console.error(`[${timestamp}] [${code}] ${route}: ${message}${details ? ' ' + details : ''}`)
+}
+
 // ── Middleware ───────────────────────────────────────────────────────────────
 app.use(compression())
 app.use(cors({
@@ -209,7 +216,7 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
             results.lastUpdated = snapshot.snapshot_date
           }
         } else {
-          console.error(`[ERROR] Supabase total_accounts fetch failed [${response.status}]`)
+          logError('/api/metrics', 'SUPABASE_HTTP', `total_accounts fetch failed`, { status: response.status })
         }
       } finally {
         clearTimeout(timeout)
@@ -217,9 +224,9 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     }
   } catch (err) {
     if (err.name === 'AbortError') {
-      console.error('[ERROR] Supabase total_accounts request timed out [AbortError]')
+      logError('/api/metrics', 'SUPABASE_TIMEOUT', 'total_accounts request timed out', { timeout: FETCH_TIMEOUT })
     } else {
-      console.error(`[ERROR] Supabase total_accounts request failed [${err.name || 'UNKNOWN'}]:`, err.message)
+      logError('/api/metrics', err.name || 'SUPABASE_ERROR', 'total_accounts request failed', { message: err.message })
     }
   }
 
@@ -255,14 +262,14 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
             })
 
             if (!response.ok) {
-              console.error(`[ERROR] Stripe subscriptions fetch failed [${response.status}]`)
+              logError('/api/metrics', 'STRIPE_HTTP', 'subscriptions fetch failed', { status: response.status })
               break
             }
 
             const data = await response.json()
             const validData = validateStripeSubscriptionsResponse(data)
             if (!validData) {
-              console.error('[ERROR] Stripe subscriptions response invalid: missing data array [INVALID_RESPONSE]')
+              logError('/api/metrics', 'STRIPE_INVALID', 'subscriptions response missing data array', { status: response.status })
               break
             }
 
@@ -300,9 +307,9 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
         }
       } catch (err) {
         if (err.name === 'AbortError') {
-          console.error('[ERROR] Stripe subscriptions request timed out [AbortError]')
+          logError('/api/metrics', 'STRIPE_TIMEOUT', 'subscriptions request timed out', { timeout: FETCH_TIMEOUT })
         } else {
-          console.error(`[ERROR] Stripe subscriptions request failed [${err.name || 'UNKNOWN'}]:`, err.message)
+          logError('/api/metrics', err.name || 'STRIPE_ERROR', 'subscriptions request failed', { message: err.message })
         }
       }
     }
@@ -331,12 +338,13 @@ app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
     res.json(agents)
   } catch (e) {
     if (e.code === 'ENOENT') {
+      logError('/api/agents', 'FILE_NOT_FOUND', 'agents.json not found', { file: 'agents.json' })
       res.status(404).json({ error: 'Agents data not found' })
     } else if (e instanceof SyntaxError) {
-      console.error('Invalid agents data format:', e.message)
+      logError('/api/agents', 'JSON_PARSE_ERROR', 'invalid agents data format', { message: e.message })
       res.status(500).json({ error: 'Invalid agents data format' })
     } else {
-      console.error(`Failed to read agents data [${e.code || 'UNKNOWN'}]:`, e.message)
+      logError('/api/agents', e.code || 'READ_ERROR', 'failed to read agents data', { message: e.message })
       res.status(500).json({ error: 'Failed to read agents data' })
     }
   }
@@ -344,6 +352,7 @@ app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
 
 app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
   if (!validateAgentsJSON(req.body)) {
+    logError('/api/agents', 'VALIDATION_ERROR', 'invalid agents data structure', { bodySize: JSON.stringify(req.body).length })
     return res.status(400).json({ error: 'Invalid agents data structure' })
   }
   const filePath = path.join(__dirname, 'data', 'agents.json')
@@ -351,7 +360,7 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
     fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2))
     res.json({ ok: true })
   } catch (e) {
-    console.error(`Failed to save agents [${e.code || 'UNKNOWN'}]:`, e.message)
+    logError('/api/agents', e.code || 'WRITE_ERROR', 'failed to save agents', { message: e.message })
     res.status(500).json({ error: 'Failed to save agents' })
   }
 })
@@ -360,7 +369,10 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
 // The client exclusively calls this route for swipe actions and security fix requests
 app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
   const validation = validateActionPayload(req.body)
-  if (!validation.valid) return res.status(400).json({ error: validation.error })
+  if (!validation.valid) {
+    logError('/api/action', 'VALIDATION_ERROR', validation.error, { action: req.body.action })
+    return res.status(400).json({ error: validation.error })
+  }
 
   const { action, cardId, repo, repoName, summary, route } = req.body
   const labels = { approve: '✅ Approved', deny: '❌ Denied', plan: '📋 Plan Requested', sec_fix: '🔐 Security Fix Requested' }
@@ -376,7 +388,7 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
     const result = await postSlack(SLACK_TOKEN, `${label} — ${escapeSlackMarkdown(repoName || repo)}`, blocks)
     res.json({ ok: result.ok, ts: result.ts })
   } catch (e) {
-    console.error(`[ERROR] Failed to post Slack action [${e.name || 'UNKNOWN'}]:`, e.message)
+    logError('/api/action', e.name || 'SLACK_ERROR', 'failed to post Slack action', { action, message: e.message })
     res.status(500).json({ error: e.message })
   }
 })
