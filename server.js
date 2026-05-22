@@ -147,7 +147,7 @@ function generateETag(obj) {
 function validateSupabaseSnapshot(data) {
   if (!Array.isArray(data) || data.length === 0) return null
   const snapshot = data[0]
-  if (typeof snapshot !== 'object' || !snapshot.total_users || !snapshot.snapshot_date) return null
+  if (typeof snapshot !== 'object' || snapshot.total_users == null || !snapshot.snapshot_date) return null
   return snapshot
 }
 
