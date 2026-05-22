@@ -60,13 +60,17 @@ Rules:
 - Bold the section headers
 - Start directly with the content — no greeting, no \"Here is your report\"
 PROMPT
-" || echo "Failed to generate summary — Claude request timeout or error")
+" 2>/dev/null)
 
 TIMESTAMP=$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S%z)
 
+if [ -z "$SUMMARY" ] || [ ${#SUMMARY} -lt 20 ]; then
+  SUMMARY="Claude API request failed or timed out. Summary will be regenerated on next run."
+fi
+
 python3 -c "
 import json, sys
-summary = sys.stdin.read()
+summary = sys.stdin.read().strip()
 obj = {'generated': '$TIMESTAMP', 'summary': summary}
 with open('$OUTPUT_FILE', 'w') as f:
     json.dump(obj, f, indent=2)
