@@ -102,11 +102,6 @@ function cleanup() {
   _rateLimitMap.clear()
 }
 
-if (typeof process !== 'undefined' && process.on) {
-  process.on('SIGTERM', cleanup)
-  process.on('SIGINT', cleanup)
-}
-
 module.exports = {
   SLACK_CHANNEL,
   FETCH_TIMEOUT,
