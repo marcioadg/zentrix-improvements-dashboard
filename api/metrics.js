@@ -292,11 +292,11 @@ module.exports = async function handler(req, res) {
       try {
         let hasMore = true
         let startingAfter = undefined
-        while (hasMore) {
+        while (hasMore && !isDeadlineExceeded()) {
           const params = new URLSearchParams({ limit: '100', status: 'active', 'created[gte]': String(periodStartUnix) })
           if (startingAfter) params.append('starting_after', startingAfter)
           const controller = new AbortController()
-          const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+          const timeout = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT, deadline - Date.now()))
           let data
           try {
             const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
