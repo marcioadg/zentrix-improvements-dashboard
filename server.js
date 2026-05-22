@@ -336,7 +336,7 @@ app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
       console.error('Invalid agents data format:', e.message)
       res.status(500).json({ error: 'Invalid agents data format' })
     } else {
-      console.error('Failed to read agents data:', e.message)
+      console.error(`Failed to read agents data [${e.code || 'UNKNOWN'}]:`, e.message)
       res.status(500).json({ error: 'Failed to read agents data' })
     }
   }
@@ -351,7 +351,7 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
     fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2))
     res.json({ ok: true })
   } catch (e) {
-    console.error('Failed to save agents:', e.message)
+    console.error(`Failed to save agents [${e.code || 'UNKNOWN'}]:`, e.message)
     res.status(500).json({ error: 'Failed to save agents' })
   }
 })
