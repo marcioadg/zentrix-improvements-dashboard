@@ -164,7 +164,7 @@ module.exports = async function handler(req, res) {
             }
           }
         } catch (e) {
-          console.error(`Count error for ${table}:`, e.message)
+          console.error(`[ERROR] Supabase count for ${table} failed [${e.name || 'UNKNOWN'}]:`, e.message)
         } finally {
           clearTimeout(timeout)
         }
@@ -172,7 +172,7 @@ module.exports = async function handler(req, res) {
       results.productAccountCounts = productAccountCounts
     }
   } catch (err) {
-    console.error('Supabase metrics error:', err.message)
+    console.error(`[ERROR] Supabase metrics request failed [${err.name || 'UNKNOWN'}]:`, err.message)
   }
 
   // ── Stripe ──
@@ -217,7 +217,7 @@ module.exports = async function handler(req, res) {
               headers: { 'Authorization': `Bearer ${stripeKey}` },
               signal: controller.signal
             })
-            if (!response.ok) { console.error('Stripe error:', response.status); break }
+            if (!response.ok) { console.error(`[ERROR] Stripe all-subs fetch failed [${response.status}]`); break }
             data = await response.json()
           } finally {
             clearTimeout(timeout)
@@ -286,7 +286,7 @@ module.exports = async function handler(req, res) {
           if (hasMore && data.data.length > 0) startingAfter = data.data[data.data.length - 1].id
           else hasMore = false
         }
-      } catch (err) { console.error('Stripe all-subs error:', err.message) }
+      } catch (err) { console.error(`[ERROR] Stripe all-subs request failed [${err.name || 'UNKNOWN'}]:`, err.message) }
 
       // ── New subscriptions in period (for newPayingCustomers) ──
       try {
@@ -303,7 +303,7 @@ module.exports = async function handler(req, res) {
               headers: { 'Authorization': `Bearer ${stripeKey}` },
               signal: controller.signal
             })
-            if (!response.ok) { console.error('Stripe new subs error:', response.status); break }
+            if (!response.ok) { console.error(`[ERROR] Stripe new-subs fetch failed [${response.status}]`); break }
             data = await response.json()
           } finally {
             clearTimeout(timeout)
@@ -316,7 +316,7 @@ module.exports = async function handler(req, res) {
           if (hasMore && data.data.length > 0) startingAfter = data.data[data.data.length - 1].id
           else hasMore = false
         }
-      } catch (err) { console.error('Stripe new customers error:', err.message) }
+      } catch (err) { console.error(`[ERROR] Stripe new-customers request failed [${err.name || 'UNKNOWN'}]:`, err.message) }
     }
 
     // Convert productCustomers Sets → counts
