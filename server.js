@@ -209,7 +209,7 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
             results.lastUpdated = snapshot.snapshot_date
           }
         } else {
-          console.error(`Supabase total_accounts fetch failed: ${response.status}`)
+          console.error(`[ERROR] Supabase total_accounts fetch failed [${response.status}]`)
         }
       } finally {
         clearTimeout(timeout)
@@ -217,9 +217,9 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     }
   } catch (err) {
     if (err.name === 'AbortError') {
-      console.error('Supabase total_accounts request timed out')
+      console.error('[ERROR] Supabase total_accounts request timed out [AbortError]')
     } else {
-      console.error('Supabase total_accounts request failed:', err.message)
+      console.error(`[ERROR] Supabase total_accounts request failed [${err.name || 'UNKNOWN'}]:`, err.message)
     }
   }
 
@@ -255,14 +255,14 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
             })
 
             if (!response.ok) {
-              console.error(`Stripe subscriptions fetch failed: ${response.status}`)
+              console.error(`[ERROR] Stripe subscriptions fetch failed [${response.status}]`)
               break
             }
 
             const data = await response.json()
             const validData = validateStripeSubscriptionsResponse(data)
             if (!validData) {
-              console.error('Stripe subscriptions response invalid: missing data array')
+              console.error('[ERROR] Stripe subscriptions response invalid: missing data array [INVALID_RESPONSE]')
               break
             }
 
@@ -300,9 +300,9 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
         }
       } catch (err) {
         if (err.name === 'AbortError') {
-          console.error('Stripe subscriptions request timed out')
+          console.error('[ERROR] Stripe subscriptions request timed out [AbortError]')
         } else {
-          console.error('Stripe subscriptions request failed:', err.message)
+          console.error(`[ERROR] Stripe subscriptions request failed [${err.name || 'UNKNOWN'}]:`, err.message)
         }
       }
     }
