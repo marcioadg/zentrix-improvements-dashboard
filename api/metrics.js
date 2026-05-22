@@ -1,3 +1,5 @@
+const { logError } = require('../utils/slack.js')
+
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
@@ -164,7 +166,7 @@ module.exports = async function handler(req, res) {
             }
           }
         } catch (e) {
-          console.error(`[ERROR] Supabase count for ${table} failed [${e.name || 'UNKNOWN'}]:`, e.message)
+          logError('/api/metrics', e.name || 'SUPABASE_ERROR', `product account count for ${product} failed`, { message: e.message })
         } finally {
           clearTimeout(timeout)
         }
@@ -172,7 +174,7 @@ module.exports = async function handler(req, res) {
       results.productAccountCounts = productAccountCounts
     }
   } catch (err) {
-    console.error(`[ERROR] Supabase metrics request failed [${err.name || 'UNKNOWN'}]:`, err.message)
+    logError('/api/metrics', err.name || 'SUPABASE_ERROR', 'product accounts fetch failed', { message: err.message })
   }
 
   // ── Stripe ──
@@ -217,7 +219,7 @@ module.exports = async function handler(req, res) {
               headers: { 'Authorization': `Bearer ${stripeKey}` },
               signal: controller.signal
             })
-            if (!response.ok) { console.error(`[ERROR] Stripe all-subs fetch failed [${response.status}]`); break }
+            if (!response.ok) { logError('/api/metrics', 'STRIPE_HTTP', 'subscriptions fetch failed', { status: response.status }); break }
             data = await response.json()
           } finally {
             clearTimeout(timeout)
@@ -286,7 +288,7 @@ module.exports = async function handler(req, res) {
           if (hasMore && data.data.length > 0) startingAfter = data.data[data.data.length - 1].id
           else hasMore = false
         }
-      } catch (err) { console.error(`[ERROR] Stripe all-subs request failed [${err.name || 'UNKNOWN'}]:`, err.message) }
+      } catch (err) { logError('/api/metrics', err.name === 'AbortError' ? 'STRIPE_TIMEOUT' : 'STRIPE_ERROR', 'subscriptions request failed', { message: err.message }) }
 
       // ── New subscriptions in period (for newPayingCustomers) ──
       try {
@@ -303,7 +305,7 @@ module.exports = async function handler(req, res) {
               headers: { 'Authorization': `Bearer ${stripeKey}` },
               signal: controller.signal
             })
-            if (!response.ok) { console.error(`[ERROR] Stripe new-subs fetch failed [${response.status}]`); break }
+            if (!response.ok) { logError('/api/metrics', 'STRIPE_HTTP', 'new subscriptions fetch failed', { status: response.status }); break }
             data = await response.json()
           } finally {
             clearTimeout(timeout)
@@ -316,7 +318,7 @@ module.exports = async function handler(req, res) {
           if (hasMore && data.data.length > 0) startingAfter = data.data[data.data.length - 1].id
           else hasMore = false
         }
-      } catch (err) { console.error(`[ERROR] Stripe new-customers request failed [${err.name || 'UNKNOWN'}]:`, err.message) }
+      } catch (err) { logError('/api/metrics', err.name === 'AbortError' ? 'STRIPE_TIMEOUT' : 'STRIPE_ERROR', 'new subscriptions request failed', { message: err.message }) }
     }
 
     // Convert productCustomers Sets → counts

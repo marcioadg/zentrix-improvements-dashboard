@@ -96,6 +96,13 @@ const _rateLimitCleanup = setInterval(() => {
 }, 300000)
 _rateLimitCleanup.unref()
 
+// Standardized error logging with timestamp, code, route, and context
+function logError(route, code, message, context = {}) {
+  const timestamp = new Date().toISOString()
+  const details = Object.entries(context).map(([k, v]) => `${k}=${v}`).join(' ')
+  console.error(`[${timestamp}] [${code}] ${route}: ${message}${details ? ' ' + details : ''}`)
+}
+
 // Graceful shutdown: clear the cleanup interval on process termination
 function cleanup() {
   clearInterval(_rateLimitCleanup)
@@ -112,5 +119,6 @@ module.exports = {
   postSlack,
   getClientIP,
   checkRateLimit,
+  logError,
   cleanup
 }

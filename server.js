@@ -14,6 +14,7 @@ const {
   postSlack,
   getClientIP,
   checkRateLimit,
+  logError,
   cleanup: cleanupRateLimit
 } = require('./utils/slack.js')
 
@@ -30,13 +31,6 @@ if (!SLACK_TOKEN) {
 }
 if (!API_KEY) {
   console.warn('[WARN] API_KEY not set — Protected endpoints will be inaccessible')
-}
-
-// ── Request logging helper ───────────────────────────────────────────────────
-function logError(route, code, message, context = {}) {
-  const timestamp = new Date().toISOString()
-  const details = Object.entries(context).map(([k, v]) => `${k}=${v}`).join(' ')
-  console.error(`[${timestamp}] [${code}] ${route}: ${message}${details ? ' ' + details : ''}`)
 }
 
 // ── Middleware ───────────────────────────────────────────────────────────────

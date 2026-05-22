@@ -3,7 +3,8 @@ const {
   validateActionPayload,
   postSlack,
   getClientIP,
-  checkRateLimit
+  checkRateLimit,
+  logError
 } = require('../utils/slack.js')
 
 const SLACK_TOKEN = process.env.SLACK_TOKEN
@@ -51,7 +52,7 @@ module.exports = async function handler(req, res) {
     const result = await postSlack(SLACK_TOKEN, `${label} — ${escapeSlackMarkdown(repoName || repo)}`, blocks)
     res.json({ ok: result.ok, ts: result.ts })
   } catch(e) {
-    console.error(`[ERROR] Failed to post Slack action [${e.name || 'UNKNOWN'}]:`, e.message)
+    logError('/api/action', e.name || 'SLACK_ERROR', 'failed to post Slack action', { action, message: e.message })
     res.status(500).json({ error: e.message })
   }
 }
