@@ -322,7 +322,13 @@ app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=60')
     res.json(agents)
   } catch (e) {
-    res.status(404).json({ error: 'Agents data not found' })
+    if (e.code === 'ENOENT') {
+      res.status(404).json({ error: 'Agents data not found' })
+    } else if (e instanceof SyntaxError) {
+      res.status(500).json({ error: 'Invalid agents data format' })
+    } else {
+      res.status(500).json({ error: 'Failed to read agents data' })
+    }
   }
 })
 
