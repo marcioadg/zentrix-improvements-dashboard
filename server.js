@@ -376,6 +376,7 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
     const result = await postSlack(SLACK_TOKEN, `${label} — ${escapeSlackMarkdown(repoName || repo)}`, blocks)
     res.json({ ok: result.ok, ts: result.ts })
   } catch (e) {
+    console.error(`[ERROR] Failed to post Slack action [${e.name || 'UNKNOWN'}]:`, e.message)
     res.status(500).json({ error: e.message })
   }
 })
