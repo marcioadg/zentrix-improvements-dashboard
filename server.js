@@ -47,8 +47,8 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '1mb' }))
 
-// Calculate CSP hash from current index.html (prevents manual sync errors)
-const _scriptHash = (() => {
+// Load and initialize index.html, CSP hash, and cache (single read operation)
+const { _scriptHash, _indexCache } = (() => {
   try {
     const content = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8')
     const scriptMatch = content.match(/<script[^>]*>([\s\S]*?)<\/script>/)
@@ -56,9 +56,11 @@ const _scriptHash = (() => {
       throw new Error('No inline script found in index.html')
     }
     const scriptContent = scriptMatch[1]
-    return 'sha256-' + crypto.createHash('sha256').update(scriptContent).digest('base64')
+    const scriptHash = 'sha256-' + crypto.createHash('sha256').update(scriptContent).digest('base64')
+    const etag = generateETag(content)
+    return { _scriptHash: scriptHash, _indexCache: { content, etag } }
   } catch (e) {
-    console.error('[ERROR] Failed to calculate CSP hash:', e.message)
+    console.error('[ERROR] Failed to initialize index.html:', e.message)
     process.exit(1)
   }
 })()
@@ -79,18 +81,6 @@ app.use('/data', express.static(path.join(__dirname, 'data'), {
     res.setHeader('Pragma', 'no-cache')
   }
 }))
-
-// Cache index.html with ETag validation
-const _indexCache = (() => {
-  try {
-    const content = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8')
-    const etag = generateETag(content)
-    return { content, etag }
-  } catch (e) {
-    console.error('Failed to load index.html:', e.message)
-    return { content: '', etag: '' }
-  }
-})()
 
 app.get('/', (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=300')
