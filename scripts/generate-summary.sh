@@ -35,6 +35,7 @@ if [ -z "$FORMATTED" ]; then
   exit 0
 fi
 
+CLAUDE_STDERR=$(mktemp)
 SUMMARY=$(timeout 60 bash -c "cat <<'PROMPT' | claude --permission-mode allow-all --print
 You are the CTO of Zentrix, writing a daily product update for the founders. They are non-technical — do not use engineering jargon, file names, technical terms, or code references.
 
@@ -60,13 +61,26 @@ Rules:
 - Bold the section headers
 - Start directly with the content — no greeting, no \"Here is your report\"
 PROMPT
-" 2>/dev/null)
+" 2>"$CLAUDE_STDERR")
+CLAUDE_EXIT=$?
 
 TIMESTAMP=$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S%z)
 
-if [ -z "$SUMMARY" ] || [ ${#SUMMARY} -lt 20 ]; then
-  SUMMARY="Claude API request failed or timed out. Summary will be regenerated on next run."
+# Check Claude exit code and log specific error
+if [ $CLAUDE_EXIT -eq 124 ]; then
+  echo "[ERROR] Claude API request timed out after 60 seconds" >&2
+  SUMMARY="Claude API request timed out. Summary will be regenerated on next run."
+elif [ $CLAUDE_EXIT -ne 0 ]; then
+  ERROR_MSG=$(cat "$CLAUDE_STDERR" 2>/dev/null | head -1)
+  echo "[ERROR] Claude API request failed with exit code $CLAUDE_EXIT: ${ERROR_MSG:-unknown error}" >&2
+  SUMMARY="Claude API request failed. Summary will be regenerated on next run."
+elif [ -z "$SUMMARY" ] || [ ${#SUMMARY} -lt 20 ]; then
+  echo "[WARN] Claude API returned empty or truncated response" >&2
+  SUMMARY="Claude API returned empty response. Summary will be regenerated on next run."
 fi
+
+# Clean up temp file
+rm -f "$CLAUDE_STDERR"
 
 python3 -c "
 import json, sys
