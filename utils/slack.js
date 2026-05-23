@@ -73,6 +73,7 @@ function checkRateLimit(ip) {
   if (!entry || now - entry.start > RATE_LIMIT_WINDOW) {
     // Reject new IPs at capacity to prevent distributed attacks (botnet style)
     if (!_rateLimitMap.has(ip) && _rateLimitMap.size >= RATE_LIMIT_MAX_IPS) {
+      logError('/api/rate-limit', 'DISTRIBUTED_ATTACK_DETECTED', 'rejecting new IP at capacity', { ip, uniqueIPsTracked: _rateLimitMap.size })
       return { allowed: false, error: 'Too many requests — try again in a minute' }
     }
     _rateLimitMap.set(ip, { start: now, count: 1 })
