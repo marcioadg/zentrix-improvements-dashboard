@@ -147,6 +147,8 @@ function rateLimit(req, res, next) {
 const _metricsCache = { data: null, etag: null, timestamp: 0 }
 const METRICS_CACHE_TTL = 600000 // 10 minutes
 let _metricsInFlight = null // Deduplicate concurrent requests
+const _entriesCache = { data: null, etag: null, timestamp: 0 }
+const ENTRIES_CACHE_TTL = 300000 // 5 minutes
 
 function generateETag(obj) {
   return 'W/"' + crypto.createHash('md5').update(JSON.stringify(obj)).digest('hex') + '"'
@@ -444,19 +446,36 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
 })
 
 // Data validation endpoint — allows frontend to verify entries array structure
-app.get('/api/validate-entries', (req, res) => {
+app.get('/api/validate-entries', rateLimit, (req, res) => {
+  const now = Date.now()
+  const isCacheValid = _entriesCache.data && (now - _entriesCache.timestamp) < ENTRIES_CACHE_TTL
+
+  if (isCacheValid) {
+    res.setHeader('Cache-Control', 'public, max-age=300')
+    res.setHeader('ETag', _entriesCache.etag)
+    if (req.headers['if-none-match'] === _entriesCache.etag) {
+      return res.status(304).end()
+    }
+    return res.json(_entriesCache.data)
+  }
+
   const filePath = path.join(__dirname, 'data', 'entries.json')
   try {
     const data = fs.readFileSync(filePath, 'utf8')
     const entries = JSON.parse(data)
     const isValid = validateEntriesArray(entries)
+    const cacheData = { ok: isValid, count: entries.length }
     if (!isValid) {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
       logError('/api/validate-entries', 'VALIDATION_FAILED', 'entries array structure validation failed', { count: entries.length })
-      res.status(400).json({ ok: false, error: 'Entries array contains invalid entries', count: entries.length })
+      res.status(400).json({ ...cacheData, error: 'Entries array contains invalid entries' })
     } else {
-      res.setHeader('Cache-Control', 'public, max-age=3600')
-      res.json({ ok: true, count: entries.length })
+      _entriesCache.data = cacheData
+      _entriesCache.etag = generateETag(cacheData)
+      _entriesCache.timestamp = now
+      res.setHeader('Cache-Control', 'public, max-age=300')
+      res.setHeader('ETag', _entriesCache.etag)
+      res.json(cacheData)
     }
   } catch (e) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
