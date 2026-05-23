@@ -127,6 +127,7 @@ function rateLimit(req, res, next) {
 // ── Response caching (10 min TTL for expensive queries) ──
 const _metricsCache = { data: null, etag: null, timestamp: 0 }
 const METRICS_CACHE_TTL = 600000 // 10 minutes
+let _metricsInFlight = null // Deduplicate concurrent requests
 
 function generateETag(obj) {
   return 'W/"' + crypto.createHash('md5').update(JSON.stringify(obj)).digest('hex') + '"'
@@ -167,19 +168,34 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     return res.json(_metricsCache.data)
   }
 
-  const GLOBAL_TIMEOUT = 45000
-  const deadline = Date.now() + GLOBAL_TIMEOUT
-  const isDeadlineExceeded = () => Date.now() > deadline
-
-  const results = {
-    totalAccounts: null,
-    totalPaidAccounts: null,
-    mrr: null,
-    ventureCount: 3,
-    ventures: ['Business OS', 'Insights', 'CRM'],
-    source: 'partial',
-    lastUpdated: null
+  // If a fetch is already in flight, wait for it instead of triggering another
+  if (_metricsInFlight) {
+    try {
+      const data = await _metricsInFlight
+      res.setHeader('Cache-Control', 'public, max-age=600')
+      res.setHeader('ETag', _metricsCache.etag)
+      res.json(data)
+      return
+    } catch (e) {
+      logError('/api/metrics', 'WAIT_ERROR', 'error while waiting for in-flight metrics fetch', { message: e.message })
+    }
   }
+
+  // Start a new fetch and store the promise so other requests can wait for it
+  _metricsInFlight = (async () => {
+    const GLOBAL_TIMEOUT = 45000
+    const deadline = Date.now() + GLOBAL_TIMEOUT
+    const isDeadlineExceeded = () => Date.now() > deadline
+
+    const results = {
+      totalAccounts: null,
+      totalPaidAccounts: null,
+      mrr: null,
+      ventureCount: 3,
+      ventures: ['Business OS', 'Insights', 'CRM'],
+      source: 'partial',
+      lastUpdated: null
+    }
 
   // ── Supabase: Total Accounts ──
   try {
@@ -311,13 +327,20 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     results.source = results.totalAccounts != null ? 'live' : 'partial'
   }
 
-  _metricsCache.data = results
-  _metricsCache.etag = generateETag(results)
-  _metricsCache.timestamp = now
+    _metricsCache.data = results
+    _metricsCache.etag = generateETag(results)
+    _metricsCache.timestamp = now
+    return results
+  })()
 
-  res.setHeader('Cache-Control', 'public, max-age=600')
-  res.setHeader('ETag', _metricsCache.etag)
-  res.json(results)
+  try {
+    const data = await _metricsInFlight
+    res.setHeader('Cache-Control', 'public, max-age=600')
+    res.setHeader('ETag', _metricsCache.etag)
+    res.json(data)
+  } finally {
+    _metricsInFlight = null
+  }
 })
 
 // Agents data — read/write
