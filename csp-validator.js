@@ -15,12 +15,15 @@ function validateCSPHashes() {
   try {
     const htmlContent = fs.readFileSync(htmlPath, 'utf8');
 
-    // Validate script hash
-    const scriptMatch = htmlContent.match(/<script[^>]*>([\s\S]*?)<\/script>/);
-    if (!scriptMatch || !scriptMatch[1]) {
-      throw new Error('No inline script found in index.html');
+    // Validate all script hashes (multiple inline scripts supported)
+    const scriptMatches = htmlContent.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || [];
+    if (scriptMatches.length === 0) {
+      throw new Error('No inline scripts found in index.html');
     }
-    const scriptHash = calculateHash(scriptMatch[1]);
+    const scriptHashes = scriptMatches.map(s => {
+      const content = s.match(/<script[^>]*>([\s\S]*?)<\/script>/)[1];
+      return calculateHash(content);
+    });
 
     // Validate CSS hash
     const styleMatch = htmlContent.match(/<style[^>]*>([\s\S]*?)<\/style>/);
@@ -30,11 +33,11 @@ function validateCSPHashes() {
     const cssHash = calculateHash(styleMatch[1]);
 
     const serverContent = fs.readFileSync(serverPath, 'utf8');
-    const scriptHashMatch = serverContent.match(/script-src '\$\{_scriptHash\}'/);
+    const scriptHashMatch = serverContent.match(/script-src '\$\{_scriptHashes\}'/);
     const cssHashMatch = serverContent.match(/style-src '\$\{_styleHash\}'/);
 
     if (!scriptHashMatch) {
-      throw new Error('server.js does not use dynamic _scriptHash in CSP header');
+      throw new Error('server.js does not use dynamic _scriptHashes in CSP header');
     }
     if (!cssHashMatch) {
       throw new Error('server.js does not use dynamic _styleHash in CSP header');
@@ -42,7 +45,7 @@ function validateCSPHashes() {
 
     if (isStandalone) {
       console.log('✅ CSP using dynamic hash calculation');
-      console.log(`   Script hash: ${scriptHash}`);
+      scriptHashes.forEach((h, i) => console.log(`   Script ${i + 1} hash: ${h}`));
       console.log(`   CSS hash: ${cssHash}`);
       process.exit(0);
     }

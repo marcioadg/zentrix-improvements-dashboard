@@ -47,16 +47,19 @@ app.use(cors({
 app.use(express.json({ limit: '1mb' }))
 
 // Load and initialize index.html, CSP hashes, and cache (single read operation)
-const { _scriptHash, _styleHash, _indexCache } = (() => {
+const { _scriptHashes, _styleHash, _indexCache } = (() => {
   try {
     const content = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8')
 
-    // Compute script hash
-    const scriptMatch = content.match(/<script[^>]*>([\s\S]*?)<\/script>/)
-    if (!scriptMatch || !scriptMatch[1]) {
-      throw new Error('No inline script found in index.html')
+    // Compute all script hashes (multiple inline scripts supported)
+    const scriptMatches = content.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || []
+    if (scriptMatches.length === 0) {
+      throw new Error('No inline scripts found in index.html')
     }
-    const scriptHash = 'sha256-' + crypto.createHash('sha256').update(scriptMatch[1]).digest('base64')
+    const scriptHashes = scriptMatches.map(script => {
+      const scriptContent = script.match(/<script[^>]*>([\s\S]*?)<\/script>/)[1]
+      return 'sha256-' + crypto.createHash('sha256').update(scriptContent).digest('base64')
+    }).join("' '")
 
     // Compute CSS hash
     const styleMatch = content.match(/<style[^>]*>([\s\S]*?)<\/style>/)
@@ -66,7 +69,7 @@ const { _scriptHash, _styleHash, _indexCache } = (() => {
     const styleHash = 'sha256-' + crypto.createHash('sha256').update(styleMatch[1]).digest('base64')
 
     const etag = generateETag(content)
-    return { _scriptHash: scriptHash, _styleHash: styleHash, _indexCache: { content, etag } }
+    return { _scriptHashes: scriptHashes, _styleHash: styleHash, _indexCache: { content, etag } }
   } catch (e) {
     console.error('[ERROR] Failed to initialize index.html:', e.message)
     process.exit(1)
@@ -80,7 +83,7 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
   res.setHeader('X-XSS-Protection', '0')
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  res.setHeader('Content-Security-Policy', `default-src 'none'; script-src '${_scriptHash}'; style-src '${_styleHash}' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
+  res.setHeader('Content-Security-Policy', `default-src 'none'; script-src '${_scriptHashes}'; style-src '${_styleHash}' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
   next()
 })
 // Serve data files with ETag validation for 304 responses (avoid re-downloading unchanged files)
