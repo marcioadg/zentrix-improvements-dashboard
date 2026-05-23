@@ -451,12 +451,13 @@ app.get('/api/validate-entries', rateLimit, (req, res) => {
   const isCacheValid = _entriesCache.data && (now - _entriesCache.timestamp) < ENTRIES_CACHE_TTL
 
   if (isCacheValid) {
+    const statusCode = _entriesCache.data.ok ? 200 : 400
     res.setHeader('Cache-Control', 'public, max-age=300')
     res.setHeader('ETag', _entriesCache.etag)
     if (req.headers['if-none-match'] === _entriesCache.etag) {
       return res.status(304).end()
     }
-    return res.json(_entriesCache.data)
+    return res.status(statusCode).json(_entriesCache.data)
   }
 
   const filePath = path.join(__dirname, 'data', 'entries.json')
@@ -466,17 +467,18 @@ app.get('/api/validate-entries', rateLimit, (req, res) => {
     const isValid = validateEntriesArray(entries)
     const cacheData = { ok: isValid, count: entries.length }
     if (!isValid) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-      logError('/api/validate-entries', 'VALIDATION_FAILED', 'entries array structure validation failed', { count: entries.length })
-      res.status(400).json({ ...cacheData, error: 'Entries array contains invalid entries' })
-    } else {
-      _entriesCache.data = cacheData
-      _entriesCache.etag = generateETag(cacheData)
-      _entriesCache.timestamp = now
-      res.setHeader('Cache-Control', 'public, max-age=300')
-      res.setHeader('ETag', _entriesCache.etag)
-      res.json(cacheData)
+      cacheData.error = 'Entries array contains invalid entries'
     }
+    _entriesCache.data = cacheData
+    _entriesCache.etag = generateETag(cacheData)
+    _entriesCache.timestamp = now
+    res.setHeader('Cache-Control', 'public, max-age=300')
+    res.setHeader('ETag', _entriesCache.etag)
+    const statusCode = isValid ? 200 : 400
+    if (!isValid) {
+      logError('/api/validate-entries', 'VALIDATION_FAILED', 'entries array structure validation failed', { count: entries.length })
+    }
+    res.status(statusCode).json(cacheData)
   } catch (e) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     logError('/api/validate-entries', e.code || 'VALIDATION_ERROR', 'failed to validate entries', { message: e.message })
