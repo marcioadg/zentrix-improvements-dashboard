@@ -94,6 +94,7 @@ app.get('/', (req, res) => {
 function requireAuth(req, res, next) {
   const key = req.headers['x-api-key'] || req.query.key
   if (API_KEY && key === API_KEY) return next()
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   res.status(401).json({ error: 'Unauthorized' })
 }
 
@@ -118,6 +119,7 @@ function rateLimit(req, res, next) {
   const ip = getClientIP(req)
   const check = checkRateLimit(ip)
   if (!check.allowed) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.status(429).json({ error: check.error })
   }
   next()
@@ -362,6 +364,7 @@ app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=60')
     res.json(agents)
   } catch (e) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     if (e.code === 'ENOENT') {
       logError('/api/agents', 'FILE_NOT_FOUND', 'agents.json not found', { file: 'agents.json' })
       res.status(404).json({ error: 'Agents data not found' })
@@ -377,6 +380,7 @@ app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
 
 app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
   if (!validateAgentsJSON(req.body)) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     logError('/api/agents', 'VALIDATION_ERROR', 'invalid agents data structure', { bodySize: JSON.stringify(req.body).length })
     return res.status(400).json({ error: 'Invalid agents data structure' })
   }
@@ -385,6 +389,7 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
     fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2))
     res.json({ ok: true })
   } catch (e) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     logError('/api/agents', e.code || 'WRITE_ERROR', 'failed to save agents', { message: e.message })
     res.status(500).json({ error: 'Failed to save agents' })
   }
@@ -398,12 +403,14 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
 
 // ── Global 404 handler ───────────────────────────────────────────────────────
 app.use((req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   logError(req.path, 'NOT_FOUND', `${req.method} request to undefined route`)
   res.status(404).json({ error: 'Not found' })
 })
 
 // ── Global error handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   logError(req.path, 'UNHANDLED_ERROR', 'error in request handler', { method: req.method, message: err.message })
   res.status(500).json({ error: 'Internal server error' })
 })
