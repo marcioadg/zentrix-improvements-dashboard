@@ -71,10 +71,9 @@ function checkRateLimit(ip) {
   const entry = _rateLimitMap.get(ip)
 
   if (!entry || now - entry.start > RATE_LIMIT_WINDOW) {
-    // Evict oldest entry if map exceeds max size (prevent memory exhaustion DoS)
+    // Reject new IPs at capacity to prevent distributed attacks (botnet style)
     if (!_rateLimitMap.has(ip) && _rateLimitMap.size >= RATE_LIMIT_MAX_IPS) {
-      const oldest = _rateLimitMap.entries().next().value
-      if (oldest) _rateLimitMap.delete(oldest[0])
+      return { allowed: false, error: 'Too many requests — try again in a minute' }
     }
     _rateLimitMap.set(ip, { start: now, count: 1 })
     return { allowed: true }
