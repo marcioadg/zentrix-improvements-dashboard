@@ -99,7 +99,12 @@ _rateLimitCleanup.unref()
 // Standardized error logging with timestamp, code, route, and context
 function logError(route, code, message, context = {}) {
   const timestamp = new Date().toISOString()
-  const details = Object.entries(context).map(([k, v]) => `${k}=${v}`).join(' ')
+  const details = Object.entries(context).map(([k, v]) => {
+    if (typeof v === 'object' && v !== null) {
+      return `${k}=${JSON.stringify(v)}`
+    }
+    return `${k}=${v}`
+  }).join(' ')
   console.error(`[${timestamp}] [${code}] ${route}: ${message}${details ? ' ' + details : ''}`)
 }
 
