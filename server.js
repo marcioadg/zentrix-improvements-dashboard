@@ -327,6 +327,16 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     results.source = results.totalAccounts != null ? 'live' : 'partial'
   }
 
+  // Log data source degradation for monitoring
+  if (results.source === 'partial') {
+    const missingSource = results.totalAccounts == null ? 'Supabase' : 'Stripe'
+    logError('/api/metrics', 'PARTIAL_DATA', `falling back to partial metrics — ${missingSource} data unavailable`, {
+      totalAccounts: results.totalAccounts,
+      mrr: results.mrr,
+      paidAccounts: results.totalPaidAccounts
+    })
+  }
+
     _metricsCache.data = results
     _metricsCache.etag = generateETag(results)
     _metricsCache.timestamp = now
