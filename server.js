@@ -217,7 +217,9 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
   }
 
   // Start a new fetch and store the promise so other requests can wait for it
-  _metricsInFlight = (async () => {
+  // Wrap in Promise.race to guarantee timeout even if deadline checks fail
+  const METRICS_TIMEOUT = 48000 // 48s: slightly longer than GLOBAL_TIMEOUT (45s) for graceful completion
+  const metricsPromise = (async () => {
     const GLOBAL_TIMEOUT = 45000
     const deadline = Date.now() + GLOBAL_TIMEOUT
     const isDeadlineExceeded = () => Date.now() > deadline
@@ -377,6 +379,13 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     _metricsCache.timestamp = now
     return results
   })()
+
+  _metricsInFlight = Promise.race([
+    metricsPromise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Metrics fetch timed out after 48s')), METRICS_TIMEOUT)
+    )
+  ])
 
   try {
     const data = await _metricsInFlight
