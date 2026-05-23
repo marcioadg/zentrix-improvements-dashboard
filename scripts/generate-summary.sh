@@ -4,6 +4,16 @@ set -euo pipefail
 ENTRIES_FILE="/home/ubuntu/zentrix-improvements-dashboard/data/entries.json"
 OUTPUT_FILE="/home/ubuntu/zentrix-improvements-dashboard/data/summary.json"
 
+# Find claude in PATH, fail clearly if not found (matches generate-security.sh pattern)
+CLAUDE="$(command -v claude || echo /home/ubuntu/.npm-global/bin/claude)"
+if [ ! -x "$CLAUDE" ]; then
+  echo "[ERROR] claude binary not found in PATH or at $CLAUDE" >&2
+  # Generate fallback summary instead of failing
+  TIMESTAMP=$(TZ=America/New_York date +%Y-%m-%dT%H:%M:%S%z)
+  echo '{"generated": "'$TIMESTAMP'", "summary": "Claude CLI unavailable — summary generation skipped. Check claude installation."}' > "$OUTPUT_FILE"
+  exit 0
+fi
+
 # Filter entries from the last 24 hours and format as compact text
 FORMATTED=$(python3 -c "
 import json, sys
@@ -36,7 +46,7 @@ if [ -z "$FORMATTED" ]; then
 fi
 
 CLAUDE_STDERR=$(mktemp)
-SUMMARY=$(timeout 60 bash -c "cat <<'PROMPT' | claude --permission-mode allow-all --print
+SUMMARY=$(timeout 60 bash -c "cat <<'PROMPT' | $CLAUDE --permission-mode allow-all --print
 You are the CTO of Zentrix, writing a daily product update for the founders. They are non-technical — do not use engineering jargon, file names, technical terms, or code references.
 
 Here are the AI-driven improvements made across Zentrix products in the last 24 hours:
