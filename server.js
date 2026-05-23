@@ -181,6 +181,7 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     } catch (e) {
       logError('/api/metrics', 'WAIT_ERROR', 'error while waiting for in-flight metrics fetch', { message: e.message })
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+      _metricsInFlight = null
       return res.status(500).json({ error: 'Metrics fetch failed — please retry' })
     }
   }
