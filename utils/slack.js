@@ -101,7 +101,11 @@ function logError(route, code, message, context = {}) {
   const timestamp = new Date().toISOString()
   const details = Object.entries(context).map(([k, v]) => {
     if (typeof v === 'object' && v !== null) {
-      return `${k}=${JSON.stringify(v)}`
+      let serialized = JSON.stringify(v)
+      if (serialized.length > 200) {
+        serialized = serialized.slice(0, 197) + '...'
+      }
+      return `${k}=${serialized}`
     }
     return `${k}=${v}`
   }).join(' ')
