@@ -163,6 +163,19 @@ function validateStripeSubscriptionsResponse(data) {
   return data
 }
 
+// Validate entries array structure for data integrity
+function validateEntriesArray(data) {
+  if (!Array.isArray(data)) return false
+  if (data.length === 0) return true
+  return data.every(e => {
+    if (typeof e !== 'object' || e === null) return false
+    if (typeof e.date !== 'string' || typeof e.repo !== 'string') return false
+    if (typeof e.category !== 'string' || typeof e.summary !== 'string') return false
+    if (e.score !== undefined && (typeof e.score !== 'number' || e.score < 0 || e.score > 100)) return false
+    return true
+  })
+}
+
 // ── Routes ───────────────────────────────────────────────────────────────────
 
 // Health check (not rate-limited: critical system endpoint for load balancers/monitors)
@@ -416,6 +429,28 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
 // The client exclusively calls this route for swipe actions and security fix requests
 app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
   await handleAction(req, res, SLACK_TOKEN)
+})
+
+// Data validation endpoint — allows frontend to verify entries array structure
+app.get('/api/validate-entries', (req, res) => {
+  const filePath = path.join(__dirname, 'data', 'entries.json')
+  try {
+    const data = fs.readFileSync(filePath, 'utf8')
+    const entries = JSON.parse(data)
+    const isValid = validateEntriesArray(entries)
+    if (!isValid) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+      logError('/api/validate-entries', 'VALIDATION_FAILED', 'entries array structure validation failed', { count: entries.length })
+      res.status(400).json({ ok: false, error: 'Entries array contains invalid entries', count: entries.length })
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=3600')
+      res.json({ ok: true, count: entries.length })
+    }
+  } catch (e) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    logError('/api/validate-entries', e.code || 'VALIDATION_ERROR', 'failed to validate entries', { message: e.message })
+    res.status(500).json({ ok: false, error: 'Failed to validate entries' })
+  }
 })
 
 // ── Global 404 handler ───────────────────────────────────────────────────────
