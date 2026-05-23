@@ -3,6 +3,10 @@ set -euo pipefail
 
 ENTRIES_FILE="/home/ubuntu/zentrix-improvements-dashboard/data/entries.json"
 OUTPUT_FILE="/home/ubuntu/zentrix-improvements-dashboard/data/summary.json"
+CLAUDE_STDERR=$(mktemp)
+
+# Cleanup temp files on all exit paths (early exits don't leak resources)
+trap 'rm -f "$CLAUDE_STDERR"' EXIT
 
 # Find claude in PATH, fail clearly if not found (matches generate-security.sh pattern)
 CLAUDE="$(command -v claude || echo /home/ubuntu/.npm-global/bin/claude)"
@@ -45,7 +49,6 @@ if [ -z "$FORMATTED" ]; then
   exit 0
 fi
 
-CLAUDE_STDERR=$(mktemp)
 SUMMARY=$(timeout 60 bash -c "cat <<'PROMPT' | $CLAUDE --permission-mode allow-all --print
 You are the CTO of Zentrix, writing a daily product update for the founders. They are non-technical — do not use engineering jargon, file names, technical terms, or code references.
 
@@ -88,9 +91,6 @@ elif [ -z "$SUMMARY" ] || [ ${#SUMMARY} -lt 20 ]; then
   echo "[WARN] Claude API returned empty or truncated response" >&2
   SUMMARY="Claude API returned empty response. Summary will be regenerated on next run."
 fi
-
-# Clean up temp file
-rm -f "$CLAUDE_STDERR"
 
 python3 -c "
 import json, sys
