@@ -23,7 +23,7 @@ function validateCSPHashes() {
     const scriptHash = calculateHash(scriptMatch[1]);
 
     // Validate CSS hash
-    const styleMatch = htmlContent.match(/<style[^>]*>([^<]*)<\/style>/);
+    const styleMatch = htmlContent.match(/<style[^>]*>([\s\S]*?)<\/style>/);
     if (!styleMatch || !styleMatch[1]) {
       throw new Error('No inline style found in index.html');
     }

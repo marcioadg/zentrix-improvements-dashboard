@@ -59,7 +59,7 @@ const { _scriptHash, _styleHash, _indexCache } = (() => {
     const scriptHash = 'sha256-' + crypto.createHash('sha256').update(scriptMatch[1]).digest('base64')
 
     // Compute CSS hash
-    const styleMatch = content.match(/<style[^>]*>([^<]*)<\/style>/)
+    const styleMatch = content.match(/<style[^>]*>([\s\S]*?)<\/style>/)
     if (!styleMatch || !styleMatch[1]) {
       throw new Error('No inline style found in index.html')
     }
