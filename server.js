@@ -363,6 +363,18 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
   await handleAction(req, res, SLACK_TOKEN)
 })
 
+// ── Global 404 handler ───────────────────────────────────────────────────────
+app.use((req, res) => {
+  logError(req.path, 'NOT_FOUND', `${req.method} request to undefined route`)
+  res.status(404).json({ error: 'Not found' })
+})
+
+// ── Global error handler ─────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  logError(req.path, 'UNHANDLED_ERROR', 'error in request handler', { method: req.method, message: err.message })
+  res.status(500).json({ error: 'Internal server error' })
+})
+
 validateCSPHashes()
 
 const server = app.listen(PORT, () => console.log(`Dashboard API running on :${PORT}`))
@@ -384,3 +396,16 @@ function gracefulShutdown(signal) {
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
 process.on('SIGINT', () => gracefulShutdown('SIGINT'))
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  const message = reason instanceof Error ? reason.message : String(reason)
+  logError('process', 'UNHANDLED_REJECTION', 'unhandled promise rejection', { message })
+})
+
+// Handle uncaught exceptions (last resort before crash)
+process.on('uncaughtException', (error) => {
+  logError('process', 'UNCAUGHT_EXCEPTION', 'uncaught exception — forcing shutdown', { message: error.message })
+  console.error(error.stack)
+  process.exit(1)
+})
