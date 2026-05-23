@@ -14,22 +14,36 @@ function validateCSPHashes() {
 
   try {
     const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+
+    // Validate script hash
     const scriptMatch = htmlContent.match(/<script[^>]*>([\s\S]*?)<\/script>/);
     if (!scriptMatch || !scriptMatch[1]) {
       throw new Error('No inline script found in index.html');
     }
-    const expectedHash = calculateHash(scriptMatch[1]);
+    const scriptHash = calculateHash(scriptMatch[1]);
+
+    // Validate CSS hash
+    const styleMatch = htmlContent.match(/<style[^>]*>([^<]*)<\/style>/);
+    if (!styleMatch || !styleMatch[1]) {
+      throw new Error('No inline style found in index.html');
+    }
+    const cssHash = calculateHash(styleMatch[1]);
 
     const serverContent = fs.readFileSync(serverPath, 'utf8');
-    const serverMatch = serverContent.match(/script-src '\$\{_scriptHash\}'/);
+    const scriptHashMatch = serverContent.match(/script-src '\$\{_scriptHash\}'/);
+    const cssHashMatch = serverContent.match(/style-src '\$\{_styleHash\}'/);
 
-    if (!serverMatch) {
+    if (!scriptHashMatch) {
       throw new Error('server.js does not use dynamic _scriptHash in CSP header');
+    }
+    if (!cssHashMatch) {
+      throw new Error('server.js does not use dynamic _styleHash in CSP header');
     }
 
     if (isStandalone) {
       console.log('✅ CSP using dynamic hash calculation');
-      console.log(`   Current index.html script hash: ${expectedHash}`);
+      console.log(`   Script hash: ${scriptHash}`);
+      console.log(`   CSS hash: ${cssHash}`);
       process.exit(0);
     }
   } catch (e) {

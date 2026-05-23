@@ -46,18 +46,27 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '1mb' }))
 
-// Load and initialize index.html, CSP hash, and cache (single read operation)
-const { _scriptHash, _indexCache } = (() => {
+// Load and initialize index.html, CSP hashes, and cache (single read operation)
+const { _scriptHash, _styleHash, _indexCache } = (() => {
   try {
     const content = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8')
+
+    // Compute script hash
     const scriptMatch = content.match(/<script[^>]*>([\s\S]*?)<\/script>/)
     if (!scriptMatch || !scriptMatch[1]) {
       throw new Error('No inline script found in index.html')
     }
-    const scriptContent = scriptMatch[1]
-    const scriptHash = 'sha256-' + crypto.createHash('sha256').update(scriptContent).digest('base64')
+    const scriptHash = 'sha256-' + crypto.createHash('sha256').update(scriptMatch[1]).digest('base64')
+
+    // Compute CSS hash
+    const styleMatch = content.match(/<style[^>]*>([^<]*)<\/style>/)
+    if (!styleMatch || !styleMatch[1]) {
+      throw new Error('No inline style found in index.html')
+    }
+    const styleHash = 'sha256-' + crypto.createHash('sha256').update(styleMatch[1]).digest('base64')
+
     const etag = generateETag(content)
-    return { _scriptHash: scriptHash, _indexCache: { content, etag } }
+    return { _scriptHash: scriptHash, _styleHash: styleHash, _indexCache: { content, etag } }
   } catch (e) {
     console.error('[ERROR] Failed to initialize index.html:', e.message)
     process.exit(1)
@@ -71,7 +80,7 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
   res.setHeader('X-XSS-Protection', '0')
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  res.setHeader('Content-Security-Policy', `default-src 'none'; script-src '${_scriptHash}'; style-src 'sha256-twU6KozwNFRBwq/gjzeoMQjRyMBl+ySRLBUIWiG0Rc0=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
+  res.setHeader('Content-Security-Policy', `default-src 'none'; script-src '${_scriptHash}'; style-src '${_styleHash}' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
   next()
 })
 app.use('/data', express.static(path.join(__dirname, 'data'), {
