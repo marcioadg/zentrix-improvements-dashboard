@@ -33,7 +33,10 @@ window.addEventListener('unhandledrejection', e => console.error('Unhandled prom
     document.addEventListener('visibilitychange', function() {
       if (document.hidden) {
         const timeoutId = setTimeout(() => window._cleanupAllListeners(), 5000);
-        document.addEventListener('visibilityshow', () => clearTimeout(timeoutId), { once: true });
+        const handler = () => {
+          if (!document.hidden) clearTimeout(timeoutId);
+        };
+        document.addEventListener('visibilitychange', handler, { once: true });
       }
     });
   }
