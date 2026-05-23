@@ -83,10 +83,15 @@ app.use((req, res, next) => {
   res.setHeader('Content-Security-Policy', `default-src 'none'; script-src '${_scriptHash}'; style-src '${_styleHash}' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
   next()
 })
+// Serve data files with ETag validation for 304 responses (avoid re-downloading unchanged files)
 app.use('/data', express.static(path.join(__dirname, 'data'), {
-  setHeaders: (res) => {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    res.setHeader('Pragma', 'no-cache')
+  setHeaders: (res, filePath) => {
+    // Generate ETag from file mtime to allow 304 revalidation without body transmission
+    const stat = fs.statSync(filePath)
+    const etag = generateETag(stat.mtime.getTime().toString())
+    res.setHeader('ETag', etag)
+    // Allow validation but prevent stale cache on file updates (must revalidate after 24h)
+    res.setHeader('Cache-Control', 'public, must-revalidate, max-age=86400')
   }
 }))
 
