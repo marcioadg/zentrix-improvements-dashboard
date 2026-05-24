@@ -19,10 +19,10 @@ module.exports = async function handler(req, res) {
   }
 
   const product = req.query.product || 'os'  // os | insights | crm | agents
-  res.setHeader('Cache-Control', 'public, max-age=300')
 
   try {
     if (!SUPABASE_SERVICE_ROLE_KEY) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
       return res.json({ data: [], product })
     }
 
@@ -45,9 +45,11 @@ module.exports = async function handler(req, res) {
         if (!response.ok) {
           const err = await response.text()
           logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (os) fetch failed', { status: response.status, product: 'os' })
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
           return res.json({ data: [], product, error: err })
         }
         const data = await response.json()
+        res.setHeader('Cache-Control', 'public, max-age=300')
         return res.json({ data, product })
       } finally {
         clearTimeout(timeout)
@@ -74,6 +76,7 @@ module.exports = async function handler(req, res) {
         if (!response.ok) {
           const err = await response.text()
           logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (insights) fetch failed', { status: response.status, product: 'insights' })
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
           return res.json({ data: [], product, error: err })
         }
         const raw = await response.json()
@@ -91,6 +94,7 @@ module.exports = async function handler(req, res) {
           wow_hours_change_pct: row.wow_hours_change_pct,
           top_users: row.top_users,
         }))
+        res.setHeader('Cache-Control', 'public, max-age=300')
         return res.json({ data, product })
       } finally {
         clearTimeout(timeout)
@@ -117,6 +121,7 @@ module.exports = async function handler(req, res) {
         if (!response.ok) {
           const err = await response.text()
           logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (crm) fetch failed', { status: response.status, product: 'crm' })
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
           return res.json({ data: [], product, error: err })
         }
         const raw = await response.json()
@@ -137,6 +142,7 @@ module.exports = async function handler(req, res) {
           top_tenants: row.top_tenants,
           low_tenants: row.low_tenants,
         }))
+        res.setHeader('Cache-Control', 'public, max-age=300')
         return res.json({ data, product })
       } finally {
         clearTimeout(timeout)
@@ -144,6 +150,7 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Agents or other unknown products ─────────────────────────────────────
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ data: [], product, note: 'No weekly data for this product yet' })
 
   } catch (err) {
