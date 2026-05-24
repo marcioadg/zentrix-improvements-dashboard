@@ -462,7 +462,12 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
 // Unified action endpoint — matches the Vercel serverless function (api/action.js)
 // The client exclusively calls this route for swipe actions and security fix requests
 app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
-  await handleAction(req, res, SLACK_TOKEN)
+  try {
+    await handleAction(req, res, SLACK_TOKEN)
+  } catch (err) {
+    logError('/api/action', err.name || 'UNHANDLED_ERROR', 'unhandled error in action handler', { message: err.message })
+    res.status(500).json({ error: 'Internal server error' })
+  }
 })
 
 // Data validation endpoint — allows frontend to verify entries array structure
