@@ -104,7 +104,7 @@ app.get('/', (req, res) => {
   if (req.headers['if-none-match'] === _indexCache.etag) {
     return res.status(304).end()
   }
-  res.send(_indexCache.content)
+  return res.send(_indexCache.content)
 })
 
 // ── Auth middleware ──────────────────────────────────────────────────────────
