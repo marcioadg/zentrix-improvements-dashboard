@@ -32,6 +32,12 @@ module.exports = async function handler(req, res) {
   const key = req.headers['x-api-key']
   if (key !== API_KEY) return res.status(401).json({ error: 'Unauthorized' })
 
-  await handleAction(req, res, SLACK_TOKEN)
+  try {
+    await handleAction(req, res, SLACK_TOKEN)
+  } catch (err) {
+    const { logError } = require('../utils/slack.js')
+    logError('/api/action', err.name || 'UNHANDLED_ERROR', 'unhandled error in action handler', { message: err.message })
+    res.status(500).json({ error: 'Internal server error' })
+  }
 }
 
