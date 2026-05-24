@@ -148,5 +148,5 @@ module.exports = async function handler(req, res) {
     })
   }
 
-  res.json({ history, source: 'live' })
+  return res.json({ history, source: 'live' })
 }
