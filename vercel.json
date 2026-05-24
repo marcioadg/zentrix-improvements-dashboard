@@ -27,7 +27,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'none'; script-src 'sha256-5R0rR2u+ZuN8Lcqb08vXONDxV54f4Z6PZkR1y0lg8BQ=' 'sha256-wRow/C5RJKOUEMxyX3tnqSeHWO6To7pISheAHRdaIu8='; style-src 'sha256-twU6KozwNFRBwq/gjzeoMQjRyMBl+ySRLBUIWiG0Rc0=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+          "value": "default-src 'none'; script-src 'sha256-p+15mSilFcVcevf/H5xRA4VAxZEVh6onrGjF2RG488o=' 'sha256-uNwZo1Ywm5SK8gqprp0Hh3JuvFmA1zsLofq1ccDlatQ=' 'sha256-wRow/C5RJKOUEMxyX3tnqSeHWO6To7pISheAHRdaIu8='; style-src 'sha256-twU6KozwNFRBwq/gjzeoMQjRyMBl+ySRLBUIWiG0Rc0=' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         }
       ]
     }
