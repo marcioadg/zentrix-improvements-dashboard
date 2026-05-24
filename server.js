@@ -480,6 +480,7 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
   } catch (err) {
     logError('/api/action', err.name || 'UNHANDLED_ERROR', 'unhandled error in action handler', { message: err.message })
     if (!res.headersSent) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
       return res.status(500).json({ error: 'Internal server error' })
     }
   }
