@@ -82,7 +82,11 @@ module.exports = async function handler(req, res) {
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(200).end()
+  }
+  res.setHeader('Cache-Control', 'public, max-age=300')
 
   const product = (req.query.product || 'os').toLowerCase()
   const period  = req.query.period  || '7d'
