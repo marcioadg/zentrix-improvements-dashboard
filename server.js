@@ -395,6 +395,10 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=600')
     res.setHeader('ETag', _metricsCache.etag)
     return res.json(data)
+  } catch (e) {
+    logError('/api/metrics', 'FETCH_ERROR', 'error during metrics fetch', { message: e.message })
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(500).json({ error: 'Metrics fetch failed — please retry' })
   } finally {
     _metricsInFlight = null
   }
