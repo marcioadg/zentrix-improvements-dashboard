@@ -143,7 +143,11 @@ module.exports = async function handler(req, res) {
     return res.json({ data: [], product, note: 'No weekly data for this product yet' })
 
   } catch (err) {
-    logError('/api/weekly-usage', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message })
+    if (err.name === 'AbortError') {
+      logError('/api/weekly-usage', 'SUPABASE_TIMEOUT', 'supabase request timed out', { timeout: FETCH_TIMEOUT, product })
+    } else {
+      logError('/api/weekly-usage', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message })
+    }
     return res.json({ data: [], product, error: err.message })
   }
 }
