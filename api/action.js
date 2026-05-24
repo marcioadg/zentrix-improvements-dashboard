@@ -37,7 +37,7 @@ module.exports = async function handler(req, res) {
   } catch (err) {
     const { logError } = require('../utils/slack.js')
     logError('/api/action', err.name || 'UNHANDLED_ERROR', 'unhandled error in action handler', { message: err.message })
-    res.status(500).json({ error: 'Internal server error' })
+    return res.status(500).json({ error: 'Internal server error' })
   }
 }
 
