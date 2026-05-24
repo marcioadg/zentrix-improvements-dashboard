@@ -13,9 +13,13 @@ module.exports = async function handler(req, res) {
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(200).end()
+  }
 
   const product = req.query.product || 'os'  // os | insights | crm | agents
+  res.setHeader('Cache-Control', 'public, max-age=300')
 
   try {
     if (!SUPABASE_SERVICE_ROLE_KEY) {
@@ -148,6 +152,7 @@ module.exports = async function handler(req, res) {
     } else {
       logError('/api/weekly-usage', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message })
     }
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ data: [], product, error: err.message })
   }
 }
