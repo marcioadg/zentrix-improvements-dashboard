@@ -370,5 +370,5 @@ module.exports = async function handler(req, res) {
     results.source = results.totalAccounts != null ? 'live' : 'partial'
   }
 
-  res.json(results)
+  return res.json(results)
 }
