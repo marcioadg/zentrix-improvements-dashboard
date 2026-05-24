@@ -454,6 +454,7 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
     fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2))
     _agentsCache.data = null
     _agentsCache.timestamp = 0
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ ok: true })
   } catch (e) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
