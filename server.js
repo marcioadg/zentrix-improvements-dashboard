@@ -465,7 +465,9 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
     await handleAction(req, res, SLACK_TOKEN)
   } catch (err) {
     logError('/api/action', err.name || 'UNHANDLED_ERROR', 'unhandled error in action handler', { message: err.message })
-    return res.status(500).json({ error: 'Internal server error' })
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'Internal server error' })
+    }
   }
 })
 
