@@ -137,10 +137,10 @@ async function handleAction(req, res, slackToken) {
 
   try {
     const result = await postSlack(slackToken, `${label} — ${escapeSlackMarkdown(repoName || repo)}`, blocks)
-    res.json({ ok: result.ok, ts: result.ts })
+    return res.json({ ok: result.ok, ts: result.ts })
   } catch (e) {
     logError('/api/action', e.name || 'SLACK_ERROR', 'failed to post Slack action', { action, message: e.message })
-    res.status(500).json({ error: e.message })
+    return res.status(500).json({ error: e.message })
   }
 }
 
