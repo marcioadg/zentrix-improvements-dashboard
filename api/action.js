@@ -1,7 +1,8 @@
 const {
   getClientIP,
   checkRateLimit,
-  handleAction
+  handleAction,
+  logError
 } = require('../utils/slack.js')
 
 const SLACK_TOKEN = process.env.SLACK_TOKEN
@@ -35,7 +36,6 @@ module.exports = async function handler(req, res) {
   try {
     await handleAction(req, res, SLACK_TOKEN)
   } catch (err) {
-    const { logError } = require('../utils/slack.js')
     logError('/api/action', err.name || 'UNHANDLED_ERROR', 'unhandled error in action handler', { message: err.message })
     return res.status(500).json({ error: 'Internal server error' })
   }
