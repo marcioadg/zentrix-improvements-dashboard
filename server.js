@@ -465,8 +465,17 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
 // Unified action endpoint — matches the Vercel serverless function (api/action.js)
 // The client exclusively calls this route for swipe actions and security fix requests
 app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
+  const ACTION_TIMEOUT = 12000 // 12s: guarantee response even if Slack API hangs
+  const actionPromise = handleAction(req, res, SLACK_TOKEN)
+
   try {
-    return await handleAction(req, res, SLACK_TOKEN)
+    await Promise.race([
+      actionPromise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Action handler timed out after 12s')), ACTION_TIMEOUT)
+      )
+    ])
+    return
   } catch (err) {
     logError('/api/action', err.name || 'UNHANDLED_ERROR', 'unhandled error in action handler', { message: err.message })
     if (!res.headersSent) {
