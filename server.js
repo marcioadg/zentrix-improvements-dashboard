@@ -149,6 +149,8 @@ const METRICS_CACHE_TTL = 600000 // 10 minutes
 let _metricsInFlight = null // Deduplicate concurrent requests
 const _entriesCache = { data: null, etag: null, timestamp: 0 }
 const ENTRIES_CACHE_TTL = 300000 // 5 minutes
+const _agentsCache = { data: null, etag: null, timestamp: 0 }
+const AGENTS_CACHE_TTL = 60000 // 1 minute
 
 function generateETag(obj) {
   return 'W/"' + crypto.createHash('md5').update(JSON.stringify(obj)).digest('hex') + '"'
@@ -401,11 +403,27 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
 
 // Agents data — read/write
 app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
+  const now = Date.now()
+  const isCacheValid = _agentsCache.data && (now - _agentsCache.timestamp) < AGENTS_CACHE_TTL
+
+  if (isCacheValid) {
+    res.setHeader('Cache-Control', 'public, max-age=60')
+    res.setHeader('ETag', _agentsCache.etag)
+    if (req.headers['if-none-match'] === _agentsCache.etag) {
+      return res.status(304).end()
+    }
+    return res.json(_agentsCache.data)
+  }
+
   const filePath = path.join(__dirname, 'data', 'agents.json')
   try {
     const data = fs.readFileSync(filePath, 'utf8')
     const agents = JSON.parse(data)
+    _agentsCache.data = agents
+    _agentsCache.etag = generateETag(agents)
+    _agentsCache.timestamp = now
     res.setHeader('Cache-Control', 'public, max-age=60')
+    res.setHeader('ETag', _agentsCache.etag)
     res.json(agents)
   } catch (e) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
@@ -431,6 +449,8 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
   const filePath = path.join(__dirname, 'data', 'agents.json')
   try {
     fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2))
+    _agentsCache.data = null
+    _agentsCache.timestamp = 0
     res.json({ ok: true })
   } catch (e) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
