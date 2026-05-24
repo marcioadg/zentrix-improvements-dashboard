@@ -121,6 +121,7 @@ function cleanup() {
 async function handleAction(req, res, slackToken) {
   const validation = validateActionPayload(req.body)
   if (!validation.valid) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     logError('/api/action', 'VALIDATION_ERROR', validation.error, { action: req.body?.action })
     return res.status(400).json({ error: validation.error })
   }
@@ -137,8 +138,10 @@ async function handleAction(req, res, slackToken) {
 
   try {
     const result = await postSlack(slackToken, `${label} — ${escapeSlackMarkdown(repoName || repo)}`, blocks)
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ ok: result.ok, ts: result.ts })
   } catch (e) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     logError('/api/action', e.name || 'SLACK_ERROR', 'failed to post Slack action', { action, message: e.message })
     return res.status(500).json({ error: e.message })
   }
