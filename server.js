@@ -466,7 +466,7 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
 // The client exclusively calls this route for swipe actions and security fix requests
 app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
   try {
-    await handleAction(req, res, SLACK_TOKEN)
+    return await handleAction(req, res, SLACK_TOKEN)
   } catch (err) {
     logError('/api/action', err.name || 'UNHANDLED_ERROR', 'unhandled error in action handler', { message: err.message })
     if (!res.headersSent) {
