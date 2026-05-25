@@ -847,6 +847,215 @@ app.get('/api/weekly-usage', rateLimit, async (req, res) => {
   }
 })
 
+// Product accounts endpoint — mirrors Vercel Function for local dev testing
+app.get('/api/product-accounts', rateLimit, async (req, res) => {
+  if (req.method !== 'GET') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+  res.setHeader('Cache-Control', 'public, max-age=300')
+
+  const SUPABASE_URL = process.env.SUPABASE_URL
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const product = req.query.product || 'os'
+
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    return res.json({ accounts: [], product })
+  }
+
+  const helper = async (path, headers = {}) => {
+    const FETCH_TIMEOUT = 8000
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+        headers: { 'apikey': SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json', ...headers },
+        signal: controller.signal
+      })
+      return r.ok ? r.json() : []
+    } catch (e) {
+      logError('/api/product-accounts', e.name === 'AbortError' ? 'SUPABASE_TIMEOUT' : 'SUPABASE_ERROR', `request failed for ${path}`, { message: e.message })
+      return []
+    } finally { clearTimeout(timeout) }
+  }
+
+  try {
+    if (product !== 'os') {
+      const rows = await helper(`/companies?select=id,name,created_at,status&order=created_at.desc&limit=100`)
+      return res.json({ accounts: rows.map(c => ({ id: c.id, name: c.name, created_at: c.created_at, status: c.status })), product })
+    }
+
+    const [companies, subscriptions, healthRows, usageRows] = await Promise.all([
+      helper(`/companies?select=id,name,slug,created_at,status&order=created_at.desc&limit=200`),
+      helper(`/company_subscriptions?select=company_id,subscribed,subscription_tier,user_count,base_price_per_user,created_at,trial_end&limit=500`),
+      helper(`/customer_success_tracking?select=company_id,customer_health,account_stage,subs_status&limit=500`),
+      helper(`/company_usage_stats?select=company_id,stat_date,total_minutes&stat_date=gte.${new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)}&limit=2000`),
+    ])
+
+    const subMap = {}, healthMap = {}, usageMap = {}
+    subscriptions.forEach(s => { subMap[s.company_id] = s })
+    healthRows.forEach(h => { healthMap[h.company_id] = h })
+    usageRows.forEach(u => { usageMap[u.company_id] = (usageMap[u.company_id] || 0) + (u.total_minutes || 0) })
+
+    const companyIds = companies.slice(0, 100).map(c => c.id)
+    const idList = companyIds.map(id => `"${id}"`).join(',')
+
+    const [members, profiles] = await Promise.all([
+      helper(`/company_members?select=user_id,company_id&company_id=in.(${idList})&limit=1000`),
+      helper(`/profiles?select=id,last_login_at,first_device_type&limit=2000`)
+    ])
+
+    const companyUsersMap = {}, profileMap = {}
+    members.forEach(m => { if (!companyUsersMap[m.company_id]) companyUsersMap[m.company_id] = []; companyUsersMap[m.company_id].push(m.user_id) })
+    profiles.forEach(p => { profileMap[p.id] = p })
+
+    const representativeUserIds = companyIds.map(cid => (companyUsersMap[cid] || [])[0]).filter(Boolean)
+    let attributionMap = {}
+    if (representativeUserIds.length > 0) {
+      const userIdList = representativeUserIds.slice(0, 100).map(id => `"${id}"`).join(',')
+      const attributions = await helper(`/user_attributions?select=user_id,utm_source,utm_medium,utm_campaign,utm_adset,utm_ad,utm_content,utm_term,landing_page_url,referral_source&user_id=in.(${userIdList})&limit=200`)
+      const attrByUser = {}
+      attributions.forEach(a => { attrByUser[a.user_id] = a })
+      companyIds.forEach(cid => { const uid = (companyUsersMap[cid] || [])[0]; if (uid && attrByUser[uid]) attributionMap[cid] = attrByUser[uid] })
+    }
+
+    const accounts = companies.map(c => {
+      const sub = subMap[c.id] || {}, health = healthMap[c.id] || {}, usageMinutes = usageMap[c.id] || 0, usageHours = +(usageMinutes / 60).toFixed(1), attr = attributionMap[c.id] || {}
+      const userIds = companyUsersMap[c.id] || []
+      const loginDates = userIds.map(uid => profileMap[uid]?.last_login_at).filter(Boolean).sort()
+      const medianLogin = loginDates.length > 0 ? loginDates[Math.floor(loginDates.length / 2)] : null
+      const firstUserId = userIds[0], device = firstUserId ? profileMap[firstUserId]?.first_device_type || null : null
+      const tier = (sub.subscription_tier || '').trim(), subscribed = sub.subscribed ?? false, cancelled = sub.cancelled_at
+      const trialEndDate = sub.trial_end ? new Date(sub.trial_end) : null, now = new Date(), trialExpired = trialEndDate ? trialEndDate < now : false
+      let plan, planStatus
+      if (cancelled) { plan = 'Cancelled'; planStatus = 'cancelled' }
+      else if (tier === 'Premium') { plan = 'Premium'; planStatus = 'paid' }
+      else if (tier === 'Free') { plan = 'Free'; planStatus = 'free' }
+      else if (tier === 'Trial') { plan = trialExpired ? 'Expired' : 'Trial'; planStatus = trialExpired ? 'expired' : 'trial' }
+      else { plan = 'Unknown'; planStatus = 'unknown' }
+      const accountStage = health.account_stage || null
+      let status
+      if (accountStage === 'Active Subscription') status = 'Active'
+      else if (accountStage === 'At churn Risk') status = 'Churn Risk'
+      else if (accountStage === 'Onboarding') status = 'Onboarding'
+      else if (accountStage === 'Test Company') status = 'Test'
+      else if (accountStage === 'Internal Company') status = 'Internal'
+      else if (accountStage === 'Done') status = 'Done'
+      else if (accountStage === 'Free Trial') status = planStatus === 'expired' ? 'Expired' : 'Trial'
+      else if (planStatus === 'cancelled') status = 'Cancelled'
+      else if (planStatus === 'paid') status = 'Active'
+      else if (planStatus === 'trial') status = 'Trial'
+      else if (planStatus === 'expired') status = 'Expired'
+      else if (planStatus === 'free') status = 'Free'
+      else status = null
+      return { id: c.id, name: c.name, status, score: health.customer_health || null, plan, planStatus, subscribed, usage_7d_hrs: usageHours, users: sub.user_count ?? null, median_login: medianLogin, created_at: c.created_at, device, utm_source: attr.utm_source || null, utm_medium: attr.utm_medium || null, utm_campaign: attr.utm_campaign || null, utm_content: attr.utm_content || null, utm_term: attr.utm_term || null, utm_adset: attr.utm_adset || null, utm_ad: attr.utm_ad || null, landing_page: attr.landing_page_url || null, referral: attr.referral_source || null }
+    })
+    return res.json({ accounts, product })
+  } catch (e) {
+    logError('/api/product-accounts', e.name || 'HANDLER_ERROR', 'handler error', { message: e.message, product })
+    return res.json({ accounts: [], product, error: e.message })
+  }
+})
+
+// Venture funnel endpoint — mirrors Vercel Function for local dev testing
+app.get('/api/venture-funnel', rateLimit, async (req, res) => {
+  if (req.method !== 'GET') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+  res.setHeader('Cache-Control', 'public, max-age=300')
+
+  const SUPABASE_URL = process.env.SUPABASE_URL
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const DEFAULT_PRICE = { os: 5, insights: 29, crm: 19, agents: 49 }
+  const PRODUCT_TABLE = { os: 'company_subscriptions', insights: 'subscribers', crm: null, agents: null }
+  const TRIAL_TIERS = { os: ['Trial'], insights: ['Trial'] }
+  const PAID_TIERS = { os: ['Premium'], insights: ['Enterprise', 'Premium', 'Pro'] }
+
+  const product = (req.query.product || 'os').toLowerCase()
+  const period = req.query.period || '7d'
+  const table = PRODUCT_TABLE[product]
+  const defaultPrice = DEFAULT_PRICE[product] || 15
+
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period })
+  }
+
+  if (!table) {
+    return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period, prelaunch: true })
+  }
+
+  const getPeriodStart = (p) => {
+    const now = new Date()
+    switch (p) {
+      case 'day': return new Date(now - 86400000)
+      case '7d': return new Date(now - 7 * 86400000)
+      case '14d': return new Date(now - 14 * 86400000)
+      case '30d': return new Date(now - 30 * 86400000)
+      case 'month': return new Date(now.getFullYear(), now.getMonth(), 1)
+      case 'quarter': return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
+      case 'semester': return new Date(now.getFullYear(), now.getMonth() >= 6 ? 6 : 0, 1)
+      case 'year': return new Date(now.getFullYear(), 0, 1)
+      default: return new Date(now - 7 * 86400000)
+    }
+  }
+
+  const sbFetch = async (path, headers = {}) => {
+    const FETCH_TIMEOUT = 8000
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/rest/v1${path}`, { headers: { 'apikey': SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json', ...headers }, signal: controller.signal })
+      if (!resp.ok && resp.status !== 206) return { rows: [], count: 0, ok: false }
+      const contentRange = resp.headers.get('content-range')
+      const count = contentRange ? parseInt((contentRange.match(/\/(\d+)$/) || [])[1] || '0', 10) : 0
+      let rows = []
+      try { rows = await resp.json() } catch (_) {}
+      return { rows, count, ok: true }
+    } catch (err) {
+      if (err.name === 'AbortError') { logError('/api/venture-funnel', 'SUPABASE_TIMEOUT', `request timed out for ${path}`, { timeout: FETCH_TIMEOUT }) }
+      else { logError('/api/venture-funnel', err.name || 'SUPABASE_ERROR', `request failed for ${path}`, { message: err.message }) }
+      return { rows: [], count: 0, ok: false }
+    } finally { clearTimeout(timeout) }
+  }
+
+  try {
+    const periodStart = getPeriodStart(period)
+    const periodStartIso = periodStart.toISOString()
+    const trialTiers = TRIAL_TIERS[product] || ['Trial']
+    const paidTiers = PAID_TIERS[product] || ['Premium']
+    const trialFilter = `subscription_tier=in.(${trialTiers.join(',')})`
+    const paidFilter = `subscription_tier=in.(${paidTiers.join(',')})`
+
+    const { rows: paidRows } = await sbFetch(`/${table}?select=created_at,updated_at&${paidFilter}&limit=500`)
+    let avgTimeToPaid = null
+    const diffs = []
+    paidRows.forEach(row => {
+      if (!row || typeof row !== 'object' || !row.created_at || !row.updated_at) return
+      const diffDays = (new Date(row.updated_at) - new Date(row.created_at)) / 86400000
+      if (diffDays > 0.5 && diffDays < 730) diffs.push(diffDays)
+    })
+    if (diffs.length > 0) { avgTimeToPaid = Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) }
+
+    const { count: newSignups } = await sbFetch(`/${table}?select=id&created_at=gte.${encodeURIComponent(periodStartIso)}`, { 'Prefer': 'count=exact', 'Range': '0-0' })
+
+    const trialSelect = table === 'company_subscriptions' ? `${trialFilter}&select=user_count,base_price_per_user&subscribed=eq.false&limit=500` : `${trialFilter}&select=id&limit=500`
+    const { rows: trialRows } = await sbFetch(`/${table}?${trialSelect}`)
+    const trialCount = trialRows.length
+    let potentialMrr = null
+    if (trialCount > 0) {
+      if (table === 'company_subscriptions') {
+        potentialMrr = trialRows.reduce((sum, c) => { if (!c || typeof c !== 'object') return sum; const seats = Math.max(c.user_count || 0, 1); const price = c.base_price_per_user || defaultPrice; return sum + (seats * price) }, 0)
+      } else { potentialMrr = trialCount * defaultPrice }
+    }
+
+    return res.json({ avgTimeToPaid, newSignups, potentialMrr, trialCount, product, period })
+  } catch (err) {
+    logError('/api/venture-funnel', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message, product })
+    return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period, error: err.message })
+  }
+})
+
 // ── Global 404 handler ───────────────────────────────────────────────────────
 app.use((req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
