@@ -11,7 +11,6 @@ const { logError } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
 
 // Default price per seat when base_price_per_user not in DB
 const DEFAULT_PRICE = { os: 5, insights: 29, crm: 19, agents: 49 }
@@ -77,7 +76,7 @@ async function sbFetch(path, headers = {}) {
 
 module.exports = async function handler(req, res) {
   const origin = req.headers.origin
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+  if (origin && (origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app'))) {
     res.setHeader('Access-Control-Allow-Origin', origin)
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')

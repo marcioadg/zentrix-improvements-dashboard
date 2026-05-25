@@ -3,8 +3,6 @@ const { logError } = require('../utils/slack.js')
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
 
-const ALLOWED_ORIGINS = ['https://zentrix-improvements-dashboard.vercel.app']
-
 function validateStripeResponse(data) {
   return data && typeof data === 'object' && Array.isArray(data.data) && typeof data.has_more === 'boolean'
 }
@@ -92,7 +90,7 @@ function calcMonthMRR(subscriptions, monthStart, monthEnd) {
 
 module.exports = async function handler(req, res) {
   const origin = req.headers.origin
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+  if (origin && (origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app'))) {
     res.setHeader('Access-Control-Allow-Origin', origin)
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
