@@ -87,6 +87,7 @@ app.use((req, res, next) => {
   next()
 })
 // ── CORS & HTTP method validation middleware ────────────────────────────────
+// Rate limit CORS preflight OPTIONS to prevent DoS via preflight spam
 app.use('/api', (req, res, next) => {
   const origin = req.headers.origin
   if (origin && (origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app'))) {
@@ -95,6 +96,13 @@ app.use('/api', (req, res, next) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-api-key')
   if (req.method === 'OPTIONS') {
+    // Apply rate limiting to OPTIONS requests to prevent preflight DoS
+    const ip = getClientIP(req)
+    const check = checkRateLimit(ip)
+    if (!check.allowed) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+      return res.status(429).json({ error: check.error })
+    }
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.status(200).end()
   }
