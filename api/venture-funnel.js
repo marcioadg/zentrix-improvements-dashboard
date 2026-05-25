@@ -85,6 +85,10 @@ module.exports = async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.status(200).end()
   }
+  if (req.method !== 'GET') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
   res.setHeader('Cache-Control', 'public, max-age=300')
 
   const product = (req.query.product || 'os').toLowerCase()
