@@ -223,20 +223,12 @@ function validateEntriesArray(data) {
 
 // Health check (not rate-limited: critical system endpoint for load balancers/monitors)
 app.get('/api/health', (req, res) => {
-  if (req.method !== 'GET') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   return res.json({ ok: true, ts: new Date().toISOString() })
 })
 
 // ── Metrics endpoint ──────────────────────────────────────────────────────────
 app.get('/api/metrics', rateLimit, async (req, res) => {
-  if (req.method !== 'GET') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
 
   const now = Date.now()
   const isCacheValid = _metricsCache.data && (now - _metricsCache.timestamp) < METRICS_CACHE_TTL
@@ -452,10 +444,6 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
 
 // Agents data — read/write
 app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
-  if (req.method !== 'GET') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
 
   const now = Date.now()
   const isCacheValid = _agentsCache.data && (now - _agentsCache.timestamp) < AGENTS_CACHE_TTL
@@ -495,10 +483,6 @@ app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
 })
 
 app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
-  if (req.method !== 'POST') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
 
   if (!validateAgentsJSON(req.body)) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
@@ -522,10 +506,6 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
 // Unified action endpoint — matches the Vercel serverless function (api/action.js)
 // The client exclusively calls this route for swipe actions and security fix requests
 app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
-  if (req.method !== 'POST') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
 
   const ACTION_TIMEOUT = 12000 // 12s: guarantee response even if Slack API hangs
   const actionPromise = handleAction(req, res, SLACK_TOKEN)
@@ -549,10 +529,6 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
 
 // MRR history endpoint — Stripe subscription history for trailing 12 months
 app.get('/api/mrr-history', rateLimit, async (req, res) => {
-  if (req.method !== 'GET') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
 
   const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
   const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
@@ -693,10 +669,6 @@ app.get('/api/mrr-history', rateLimit, async (req, res) => {
 
 // Data validation endpoint — allows frontend to verify entries array structure
 app.get('/api/validate-entries', rateLimit, (req, res) => {
-  if (req.method !== 'GET') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
 
   const now = Date.now()
   const isCacheValid = _entriesCache.data && (now - _entriesCache.timestamp) < ENTRIES_CACHE_TTL
@@ -739,10 +711,6 @@ app.get('/api/validate-entries', rateLimit, (req, res) => {
 
 // Weekly usage endpoint — mirrors Vercel Function for local dev testing
 app.get('/api/weekly-usage', rateLimit, async (req, res) => {
-  if (req.method !== 'GET') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
 
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -889,10 +857,6 @@ app.get('/api/weekly-usage', rateLimit, async (req, res) => {
 
 // Product accounts endpoint — mirrors Vercel Function for local dev testing
 app.get('/api/product-accounts', rateLimit, async (req, res) => {
-  if (req.method !== 'GET') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
   res.setHeader('Cache-Control', 'public, max-age=300')
 
   const SUPABASE_URL = process.env.SUPABASE_URL
@@ -999,10 +963,6 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
 
 // Venture funnel endpoint — mirrors Vercel Function for local dev testing
 app.get('/api/venture-funnel', rateLimit, async (req, res) => {
-  if (req.method !== 'GET') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
   res.setHeader('Cache-Control', 'public, max-age=300')
 
   const SUPABASE_URL = process.env.SUPABASE_URL
