@@ -435,6 +435,11 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
 
 // Agents data — read/write
 app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
+  if (req.method !== 'GET') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
   const now = Date.now()
   const isCacheValid = _agentsCache.data && (now - _agentsCache.timestamp) < AGENTS_CACHE_TTL
 
@@ -473,6 +478,11 @@ app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
 })
 
 app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
+  if (req.method !== 'POST') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
   if (!validateAgentsJSON(req.body)) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     logError('/api/agents', 'VALIDATION_ERROR', 'invalid agents data structure', { bodySize: JSON.stringify(req.body).length })
@@ -495,6 +505,11 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
 // Unified action endpoint — matches the Vercel serverless function (api/action.js)
 // The client exclusively calls this route for swipe actions and security fix requests
 app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
+  if (req.method !== 'POST') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
   const ACTION_TIMEOUT = 12000 // 12s: guarantee response even if Slack API hangs
   const actionPromise = handleAction(req, res, SLACK_TOKEN)
 
