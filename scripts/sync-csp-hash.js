@@ -24,7 +24,7 @@ function syncCSPHash() {
 
     const vercelContent = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
     const cspHeader = vercelContent.headers?.[0]?.headers?.find(h => h.key === 'Content-Security-Policy');
-    const currentHashes = cspHeader?.value?.match(/script-src '([^']*)'/)?.[1];
+    const currentHashes = cspHeader?.value?.match(/script-src '([^;]+);/)?.[1]?.replace(/'$/, '');
 
     if (currentHashes === expectedHashes) {
       console.log('✅ vercel.json CSP hashes are in sync');
