@@ -86,6 +86,21 @@ app.use((req, res, next) => {
   res.setHeader('Content-Security-Policy', `default-src 'none'; script-src '${_scriptHashes}'; style-src '${_styleHash}' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
   next()
 })
+// ── CORS & HTTP method validation middleware ────────────────────────────────
+app.use('/api', (req, res, next) => {
+  const origin = req.headers.origin
+  if (origin && (origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-api-key')
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(200).end()
+  }
+  next()
+})
+
 // Serve data files with ETag validation for 304 responses (avoid re-downloading unchanged files)
 app.use('/data', express.static(path.join(__dirname, 'data'), {
   setHeaders: (res, filePath) => {
