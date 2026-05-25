@@ -44,9 +44,8 @@ app.use(cors({
     callback(new Error('Not allowed by CORS'))
   }
 }))
-app.use(express.json({ limit: '1mb' }))
 
-// Validate Content-Type for request methods that expect JSON
+// Validate Content-Type for request methods that expect JSON (before parsing)
 app.use((req, res, next) => {
   if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
     const contentType = req.headers['content-type']
@@ -57,6 +56,8 @@ app.use((req, res, next) => {
   }
   next()
 })
+
+app.use(express.json({ limit: '1mb' }))
 
 // Load and initialize index.html, CSP hashes, and cache (single read operation)
 const { _scriptHashes, _styleHash, _indexCache } = (() => {
