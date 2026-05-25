@@ -40,7 +40,7 @@ function syncCSPHash() {
       if (h.key === 'Content-Security-Policy') {
         return {
           ...h,
-          value: h.value.replace(/script-src '[^']*'/, `script-src '${expectedHashes}'`)
+          value: h.value.replace(/script-src '[^;]*;/, `script-src '${expectedHashes}';`)
         };
       }
       return h;
