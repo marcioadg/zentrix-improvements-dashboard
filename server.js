@@ -223,6 +223,10 @@ function validateEntriesArray(data) {
 
 // Health check (not rate-limited: critical system endpoint for load balancers/monitors)
 app.get('/api/health', (req, res) => {
+  if (req.method !== 'GET') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   return res.json({ ok: true, ts: new Date().toISOString() })
 })
