@@ -208,6 +208,11 @@ app.get('/api/health', (req, res) => {
 
 // ── Metrics endpoint ──────────────────────────────────────────────────────────
 app.get('/api/metrics', rateLimit, async (req, res) => {
+  if (req.method !== 'GET') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
   const now = Date.now()
   const isCacheValid = _metricsCache.data && (now - _metricsCache.timestamp) < METRICS_CACHE_TTL
 
@@ -504,6 +509,11 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
 
 // MRR history endpoint — Stripe subscription history for trailing 12 months
 app.get('/api/mrr-history', rateLimit, async (req, res) => {
+  if (req.method !== 'GET') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
   const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
   const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
 
@@ -643,6 +653,11 @@ app.get('/api/mrr-history', rateLimit, async (req, res) => {
 
 // Data validation endpoint — allows frontend to verify entries array structure
 app.get('/api/validate-entries', rateLimit, (req, res) => {
+  if (req.method !== 'GET') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
   const now = Date.now()
   const isCacheValid = _entriesCache.data && (now - _entriesCache.timestamp) < ENTRIES_CACHE_TTL
 
@@ -684,6 +699,11 @@ app.get('/api/validate-entries', rateLimit, (req, res) => {
 
 // Weekly usage endpoint — mirrors Vercel Function for local dev testing
 app.get('/api/weekly-usage', rateLimit, async (req, res) => {
+  if (req.method !== 'GET') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
   const product = req.query.product || 'os'
