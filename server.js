@@ -46,6 +46,18 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '1mb' }))
 
+// Validate Content-Type for request methods that expect JSON
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    const contentType = req.headers['content-type']
+    if (!contentType || !contentType.includes('application/json')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+      return res.status(415).json({ error: 'Content-Type must be application/json' })
+    }
+  }
+  next()
+})
+
 // Load and initialize index.html, CSP hashes, and cache (single read operation)
 const { _scriptHashes, _styleHash, _indexCache } = (() => {
   try {
