@@ -95,7 +95,7 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
   res.setHeader('X-XSS-Protection', '0')
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
   res.setHeader('Content-Security-Policy', `default-src 'none'; script-src '${_scriptHashes}'; style-src '${_styleHash}' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
   next()
 })
