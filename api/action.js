@@ -2,7 +2,8 @@ const {
   getClientIP,
   checkRateLimit,
   handleAction,
-  logError
+  logError,
+  sendErrorResponse
 } = require('../utils/slack.js')
 
 const SLACK_TOKEN = process.env.SLACK_TOKEN
@@ -21,42 +22,35 @@ module.exports = async function handler(req, res) {
     return res.status(200).end()
   }
   if (req.method !== 'POST') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
+    return sendErrorResponse(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
   }
 
   // Validate critical env vars early
   if (!SLACK_TOKEN) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(500).json({ error: 'SLACK_TOKEN not configured' })
+    return sendErrorResponse(res, 500, 'SLACK_TOKEN_MISSING', 'SLACK_TOKEN not configured')
   }
   if (!API_KEY) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(500).json({ error: 'API_KEY not configured' })
+    return sendErrorResponse(res, 500, 'API_KEY_MISSING', 'API_KEY not configured')
   }
 
   // Rate limiting
   const ip = getClientIP(req)
   const check = checkRateLimit(ip)
   if (!check.allowed) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(429).json({ error: check.error })
+    return sendErrorResponse(res, 429, 'RATE_LIMIT_EXCEEDED', check.error)
   }
 
   const key = req.headers['x-api-key']
   if (key !== API_KEY) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(401).json({ error: 'Unauthorized' })
+    return sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Unauthorized')
   }
 
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     await handleAction(req, res, SLACK_TOKEN)
   } catch (err) {
-    logError('/api/action', err.name || 'UNHANDLED_ERROR', 'unhandled error in action handler', { message: err.message })
     if (!res.headersSent) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-      return res.status(500).json({ error: 'Internal server error' })
+      return sendErrorResponse(res, 500, err.name || 'UNHANDLED_ERROR', 'Internal server error', { message: err.message })
     }
   }
 }

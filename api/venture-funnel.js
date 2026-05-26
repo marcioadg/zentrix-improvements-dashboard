@@ -7,7 +7,7 @@
 //   crm      → no data yet (pre-launch)
 //   agents   → no data yet (pre-launch)
 
-const { logError, FETCH_TIMEOUT } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -85,8 +85,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).end()
   }
   if (req.method !== 'GET') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
+    return sendErrorResponse(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
   }
 
   const product = (req.query.product || 'os').toLowerCase()
@@ -171,8 +170,6 @@ module.exports = async function handler(req, res) {
     })
 
   } catch (err) {
-    logError('/api/venture-funnel', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message, product })
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period, error: err.message })
+    return sendErrorResponse(res, 500, err.name || 'HANDLER_ERROR', 'handler error', { message: err.message, product })
   }
 }
