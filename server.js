@@ -59,26 +59,30 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '1mb' }))
 
 // Load and initialize index.html and cache (single read operation)
-const { _indexCache } = (() => {
+const { _indexCache, _indexTemplate } = (() => {
   try {
     const content = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8')
     const etag = generateETag(content)
-    return { _indexCache: { content, etag } }
+    return { _indexCache: { content, etag }, _indexTemplate: content }
   } catch (e) {
     console.error('[ERROR] Failed to initialize index.html:', e.message)
     process.exit(1)
   }
 })()
 
-// Security headers
+// Security headers — generate nonce per request for CSP
 app.use((req, res, next) => {
+  // Generate a random nonce for inline scripts and styles (base64url format)
+  const nonce = crypto.randomBytes(16).toString('base64')
+  res.locals.nonce = nonce
+
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.setHeader('X-Frame-Options', 'DENY')
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
   res.setHeader('X-XSS-Protection', '0')
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
-  res.setHeader('Content-Security-Policy', `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
+  res.setHeader('Content-Security-Policy', `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
   next()
 })
 // ── CORS & HTTP method validation middleware ────────────────────────────────
@@ -117,12 +121,20 @@ app.use('/data', express.static(path.join(__dirname, 'data'), {
 }))
 
 app.get('/', (req, res) => {
+  // Inject nonce into inline script and style tags for CSP compliance
+  const nonce = res.locals.nonce
+  let html = _indexTemplate
+    .replace(/<style>/g, `<style nonce="${nonce}">`)
+    .replace(/<script>/g, `<script nonce="${nonce}">`)
+
+  // Generate ETag of nonce-injected content for cache validation
+  const etag = generateETag(html)
   res.setHeader('Cache-Control', 'public, max-age=300')
-  res.setHeader('ETag', _indexCache.etag)
-  if (req.headers['if-none-match'] === _indexCache.etag) {
+  res.setHeader('ETag', etag)
+  if (req.headers['if-none-match'] === etag) {
     return res.status(304).end()
   }
-  return res.send(_indexCache.content)
+  return res.send(html)
 })
 
 // ── Auth middleware ──────────────────────────────────────────────────────────
