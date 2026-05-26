@@ -53,11 +53,11 @@ module.exports = async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.status(405).json({ error: 'Method not allowed' })
   }
-  res.setHeader('Cache-Control', 'public, max-age=300')
 
   const product = req.query.product || 'os'
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
+    res.setHeader('Cache-Control', 'public, max-age=300')
     return res.json({ accounts: [], product })
   }
 
@@ -65,6 +65,12 @@ module.exports = async function handler(req, res) {
     if (product !== 'os') {
       // For non-OS products, return basic list for now
       const rows = await supabase(`/companies?select=id,name,created_at,status&order=created_at.desc&limit=100`)
+      if (!rows || rows.length === undefined) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+        logError('/api/product-accounts', 'SUPABASE_ERROR', 'failed to fetch companies data', { product })
+        return res.status(500).json({ accounts: [], product, error: 'Failed to fetch accounts' })
+      }
+      res.setHeader('Cache-Control', 'public, max-age=300')
       return res.json({
         accounts: rows.map(c => ({ id: c.id, name: c.name, created_at: c.created_at, status: c.status })),
         product
@@ -80,6 +86,12 @@ module.exports = async function handler(req, res) {
       // 7d usage: sum total_minutes per company for last 7 days
       supabase(`/company_usage_stats?select=company_id,stat_date,total_minutes&stat_date=gte.${sevenDaysAgo()}&limit=2000`),
     ])
+
+    if (!Array.isArray(companies) || !Array.isArray(subscriptions) || !Array.isArray(healthRows) || !Array.isArray(usageRows)) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+      logError('/api/product-accounts', 'SUPABASE_PARTIAL_FAILURE', 'one or more supabase requests failed', { companies: Array.isArray(companies), subscriptions: Array.isArray(subscriptions), health: Array.isArray(healthRows), usage: Array.isArray(usageRows) })
+      return res.status(500).json({ accounts: [], product, error: 'Failed to fetch complete account data' })
+    }
 
     // ── Build lookup maps ────────────────────────────────────────────────────
     const subMap = {}
@@ -104,6 +116,12 @@ module.exports = async function handler(req, res) {
       supabase(`/company_members?select=user_id,company_id&company_id=in.(${idList})&limit=1000`),
       supabase(`/profiles?select=id,last_login_at,first_device_type&limit=2000`)
     ])
+
+    if (!Array.isArray(members) || !Array.isArray(profiles)) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+      logError('/api/product-accounts', 'SUPABASE_PARTIAL_FAILURE', 'failed to fetch members or profiles', { members: Array.isArray(members), profiles: Array.isArray(profiles) })
+      return res.status(500).json({ accounts: [], product, error: 'Failed to fetch account details' })
+    }
 
     // company → user_ids
     const companyUsersMap = {}
@@ -232,11 +250,13 @@ module.exports = async function handler(req, res) {
       }
     })
 
+    res.setHeader('Cache-Control', 'public, max-age=300')
     return res.json({ accounts, product })
 
   } catch (err) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     logError('/api/product-accounts', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message, product })
-    return res.json({ accounts: [], product, error: err.message })
+    return res.status(500).json({ accounts: [], product, error: err.message })
   }
 }
 
