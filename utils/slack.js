@@ -118,6 +118,13 @@ function cleanup() {
   _rateLimitMap.clear()
 }
 
+// Standardized error response: ensures all errors have proper cache headers
+function sendErrorResponse(res, statusCode, errorCode, message, context = {}) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+  logError('API', errorCode, message, context)
+  return res.status(statusCode).json({ error: message })
+}
+
 async function handleAction(req, res, slackToken) {
   const validation = validateActionPayload(req.body)
   if (!validation.valid) {
@@ -159,5 +166,6 @@ module.exports = {
   checkRateLimit,
   logError,
   cleanup,
-  handleAction
+  handleAction,
+  sendErrorResponse
 }

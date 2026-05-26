@@ -1,3 +1,5 @@
+const { sendErrorResponse } = require('../utils/slack.js')
+
 module.exports = async function handler(req, res) {
   const origin = req.headers.origin
   // Allow localhost for development and any Vercel domain for preview/production
@@ -11,8 +13,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).end()
   }
   if (req.method !== 'GET') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
+    return sendErrorResponse(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
   }
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   return res.json({ ok: true, ts: new Date().toISOString() })
