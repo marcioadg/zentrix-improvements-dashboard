@@ -1,4 +1,4 @@
-const { logError, FETCH_TIMEOUT } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -83,8 +83,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).end()
   }
   if (req.method !== 'GET') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(405).json({ error: 'Method not allowed' })
+    return sendErrorResponse(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
   }
 
   const GLOBAL_TIMEOUT = 45000 // 45s deadline before returning partial results
