@@ -868,7 +868,6 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
   }
 
   const helper = async (path, headers = {}) => {
-    const FETCH_TIMEOUT = 8000
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
     try {
@@ -1032,7 +1031,6 @@ app.get('/api/venture-funnel', rateLimit, async (req, res) => {
   }
 
   const sbFetch = async (path, headers = {}) => {
-    const FETCH_TIMEOUT = 8000
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
     try {
