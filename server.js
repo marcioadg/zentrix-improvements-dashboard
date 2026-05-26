@@ -121,19 +121,19 @@ app.use('/data', express.static(path.join(__dirname, 'data'), {
 }))
 
 app.get('/', (req, res) => {
+  // Use cached ETag from template (nonce injection shouldn't invalidate cache)
+  res.setHeader('Cache-Control', 'public, max-age=300')
+  res.setHeader('ETag', _indexCache.etag)
+  if (req.headers['if-none-match'] === _indexCache.etag) {
+    return res.status(304).end()
+  }
+
   // Inject nonce into inline script and style tags for CSP compliance
   const nonce = res.locals.nonce
-  let html = _indexTemplate
+  const html = _indexTemplate
     .replace(/<style>/g, `<style nonce="${nonce}">`)
     .replace(/<script>/g, `<script nonce="${nonce}">`)
 
-  // Generate ETag of nonce-injected content for cache validation
-  const etag = generateETag(html)
-  res.setHeader('Cache-Control', 'public, max-age=300')
-  res.setHeader('ETag', etag)
-  if (req.headers['if-none-match'] === etag) {
-    return res.status(304).end()
-  }
   return res.send(html)
 })
 
