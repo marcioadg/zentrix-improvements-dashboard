@@ -863,7 +863,7 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
   const product = req.query.product || 'os'
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
-    res.setHeader('Cache-Control', 'public, max-age=300')
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ accounts: [], product })
   }
 
