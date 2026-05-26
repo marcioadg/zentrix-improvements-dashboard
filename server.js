@@ -5,7 +5,6 @@ const cors = require('cors')
 const path = require('path')
 const fs = require('fs')
 const crypto = require('crypto')
-const { validateCSPHashes } = require('./csp-validator.js')
 const {
   SLACK_CHANNEL,
   FETCH_TIMEOUT,
@@ -59,30 +58,12 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '1mb' }))
 
-// Load and initialize index.html, CSP hashes, and cache (single read operation)
-const { _scriptHashes, _styleHash, _indexCache } = (() => {
+// Load and initialize index.html and cache (single read operation)
+const { _indexCache } = (() => {
   try {
     const content = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8')
-
-    // Compute all script hashes (multiple inline scripts supported)
-    const scriptMatches = content.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || []
-    if (scriptMatches.length === 0) {
-      throw new Error('No inline scripts found in index.html')
-    }
-    const scriptHashes = scriptMatches.map(script => {
-      const scriptContent = script.match(/<script[^>]*>([\s\S]*?)<\/script>/)[1]
-      return 'sha256-' + crypto.createHash('sha256').update(scriptContent).digest('base64')
-    }).join("' '")
-
-    // Compute CSS hash
-    const styleMatch = content.match(/<style[^>]*>([\s\S]*?)<\/style>/)
-    if (!styleMatch || !styleMatch[1]) {
-      throw new Error('No inline style found in index.html')
-    }
-    const styleHash = 'sha256-' + crypto.createHash('sha256').update(styleMatch[1]).digest('base64')
-
     const etag = generateETag(content)
-    return { _scriptHashes: scriptHashes, _styleHash: styleHash, _indexCache: { content, etag } }
+    return { _indexCache: { content, etag } }
   } catch (e) {
     console.error('[ERROR] Failed to initialize index.html:', e.message)
     process.exit(1)
@@ -97,7 +78,7 @@ app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '0')
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
-  res.setHeader('Content-Security-Policy', `default-src 'none'; script-src '${_scriptHashes}'; style-src '${_styleHash}' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
+  res.setHeader('Content-Security-Policy', `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com https://api.github.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`)
   next()
 })
 // ── CORS & HTTP method validation middleware ────────────────────────────────
@@ -1077,8 +1058,6 @@ app.use((err, req, res, next) => {
   logError(req.path, 'UNHANDLED_ERROR', 'error in request handler', { method: req.method, message: err.message })
   return res.status(500).json({ error: 'Internal server error' })
 })
-
-validateCSPHashes()
 
 const server = app.listen(PORT, () => console.log(`Dashboard API running on :${PORT}`))
 

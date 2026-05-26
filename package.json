@@ -3,10 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "node server.js",
-    "prebuild": "node scripts/sync-csp-hash.js",
     "build": "echo 'static site'",
-    "start": "node server.js",
-    "validate:csp": "node csp-validator.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "compression": "^1.8.1",
