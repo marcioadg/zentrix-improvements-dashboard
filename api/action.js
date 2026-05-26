@@ -49,12 +49,13 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   try {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     await handleAction(req, res, SLACK_TOKEN)
   } catch (err) {
     logError('/api/action', err.name || 'UNHANDLED_ERROR', 'unhandled error in action handler', { message: err.message })
     if (!res.headersSent) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
       return res.status(500).json({ error: 'Internal server error' })
     }
   }
