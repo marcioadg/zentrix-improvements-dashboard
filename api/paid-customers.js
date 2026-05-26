@@ -104,6 +104,21 @@ async function fetchActiveSubs(key) {
   return out
 }
 
+function periodStartMs(period) {
+  const d = new Date()
+  switch (period) {
+    case 'day':  return Date.now() - 86400000
+    case '7d':   return Date.now() - 7 * 86400000
+    case '14d':  return Date.now() - 14 * 86400000
+    case '30d':  return Date.now() - 30 * 86400000
+    case 'month':    { d.setDate(1); d.setHours(0, 0, 0, 0); return d.getTime() }
+    case 'quarter':  { const q = Math.floor(d.getMonth() / 3); d.setMonth(q * 3, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
+    case 'semester': { d.setMonth(d.getMonth() < 6 ? 0 : 6, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
+    case 'year':     { d.setMonth(0, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
+    default: return null
+  }
+}
+
 module.exports = async function handler(req, res) {
   const origin = req.headers.origin
   if (origin && (origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app'))) {
@@ -151,7 +166,14 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    const customerIds = [...byCustomer.keys()]
+    let customerIds = [...byCustomer.keys()]
+    // Optional ?period= filter: keep only customers whose first active sub
+    // started within the period (i.e. "new paying customers in period").
+    const period = typeof req.query.period === 'string' ? req.query.period : null
+    const startMs = period ? periodStartMs(period) : null
+    if (startMs) {
+      customerIds = customerIds.filter(cid => { const e = byCustomer.get(cid); return e && e.since && e.since >= startMs })
+    }
     if (customerIds.length === 0) {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
       return res.json({ customers: [], count: 0 })
