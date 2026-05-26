@@ -139,7 +139,7 @@ app.get('/', (req, res) => {
 
 // ── Auth middleware ──────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
-  const key = req.headers['x-api-key'] || req.query.key
+  const key = req.headers['x-api-key']
   if (API_KEY && key === API_KEY) return next()
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   return res.status(401).json({ error: 'Unauthorized' })
