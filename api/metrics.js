@@ -86,27 +86,28 @@ module.exports = async function handler(req, res) {
     return sendErrorResponse(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
   }
 
-  const GLOBAL_TIMEOUT = 45000 // 45s deadline before returning partial results
-  const deadline = Date.now() + GLOBAL_TIMEOUT
-  const isDeadlineExceeded = () => Date.now() > deadline
+  try {
+    const GLOBAL_TIMEOUT = 45000 // 45s deadline before returning partial results
+    const deadline = Date.now() + GLOBAL_TIMEOUT
+    const isDeadlineExceeded = () => Date.now() > deadline
 
-  const period = req.query.period || '7d'
-  const periodStart = getPeriodStart(period)
-  const periodStartUnix = Math.floor(periodStart.getTime() / 1000)
+    const period = req.query.period || '7d'
+    const periodStart = getPeriodStart(period)
+    const periodStartUnix = Math.floor(periodStart.getTime() / 1000)
 
-  const results = {
-    totalAccounts: null,
-    totalPaidAccounts: null,
-    newPayingCustomers: null,
-    mrr: null,
-    productBreakdown: null,
-    productMRR: null,
-    ventureCount: 3,
-    ventures: ['Business OS', 'Insights', 'CRM'],
-    period,
-    source: 'partial',
-    lastUpdated: null
-  }
+    const results = {
+      totalAccounts: null,
+      totalPaidAccounts: null,
+      newPayingCustomers: null,
+      mrr: null,
+      productBreakdown: null,
+      productMRR: null,
+      ventureCount: 3,
+      ventures: ['Business OS', 'Insights', 'CRM'],
+      period,
+      source: 'partial',
+      lastUpdated: null
+    }
 
   // ── Supabase: Total Accounts ──
   try {
@@ -374,6 +375,11 @@ module.exports = async function handler(req, res) {
     results.source = results.totalAccounts != null ? 'live' : 'partial'
   }
 
-  res.setHeader('Cache-Control', 'public, max-age=300')
-  return res.json(results)
+    res.setHeader('Cache-Control', 'public, max-age=300')
+    return res.json(results)
+  } catch (err) {
+    if (!res.headersSent) {
+      return sendErrorResponse(res, 500, err.name || 'HANDLER_ERROR', 'Failed to generate metrics', { message: err.message })
+    }
+  }
 }

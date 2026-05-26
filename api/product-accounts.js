@@ -252,9 +252,9 @@ module.exports = async function handler(req, res) {
     return res.json({ accounts, product })
 
   } catch (err) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    logError('/api/product-accounts', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message, product })
-    return res.status(500).json({ accounts: [], product, error: err.message })
+    if (!res.headersSent) {
+      return sendErrorResponse(res, 500, err.name || 'HANDLER_ERROR', 'Failed to fetch accounts', { message: err.message, product })
+    }
   }
 }
 
