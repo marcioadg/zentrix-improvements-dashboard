@@ -436,6 +436,13 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     return res.json(data)
   } catch (e) {
     logError('/api/metrics', 'FETCH_ERROR', 'error during metrics fetch', { message: e.message })
+    // Fall back to stale cache if available (better than error for dashboard)
+    if (_metricsCache.data) {
+      const ageSeconds = Math.floor((Date.now() - _metricsCache.timestamp) / 1000)
+      res.setHeader('Cache-Control', 'public, max-age=60')
+      res.setHeader('X-Cache-Age', ageSeconds.toString())
+      return res.json({ ..._metricsCache.data, stale: true, cacheAgeSeconds: ageSeconds })
+    }
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.status(500).json({ error: 'Metrics fetch failed — please retry' })
   } finally {
