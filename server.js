@@ -858,13 +858,12 @@ app.get('/api/weekly-usage', rateLimit, async (req, res) => {
 
 // Product accounts endpoint — mirrors Vercel Function for local dev testing
 app.get('/api/product-accounts', rateLimit, async (req, res) => {
-  res.setHeader('Cache-Control', 'public, max-age=300')
-
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
   const product = req.query.product || 'os'
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
+    res.setHeader('Cache-Control', 'public, max-age=300')
     return res.json({ accounts: [], product })
   }
 
@@ -877,25 +876,42 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
         headers: { 'apikey': SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json', ...headers },
         signal: controller.signal
       })
-      return r.ok ? r.json() : []
+      return { ok: r.ok, data: r.ok ? await r.json() : [] }
     } catch (e) {
       logError('/api/product-accounts', e.name === 'AbortError' ? 'SUPABASE_TIMEOUT' : 'SUPABASE_ERROR', `request failed for ${path}`, { message: e.message })
-      return []
+      return { ok: false, data: [] }
     } finally { clearTimeout(timeout) }
   }
 
   try {
     if (product !== 'os') {
-      const rows = await helper(`/companies?select=id,name,created_at,status&order=created_at.desc&limit=100`)
-      return res.json({ accounts: rows.map(c => ({ id: c.id, name: c.name, created_at: c.created_at, status: c.status })), product })
+      const companiesResult = await helper(`/companies?select=id,name,created_at,status&order=created_at.desc&limit=100`)
+      if (!companiesResult.ok) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+        logError('/api/product-accounts', 'SUPABASE_ERROR', 'failed to fetch companies data', { product })
+        return res.status(500).json({ accounts: [], product, error: 'Failed to fetch accounts' })
+      }
+      res.setHeader('Cache-Control', 'public, max-age=300')
+      return res.json({ accounts: companiesResult.data.map(c => ({ id: c.id, name: c.name, created_at: c.created_at, status: c.status })), product })
     }
 
-    const [companies, subscriptions, healthRows, usageRows] = await Promise.all([
+    const [companiesResult, subscriptionsResult, healthResult, usageResult] = await Promise.all([
       helper(`/companies?select=id,name,slug,created_at,status&order=created_at.desc&limit=200`),
       helper(`/company_subscriptions?select=company_id,subscribed,subscription_tier,user_count,base_price_per_user,created_at,trial_end&limit=500`),
       helper(`/customer_success_tracking?select=company_id,customer_health,account_stage,subs_status&limit=500`),
       helper(`/company_usage_stats?select=company_id,stat_date,total_minutes&stat_date=gte.${new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)}&limit=2000`),
     ])
+
+    if (!companiesResult.ok || !subscriptionsResult.ok || !healthResult.ok || !usageResult.ok) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+      logError('/api/product-accounts', 'SUPABASE_PARTIAL_FAILURE', 'one or more supabase requests failed', { companies: companiesResult.ok, subscriptions: subscriptionsResult.ok, health: healthResult.ok, usage: usageResult.ok })
+      return res.status(500).json({ accounts: [], product, error: 'Failed to fetch complete account data' })
+    }
+
+    const companies = companiesResult.data
+    const subscriptions = subscriptionsResult.data
+    const healthRows = healthResult.data
+    const usageRows = usageResult.data
 
     const subMap = {}, healthMap = {}, usageMap = {}
     subscriptions.forEach(s => { subMap[s.company_id] = s })
@@ -905,10 +921,19 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
     const companyIds = companies.slice(0, 100).map(c => c.id)
     const idList = companyIds.map(id => `"${id}"`).join(',')
 
-    const [members, profiles] = await Promise.all([
+    const [membersResult, profilesResult] = await Promise.all([
       helper(`/company_members?select=user_id,company_id&company_id=in.(${idList})&limit=1000`),
       helper(`/profiles?select=id,last_login_at,first_device_type&limit=2000`)
     ])
+
+    if (!membersResult.ok || !profilesResult.ok) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+      logError('/api/product-accounts', 'SUPABASE_PARTIAL_FAILURE', 'failed to fetch members or profiles', { members: membersResult.ok, profiles: profilesResult.ok })
+      return res.status(500).json({ accounts: [], product, error: 'Failed to fetch account details' })
+    }
+
+    const members = membersResult.data
+    const profiles = profilesResult.data
 
     const companyUsersMap = {}, profileMap = {}
     members.forEach(m => { if (!companyUsersMap[m.company_id]) companyUsersMap[m.company_id] = []; companyUsersMap[m.company_id].push(m.user_id) })
@@ -918,11 +943,15 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
     let attributionMap = {}
     if (representativeUserIds.length > 0) {
       const userIdList = representativeUserIds.slice(0, 100).map(id => `"${id}"`).join(',')
-      const attributions = await helper(`/user_attributions?select=user_id,utm_source,utm_medium,utm_campaign,utm_adset,utm_ad,utm_content,utm_term,landing_page_url,referral_source&user_id=in.(${userIdList})&limit=200`)
-      const attrByUser = {}
-      attributions.forEach(a => { attrByUser[a.user_id] = a })
-      companyIds.forEach(cid => { const uid = (companyUsersMap[cid] || [])[0]; if (uid && attrByUser[uid]) attributionMap[cid] = attrByUser[uid] })
+      const attributionsResult = await helper(`/user_attributions?select=user_id,utm_source,utm_medium,utm_campaign,utm_adset,utm_ad,utm_content,utm_term,landing_page_url,referral_source&user_id=in.(${userIdList})&limit=200`)
+      if (attributionsResult.ok) {
+        const attrByUser = {}
+        attributionsResult.data.forEach(a => { attrByUser[a.user_id] = a })
+        companyIds.forEach(cid => { const uid = (companyUsersMap[cid] || [])[0]; if (uid && attrByUser[uid]) attributionMap[cid] = attrByUser[uid] })
+      }
     }
+
+    res.setHeader('Cache-Control', 'public, max-age=300')
 
     const accounts = companies.map(c => {
       const sub = subMap[c.id] || {}, health = healthMap[c.id] || {}, usageMinutes = usageMap[c.id] || 0, usageHours = +(usageMinutes / 60).toFixed(1), attr = attributionMap[c.id] || {}
@@ -959,7 +988,7 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
   } catch (e) {
     logError('/api/product-accounts', e.name || 'HANDLER_ERROR', 'handler error', { message: e.message, product })
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.json({ accounts: [], product, error: e.message })
+    return res.status(500).json({ accounts: [], product, error: e.message })
   }
 })
 
