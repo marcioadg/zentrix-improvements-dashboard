@@ -1,4 +1,4 @@
-const { logError, FETCH_TIMEOUT } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse } = require('../utils/slack.js')
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
@@ -122,36 +122,40 @@ module.exports = async function handler(req, res) {
     return res.json({ history, source: 'placeholder' })
   }
 
-  // Fetch all subscriptions from all Stripe accounts
-  const allSubs = []
-  for (const key of stripeKeys) {
-    try {
-      const subs = await fetchAllSubscriptions(key)
-      allSubs.push(...subs)
-    } catch (err) {
-      logError('/api/mrr-history', err.name || 'STRIPE_ERROR', 'failed to fetch subscriptions', { message: err.message })
+  try {
+    // Fetch all subscriptions from all Stripe accounts
+    const allSubs = []
+    for (const key of stripeKeys) {
+      try {
+        const subs = await fetchAllSubscriptions(key)
+        allSubs.push(...subs)
+      } catch (err) {
+        logError('/api/mrr-history', err.name || 'STRIPE_ERROR', 'failed to fetch subscriptions', { message: err.message })
+      }
     }
+
+    // Calculate MRR for trailing 12 months
+    const now = new Date()
+    const history = []
+
+    for (let i = 11; i >= 0; i--) {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthStart = Math.floor(monthDate.getTime() / 1000)
+      const monthEnd = Math.floor(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59).getTime() / 1000)
+
+      const mrr = calcMonthMRR(allSubs, monthStart, monthEnd)
+
+      history.push({
+        month: monthDate.toLocaleDateString('en-US', { month: 'short' }),
+        year: monthDate.getFullYear(),
+        date: monthDate.toISOString().substring(0, 7),
+        mrr
+      })
+    }
+
+    res.setHeader('Cache-Control', 'public, max-age=300')
+    return res.json({ history, source: 'live' })
+  } catch (err) {
+    return sendErrorResponse(res, 500, err.name || 'HANDLER_ERROR', 'Failed to generate MRR history', { message: err.message })
   }
-
-  // Calculate MRR for trailing 12 months
-  const now = new Date()
-  const history = []
-
-  for (let i = 11; i >= 0; i--) {
-    const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const monthStart = Math.floor(monthDate.getTime() / 1000)
-    const monthEnd = Math.floor(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59).getTime() / 1000)
-
-    const mrr = calcMonthMRR(allSubs, monthStart, monthEnd)
-
-    history.push({
-      month: monthDate.toLocaleDateString('en-US', { month: 'short' }),
-      year: monthDate.getFullYear(),
-      date: monthDate.toISOString().substring(0, 7),
-      mrr
-    })
-  }
-
-  res.setHeader('Cache-Control', 'public, max-age=300')
-  return res.json({ history, source: 'live' })
 }
