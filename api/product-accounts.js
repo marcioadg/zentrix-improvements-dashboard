@@ -2,13 +2,12 @@
 // Returns full company list with all columns matching the OS admin panel:
 // Company, Status, Score, Plan, 7d Usage, Users, Median Login, Created,
 // Device, Source, Medium, Campaign, Content, Term, Adset, Ad, Landing Page, Referral
-const { logError } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 async function supabase(path, headers = {}) {
-  const FETCH_TIMEOUT = 8000
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
   try {

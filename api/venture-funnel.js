@@ -7,7 +7,7 @@
 //   crm      → no data yet (pre-launch)
 //   agents   → no data yet (pre-launch)
 
-const { logError } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -43,7 +43,6 @@ function getPeriodStart(period) {
 }
 
 async function sbFetch(path, headers = {}) {
-  const FETCH_TIMEOUT = 8000
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
   try {

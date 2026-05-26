@@ -1,4 +1,4 @@
-const { logError } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT } = require('../utils/slack.js')
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
@@ -11,7 +11,6 @@ async function fetchAllSubscriptions(stripeKey) {
   const subs = []
   let hasMore = true
   let startingAfter = undefined
-  const FETCH_TIMEOUT = 8000
 
   while (hasMore) {
     const params = new URLSearchParams({ limit: '100', status: 'all' })

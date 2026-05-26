@@ -1,9 +1,8 @@
 // /api/weekly-usage.js
-const { logError } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-const FETCH_TIMEOUT = 8000
 
 module.exports = async function handler(req, res) {
   const origin = req.headers.origin
