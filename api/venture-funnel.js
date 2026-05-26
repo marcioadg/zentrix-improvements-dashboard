@@ -88,7 +88,6 @@ module.exports = async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.status(405).json({ error: 'Method not allowed' })
   }
-  res.setHeader('Cache-Control', 'public, max-age=300')
 
   const product = (req.query.product || 'os').toLowerCase()
   const period  = req.query.period  || '7d'
@@ -96,11 +95,13 @@ module.exports = async function handler(req, res) {
   const defaultPrice = DEFAULT_PRICE[product] || 15
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period })
   }
 
   // Pre-launch products — no data yet
   if (!table) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period, prelaunch: true })
   }
 
@@ -159,6 +160,7 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    res.setHeader('Cache-Control', 'public, max-age=300')
     return res.json({
       avgTimeToPaid,
       newSignups,
@@ -170,6 +172,7 @@ module.exports = async function handler(req, res) {
 
   } catch (err) {
     logError('/api/venture-funnel', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message, product })
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period, error: err.message })
   }
 }
