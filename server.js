@@ -993,8 +993,6 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
 
 // Venture funnel endpoint — mirrors Vercel Function for local dev testing
 app.get('/api/venture-funnel', rateLimit, async (req, res) => {
-  res.setHeader('Cache-Control', 'public, max-age=300')
-
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
   const DEFAULT_PRICE = { os: 5, insights: 29, crm: 19, agents: 49 }
@@ -1008,10 +1006,12 @@ app.get('/api/venture-funnel', rateLimit, async (req, res) => {
   const defaultPrice = DEFAULT_PRICE[product] || 15
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period })
   }
 
   if (!table) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period, prelaunch: true })
   }
 
@@ -1078,9 +1078,11 @@ app.get('/api/venture-funnel', rateLimit, async (req, res) => {
       } else { potentialMrr = trialCount * defaultPrice }
     }
 
+    res.setHeader('Cache-Control', 'public, max-age=300')
     return res.json({ avgTimeToPaid, newSignups, potentialMrr, trialCount, product, period })
   } catch (err) {
     logError('/api/venture-funnel', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message, product })
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period, error: err.message })
   }
 })
