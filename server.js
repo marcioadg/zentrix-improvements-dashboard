@@ -958,6 +958,7 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
     return res.json({ accounts, product })
   } catch (e) {
     logError('/api/product-accounts', e.name || 'HANDLER_ERROR', 'handler error', { message: e.message, product })
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ accounts: [], product, error: e.message })
   }
 })
