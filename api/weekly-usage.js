@@ -46,8 +46,7 @@ module.exports = async function handler(req, res) {
         if (!response.ok) {
           const err = await response.text()
           logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (os) fetch failed', { status: response.status, product: 'os' })
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-          return res.json({ data: [], product, error: err })
+          return sendErrorResponse(res, 500, 'SUPABASE_HTTP', 'Failed to fetch weekly usage data', { product: 'os' })
         }
         const data = await response.json()
         res.setHeader('Cache-Control', 'public, max-age=300')
@@ -77,8 +76,7 @@ module.exports = async function handler(req, res) {
         if (!response.ok) {
           const err = await response.text()
           logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (insights) fetch failed', { status: response.status, product: 'insights' })
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-          return res.json({ data: [], product, error: err })
+          return sendErrorResponse(res, 500, 'SUPABASE_HTTP', 'Failed to fetch weekly usage data', { product: 'insights' })
         }
         const raw = await response.json()
         // Normalize to common format: map total_users (not total_companies)
@@ -122,8 +120,7 @@ module.exports = async function handler(req, res) {
         if (!response.ok) {
           const err = await response.text()
           logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (crm) fetch failed', { status: response.status, product: 'crm' })
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-          return res.json({ data: [], product, error: err })
+          return sendErrorResponse(res, 500, 'SUPABASE_HTTP', 'Failed to fetch weekly usage data', { product: 'crm' })
         }
         const raw = await response.json()
         // Normalize to common format: map total_tenants as company equivalent
@@ -156,11 +153,9 @@ module.exports = async function handler(req, res) {
 
   } catch (err) {
     if (err.name === 'AbortError') {
-      logError('/api/weekly-usage', 'SUPABASE_TIMEOUT', 'supabase request timed out', { timeout: FETCH_TIMEOUT, product })
+      return sendErrorResponse(res, 504, 'SUPABASE_TIMEOUT', 'Request timed out', { timeout: FETCH_TIMEOUT, product })
     } else {
-      logError('/api/weekly-usage', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message })
+      return sendErrorResponse(res, 500, err.name || 'HANDLER_ERROR', 'Failed to fetch weekly usage data', { message: err.message, product })
     }
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.json({ data: [], product, error: err.message })
   }
 }
