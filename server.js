@@ -230,6 +230,18 @@ function validateMetricsResponse(data) {
   return true
 }
 
+// Validate weekly usage response array structure to prevent silent data corruption
+function validateWeeklyUsageResponse(data) {
+  if (!Array.isArray(data)) return false
+  return data.every(row => {
+    if (!row || typeof row !== 'object') return false
+    if (typeof row.week_start !== 'string' || typeof row.week_end !== 'string') return false
+    if (row.total_hours !== null && row.total_hours !== undefined && typeof row.total_hours !== 'number') return false
+    if (row.total_users !== null && row.total_users !== undefined && typeof row.total_users !== 'number') return false
+    return true
+  })
+}
+
 // ── Routes ───────────────────────────────────────────────────────────────────
 
 // Health check (not rate-limited: critical system endpoint for load balancers/monitors)
@@ -816,6 +828,13 @@ app.get('/api/weekly-usage', rateLimit, async (req, res) => {
       }
       const raw = await response.json()
       const data = raw.map(schema.transform)
+
+      // Validate weekly usage response structure before returning to prevent silent data corruption
+      if (!validateWeeklyUsageResponse(data)) {
+        logError('/api/weekly-usage', 'VALIDATION_ERROR', 'weekly usage response failed validation — data corruption detected', { product, rowCount: data.length })
+        throw new Error('Weekly usage response validation failed')
+      }
+
       res.setHeader('Cache-Control', 'public, max-age=300')
       return res.json({ data, product })
     } finally {
