@@ -220,6 +220,21 @@ function getPeriodStart(period) {
   }
 }
 
+function getPeriodStartMs(period) {
+  const d = new Date()
+  switch (period) {
+    case 'day':  return Date.now() - 86400000
+    case '7d':   return Date.now() - 7 * 86400000
+    case '14d':  return Date.now() - 14 * 86400000
+    case '30d':  return Date.now() - 30 * 86400000
+    case 'month':    { d.setDate(1); d.setHours(0, 0, 0, 0); return d.getTime() }
+    case 'quarter':  { const q = Math.floor(d.getMonth() / 3); d.setMonth(q * 3, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
+    case 'semester': { d.setMonth(d.getMonth() < 6 ? 0 : 6, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
+    case 'year':     { d.setMonth(0, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
+    default: return null
+  }
+}
+
 // Wrap fetch with AbortController timeout — consolidates repeated pattern across API handlers
 // Returns response or null on error; logs error with context
 async function fetchWithTimeout(url, options = {}, context = {}) {
@@ -285,6 +300,7 @@ module.exports = {
   setupCORSAndOptions,
   calcSubMRR,
   getPeriodStart,
+  getPeriodStartMs,
   fetchWithTimeout,
   supabaseWithTimeout
 }

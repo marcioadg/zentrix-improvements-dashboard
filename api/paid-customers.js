@@ -2,7 +2,7 @@
 // Returns the list of currently-paying customers (active Stripe subscriptions),
 // enriched with company / owner / status data from Supabase. Driven by Stripe so
 // the count matches the "Total Paid Accounts" card on the dashboard.
-const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, calcSubMRR, supabaseWithTimeout } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, calcSubMRR, getPeriodStartMs, supabaseWithTimeout } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -55,20 +55,6 @@ async function fetchActiveSubs(key) {
   return out
 }
 
-function periodStartMs(period) {
-  const d = new Date()
-  switch (period) {
-    case 'day':  return Date.now() - 86400000
-    case '7d':   return Date.now() - 7 * 86400000
-    case '14d':  return Date.now() - 14 * 86400000
-    case '30d':  return Date.now() - 30 * 86400000
-    case 'month':    { d.setDate(1); d.setHours(0, 0, 0, 0); return d.getTime() }
-    case 'quarter':  { const q = Math.floor(d.getMonth() / 3); d.setMonth(q * 3, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
-    case 'semester': { d.setMonth(d.getMonth() < 6 ? 0 : 6, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
-    case 'year':     { d.setMonth(0, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
-    default: return null
-  }
-}
 
 module.exports = async function handler(req, res) {
   const corsResult = setupCORSAndOptions(req, res, 'GET')
@@ -113,7 +99,7 @@ module.exports = async function handler(req, res) {
     // Optional ?period= filter: keep only customers whose first active sub
     // started within the period (i.e. "new paying customers in period").
     const period = typeof req.query.period === 'string' ? req.query.period : null
-    const startMs = period ? periodStartMs(period) : null
+    const startMs = period ? getPeriodStartMs(period) : null
     if (startMs) {
       customerIds = customerIds.filter(cid => { const e = byCustomer.get(cid); return e && e.since && e.since >= startMs })
     }
