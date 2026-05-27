@@ -24,6 +24,7 @@ const {
   PAID_TIERS,
   validateWeeklyUsageResponse
 } = require('./utils/schemas.js')
+const weeklyUsageHandler = require('./api/weekly-usage.js')
 
 const app = express()
 const PORT = process.env.PORT || 3847
@@ -740,68 +741,8 @@ app.get('/api/validate-entries', rateLimit, (req, res) => {
   }
 })
 
-// Weekly usage endpoint — mirrors Vercel Function for local dev testing
-app.get('/api/weekly-usage', rateLimit, async (req, res) => {
-  const SUPABASE_URL = process.env.SUPABASE_URL
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const product = req.query.product || 'os'
-
-  try {
-    if (!SUPABASE_SERVICE_ROLE_KEY) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-      return res.json({ data: [], product })
-    }
-
-    const schema = WEEKLY_USAGE_SCHEMAS[product]
-    if (!schema) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-      return res.json({ data: [], product, note: 'No weekly data for this product yet' })
-    }
-
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-    try {
-      const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/weekly_usage_snapshots?select=${schema.fields}&order=week_start.asc&limit=16`,
-        {
-          headers: {
-            'apikey': SUPABASE_SERVICE_ROLE_KEY,
-            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-            'Content-Type': 'application/json',
-            ...schema.headers
-          },
-          signal: controller.signal
-        }
-      )
-      if (!response.ok) {
-        logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots fetch failed', { status: response.status, product })
-        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-        return res.json({ data: [], product })
-      }
-      const raw = await response.json()
-      const data = raw.map(schema.transform)
-
-      // Validate weekly usage response structure before returning to prevent silent data corruption
-      if (!validateWeeklyUsageResponse(data)) {
-        logError('/api/weekly-usage', 'VALIDATION_ERROR', 'weekly usage response failed validation — data corruption detected', { product, rowCount: data.length })
-        throw new Error('Weekly usage response validation failed')
-      }
-
-      res.setHeader('Cache-Control', 'public, max-age=300')
-      return res.json({ data, product })
-    } finally {
-      clearTimeout(timeout)
-    }
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      logError('/api/weekly-usage', 'SUPABASE_TIMEOUT', 'supabase request timed out', { timeout: FETCH_TIMEOUT, product })
-    } else {
-      logError('/api/weekly-usage', err.name || 'HANDLER_ERROR', 'handler error', { message: err.message })
-    }
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.json({ data: [], product, error: err.message })
-  }
-})
+// Weekly usage endpoint — uses Vercel Function handler for single source of truth
+app.get('/api/weekly-usage', rateLimit, weeklyUsageHandler)
 
 // Product accounts endpoint — mirrors Vercel Function for local dev testing
 app.get('/api/product-accounts', rateLimit, async (req, res) => {
