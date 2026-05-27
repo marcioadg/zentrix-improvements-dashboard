@@ -169,11 +169,63 @@ async function handleAction(req, res, slackToken) {
   }
 }
 
+// ── Shared product and utility constants ────────────────────────────────────
+const PRODUCT_NAMES = {
+  'prod_UIcJaRWyvLj3hG': 'Zentrix OS',
+  'prod_UIXWsz46FekvcE': 'Zentrix CRM',
+  'prod_UIF93vwI9NzXpI': 'Zentrix Insights',
+  'prod_T85Mmg99NDMaWP': 'Zentrix OS',
+  'prod_TU0tjFz2jR0OYg': 'Zentrix Insights',
+  'prod_T4vLmff0Cdl34d': 'Zentrix OS'
+}
+
+function calcSubMRR(sub) {
+  let mrr = 0
+  for (const item of sub.items?.data || []) {
+    const price = item.price
+    if (!price?.unit_amount) continue
+    const qty = item.quantity || 1
+    const amount = (price.unit_amount / 100) * qty
+    const interval = price.recurring?.interval
+    if (interval === 'month') mrr += amount
+    else if (interval === 'year') mrr += amount / 12
+    else if (interval === 'week') mrr += amount * 4.33
+  }
+  return mrr
+}
+
+function getPeriodStart(period) {
+  const now = new Date()
+  switch (period) {
+    case 'day':      return new Date(now - 24*60*60*1000)
+    case '7d':       return new Date(now - 7*24*60*60*1000)
+    case '14d':      return new Date(now - 14*24*60*60*1000)
+    case '30d':      return new Date(now - 30*24*60*60*1000)
+    case 'month': {
+      const d = new Date(now); d.setDate(1); d.setHours(0,0,0,0); return d
+    }
+    case 'quarter': {
+      const d = new Date(now)
+      const q = Math.floor(d.getMonth() / 3)
+      d.setMonth(q * 3, 1); d.setHours(0,0,0,0); return d
+    }
+    case 'semester': {
+      const d = new Date(now)
+      d.setMonth(d.getMonth() < 6 ? 0 : 6, 1); d.setHours(0,0,0,0); return d
+    }
+    case 'year': {
+      const d = new Date(now); d.setMonth(0, 1); d.setHours(0,0,0,0); return d
+    }
+    default: return new Date(now - 7*24*60*60*1000)
+  }
+}
+
 module.exports = {
   SLACK_CHANNEL,
   FETCH_TIMEOUT,
   RATE_LIMIT_WINDOW,
   RATE_LIMIT_MAX,
+  PRODUCT_NAMES,
   escapeSlackMarkdown,
   validateActionPayload,
   postSlack,
@@ -183,5 +235,7 @@ module.exports = {
   cleanup,
   handleAction,
   sendErrorResponse,
-  setupCORSAndOptions
+  setupCORSAndOptions,
+  calcSubMRR,
+  getPeriodStart
 }

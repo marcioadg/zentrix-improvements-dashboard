@@ -7,7 +7,7 @@
 //   crm      → no data yet (pre-launch)
 //   agents   → no data yet (pre-launch)
 
-const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, getPeriodStart } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -26,21 +26,6 @@ const PRODUCT_TABLE = {
 // Which tier values count as "trial" vs "paid" per table
 const TRIAL_TIERS  = { os: ['Trial'], insights: ['Trial'] }
 const PAID_TIERS   = { os: ['Premium'], insights: ['Enterprise', 'Premium', 'Pro'] }
-
-function getPeriodStart(period) {
-  const now = new Date()
-  switch (period) {
-    case 'day':      return new Date(now - 86400000)
-    case '7d':       return new Date(now - 7 * 86400000)
-    case '14d':      return new Date(now - 14 * 86400000)
-    case '30d':      return new Date(now - 30 * 86400000)
-    case 'month':    return new Date(now.getFullYear(), now.getMonth(), 1)
-    case 'quarter':  return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
-    case 'semester': return new Date(now.getFullYear(), now.getMonth() >= 6 ? 6 : 0, 1)
-    case 'year':     return new Date(now.getFullYear(), 0, 1)
-    default:         return new Date(now - 7 * 86400000)
-  }
-}
 
 async function sbFetch(path, headers = {}) {
   const controller = new AbortController()

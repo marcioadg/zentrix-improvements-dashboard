@@ -2,36 +2,12 @@
 // Returns the list of currently-paying customers (active Stripe subscriptions),
 // enriched with company / owner / status data from Supabase. Driven by Stripe so
 // the count matches the "Total Paid Accounts" card on the dashboard.
-const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, calcSubMRR } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
-
-const PRODUCT_NAMES = {
-  'prod_UIcJaRWyvLj3hG': 'Zentrix OS',
-  'prod_UIXWsz46FekvcE': 'Zentrix CRM',
-  'prod_UIF93vwI9NzXpI': 'Zentrix Insights',
-  'prod_T85Mmg99NDMaWP': 'Zentrix OS',
-  'prod_TU0tjFz2jR0OYg': 'Zentrix Insights',
-  'prod_T4vLmff0Cdl34d': 'Zentrix OS'
-}
-
-function calcSubMRR(sub) {
-  let mrr = 0
-  for (const item of sub.items?.data || []) {
-    const price = item.price
-    if (!price?.unit_amount) continue
-    const qty = item.quantity || 1
-    const amount = (price.unit_amount / 100) * qty
-    const interval = price.recurring?.interval
-    if (interval === 'month') mrr += amount
-    else if (interval === 'year') mrr += amount / 12
-    else if (interval === 'week') mrr += amount * 4.33
-  }
-  return mrr
-}
 
 function getSubProductNames(sub) {
   const names = new Set()
