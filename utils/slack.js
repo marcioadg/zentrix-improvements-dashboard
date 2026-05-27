@@ -140,6 +140,15 @@ function setupCORSAndOptions(req, res, allowedMethods = 'GET') {
   return null
 }
 
+function requireMethod(req, res, method = 'GET') {
+  const corsResult = setupCORSAndOptions(req, res, method)
+  if (corsResult) return corsResult
+  if (req.method !== method) {
+    return sendErrorResponse(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
+  }
+  return null
+}
+
 async function handleAction(req, res, slackToken) {
   const validation = validateActionPayload(req.body)
   if (!validation.valid) {
@@ -411,6 +420,7 @@ module.exports = {
   handleAction,
   sendErrorResponse,
   setupCORSAndOptions,
+  requireMethod,
   calcSubMRR,
   getPeriodStart,
   getPeriodStartMs,

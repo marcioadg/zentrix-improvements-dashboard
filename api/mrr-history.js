@@ -1,4 +1,4 @@
-const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, fetchWithTimeout } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse, requireMethod, fetchWithTimeout } = require('../utils/slack.js')
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
@@ -75,12 +75,8 @@ function calcMonthMRR(subscriptions, monthStart, monthEnd) {
 }
 
 module.exports = async function handler(req, res) {
-  const corsResult = setupCORSAndOptions(req, res, 'GET')
-  if (corsResult) return corsResult
-
-  if (req.method !== 'GET') {
-    return sendErrorResponse(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
-  }
+  const methodCheck = requireMethod(req, res, 'GET')
+  if (methodCheck) return methodCheck
 
   const stripeKeys = [STRIPE_SECRET_KEY, STRIPE_SECRET_KEY_NEW].filter(Boolean)
 

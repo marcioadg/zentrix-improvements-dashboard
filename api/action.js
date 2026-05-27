@@ -4,19 +4,15 @@ const {
   handleAction,
   logError,
   sendErrorResponse,
-  setupCORSAndOptions
+  requireMethod
 } = require('../utils/slack.js')
 
 const SLACK_TOKEN = process.env.SLACK_TOKEN
 const API_KEY = process.env.API_KEY
 
 module.exports = async function handler(req, res) {
-  const corsResult = setupCORSAndOptions(req, res, 'POST')
-  if (corsResult) return corsResult
-
-  if (req.method !== 'POST') {
-    return sendErrorResponse(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
-  }
+  const methodCheck = requireMethod(req, res, 'POST')
+  if (methodCheck) return methodCheck
 
   // Validate critical env vars early
   if (!SLACK_TOKEN) {

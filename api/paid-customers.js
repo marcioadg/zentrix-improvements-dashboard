@@ -2,7 +2,7 @@
 // Returns the list of currently-paying customers (active Stripe subscriptions),
 // enriched with company / owner / status data from Supabase. Driven by Stripe so
 // the count matches the "Total Paid Accounts" card on the dashboard.
-const { logError, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, calcSubMRR, getPeriodStartMs, supabaseWithTimeout, stripePaginated } = require('../utils/slack.js')
+const { logError, sendErrorResponse, requireMethod, PRODUCT_NAMES, calcSubMRR, getPeriodStartMs, supabaseWithTimeout, stripePaginated } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -19,15 +19,9 @@ function getSubProductNames(sub) {
   return names
 }
 
-
-
 module.exports = async function handler(req, res) {
-  const corsResult = setupCORSAndOptions(req, res, 'GET')
-  if (corsResult) return corsResult
-
-  if (req.method !== 'GET') {
-    return sendErrorResponse(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
-  }
+  const methodCheck = requireMethod(req, res, 'GET')
+  if (methodCheck) return methodCheck
 
   const stripeKeys = [STRIPE_SECRET_KEY, STRIPE_SECRET_KEY_NEW].filter(Boolean)
   if (stripeKeys.length === 0) {
