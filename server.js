@@ -711,8 +711,52 @@ app.get('/api/validate-entries', rateLimit, (req, res) => {
 })
 
 // Weekly usage endpoint — mirrors Vercel Function for local dev testing
-app.get('/api/weekly-usage', rateLimit, async (req, res) => {
+const WEEKLY_USAGE_SCHEMAS = {
+  os: {
+    fields: '*',
+    headers: {},
+    transform: (row) => row
+  },
+  insights: {
+    fields: 'week_start,week_end,total_hours,paid_hours,trial_hours,free_hours,avg_hours_per_user,total_users,paid_users,wow_hours_change_pct,top_users',
+    headers: { 'Accept-Profile': 'insights' },
+    transform: (row) => ({
+      week_start: row.week_start,
+      week_end: row.week_end,
+      total_hours: row.total_hours,
+      paid_hours: row.paid_hours,
+      trial_hours: row.trial_hours,
+      free_hours: row.free_hours,
+      avg_hours_per_user: row.avg_hours_per_user,
+      total_users: row.total_users,
+      paid_users: row.paid_users,
+      wow_hours_change_pct: row.wow_hours_change_pct,
+      top_users: row.top_users,
+    })
+  },
+  crm: {
+    fields: 'week_start,week_end,total_hours,paid_hours,trial_hours,free_hours,avg_hours_per_tenant,avg_hours_per_user,total_tenants,paid_tenants,wow_hours_change_pct,top_tenants,low_tenants',
+    headers: { 'Accept-Profile': 'crm' },
+    transform: (row) => ({
+      week_start: row.week_start,
+      week_end: row.week_end,
+      total_hours: row.total_hours,
+      paid_hours: row.paid_hours,
+      trial_hours: row.trial_hours,
+      free_hours: row.free_hours,
+      avg_hours_per_tenant: row.avg_hours_per_tenant,
+      avg_hours_per_user: row.avg_hours_per_user,
+      total_tenants: row.total_tenants,
+      total_companies: row.total_tenants,
+      paid_tenants: row.paid_tenants,
+      wow_hours_change_pct: row.wow_hours_change_pct,
+      top_tenants: row.top_tenants,
+      low_tenants: row.low_tenants,
+    })
+  }
+}
 
+app.get('/api/weekly-usage', rateLimit, async (req, res) => {
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
   const product = req.query.product || 'os'
@@ -723,128 +767,39 @@ app.get('/api/weekly-usage', rateLimit, async (req, res) => {
       return res.json({ data: [], product })
     }
 
-    // ── OS (public schema) ────────────────────────────────────────────────────
-    if (product === 'os') {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-      try {
-        const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/weekly_usage_snapshots?select=*&order=week_start.asc&limit=16`,
-          {
-            headers: {
-              'apikey': SUPABASE_SERVICE_ROLE_KEY,
-              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            signal: controller.signal
-          }
-        )
-        if (!response.ok) {
-          logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (os) fetch failed', { status: response.status, product: 'os' })
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-          return res.json({ data: [], product })
-        }
-        const data = await response.json()
-        res.setHeader('Cache-Control', 'public, max-age=300')
-        return res.json({ data, product })
-      } finally {
-        clearTimeout(timeout)
-      }
+    const schema = WEEKLY_USAGE_SCHEMAS[product]
+    if (!schema) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+      return res.json({ data: [], product, note: 'No weekly data for this product yet' })
     }
 
-    // ── Insights schema ───────────────────────────────────────────────────────
-    if (product === 'insights') {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-      try {
-        const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/weekly_usage_snapshots?select=week_start,week_end,total_hours,paid_hours,trial_hours,free_hours,avg_hours_per_user,total_users,paid_users,wow_hours_change_pct,top_users&order=week_start.asc&limit=16`,
-          {
-            headers: {
-              'apikey': SUPABASE_SERVICE_ROLE_KEY,
-              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-              'Content-Type': 'application/json',
-              'Accept-Profile': 'insights'
-            },
-            signal: controller.signal
-          }
-        )
-        if (!response.ok) {
-          logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (insights) fetch failed', { status: response.status, product: 'insights' })
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-          return res.json({ data: [], product })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/weekly_usage_snapshots?select=${schema.fields}&order=week_start.asc&limit=16`,
+        {
+          headers: {
+            'apikey': SUPABASE_SERVICE_ROLE_KEY,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            'Content-Type': 'application/json',
+            ...schema.headers
+          },
+          signal: controller.signal
         }
-        const raw = await response.json()
-        const data = raw.map(row => ({
-          week_start: row.week_start,
-          week_end: row.week_end,
-          total_hours: row.total_hours,
-          paid_hours: row.paid_hours,
-          trial_hours: row.trial_hours,
-          free_hours: row.free_hours,
-          avg_hours_per_user: row.avg_hours_per_user,
-          total_users: row.total_users,
-          paid_users: row.paid_users,
-          wow_hours_change_pct: row.wow_hours_change_pct,
-          top_users: row.top_users,
-        }))
-        res.setHeader('Cache-Control', 'public, max-age=300')
-        return res.json({ data, product })
-      } finally {
-        clearTimeout(timeout)
+      )
+      if (!response.ok) {
+        logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots fetch failed', { status: response.status, product })
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+        return res.json({ data: [], product })
       }
+      const raw = await response.json()
+      const data = raw.map(schema.transform)
+      res.setHeader('Cache-Control', 'public, max-age=300')
+      return res.json({ data, product })
+    } finally {
+      clearTimeout(timeout)
     }
-
-    // ── CRM schema ────────────────────────────────────────────────────────────
-    if (product === 'crm') {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-      try {
-        const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/weekly_usage_snapshots?select=week_start,week_end,total_hours,paid_hours,trial_hours,free_hours,avg_hours_per_tenant,avg_hours_per_user,total_tenants,paid_tenants,wow_hours_change_pct,top_tenants,low_tenants&order=week_start.asc&limit=16`,
-          {
-            headers: {
-              'apikey': SUPABASE_SERVICE_ROLE_KEY,
-              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-              'Content-Type': 'application/json',
-              'Accept-Profile': 'crm'
-            },
-            signal: controller.signal
-          }
-        )
-        if (!response.ok) {
-          logError('/api/weekly-usage', 'SUPABASE_HTTP', 'weekly_usage_snapshots (crm) fetch failed', { status: response.status, product: 'crm' })
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-          return res.json({ data: [], product })
-        }
-        const raw = await response.json()
-        const data = raw.map(row => ({
-          week_start: row.week_start,
-          week_end: row.week_end,
-          total_hours: row.total_hours,
-          paid_hours: row.paid_hours,
-          trial_hours: row.trial_hours,
-          free_hours: row.free_hours,
-          avg_hours_per_tenant: row.avg_hours_per_tenant,
-          avg_hours_per_user: row.avg_hours_per_user,
-          total_tenants: row.total_tenants,
-          total_companies: row.total_tenants,
-          paid_tenants: row.paid_tenants,
-          wow_hours_change_pct: row.wow_hours_change_pct,
-          top_tenants: row.top_tenants,
-          low_tenants: row.low_tenants,
-        }))
-        res.setHeader('Cache-Control', 'public, max-age=300')
-        return res.json({ data, product })
-      } finally {
-        clearTimeout(timeout)
-      }
-    }
-
-    // ── Agents or other unknown products ─────────────────────────────────────
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.json({ data: [], product, note: 'No weekly data for this product yet' })
-
   } catch (err) {
     if (err.name === 'AbortError') {
       logError('/api/weekly-usage', 'SUPABASE_TIMEOUT', 'supabase request timed out', { timeout: FETCH_TIMEOUT, product })
