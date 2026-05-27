@@ -7,7 +7,7 @@
 //   crm      → no data yet (pre-launch)
 //   agents   → no data yet (pre-launch)
 
-const { logError, sendErrorResponse, requireMethod, getPeriodStart, supabaseWithPagination } = require('../utils/slack.js')
+const { logError, sendErrorResponse, requireMethod, getPeriodStart, supabaseWithPagination, supabaseWithTimeout } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -57,17 +57,29 @@ module.exports = async function handler(req, res) {
   const paidFilter  = `subscription_tier=in.(${paidTiers.join(',')})`
 
   try {
+    // ── OS only: exclude internal/testing companies ─────────────────────────
+    // Same Super Admin "internal / testing" saved filter used by the OS account
+    // base in /api/metrics, so the funnel counts the same real companies.
+    let excludedIds = new Set()
+    if (table === 'company_subscriptions') {
+      const filterRows = await supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/saved_company_filters?select=name,filter_data&limit=50`, '/api/venture-funnel')
+      const filterMatch = Array.isArray(filterRows) ? filterRows.find(f => f.name === 'internal / testing') : null
+      excludedIds = new Set(filterMatch?.filter_data?.excludedCompanyIds || [])
+    }
+    const isExcluded = row => row && excludedIds.has(row.company_id)
+    const idCol = table === 'company_subscriptions' ? ',company_id' : ''
+
     // ── 1. Avg time to paid ─────────────────────────────────────────────────
     // For rows where they converted (paid tier), measure updated_at - created_at
     const { rows: paidRows } = await supabaseWithPagination(
       SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-      `/${table}?select=created_at,updated_at&${paidFilter}&limit=500`,
+      `/${table}?select=created_at,updated_at${idCol}&${paidFilter}&limit=500`,
       '/api/venture-funnel'
     )
     let avgTimeToPaid = null
     const diffs = []
     paidRows.forEach(row => {
-      if (!row || typeof row !== 'object' || !row.created_at || !row.updated_at) return
+      if (!row || typeof row !== 'object' || !row.created_at || !row.updated_at || isExcluded(row)) return
       const diffDays = (new Date(row.updated_at) - new Date(row.created_at)) / 86400000
       if (diffDays > 0.5 && diffDays < 730) diffs.push(diffDays)
     })
@@ -76,18 +88,31 @@ module.exports = async function handler(req, res) {
     }
 
     // ── 2. New signups in period ────────────────────────────────────────────
-    // Count ALL new rows in this product's table created within the period
-    const { count: newSignups } = await supabaseWithPagination(
-      SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-      `/${table}?select=id&created_at=gte.${encodeURIComponent(periodStartIso)}`,
-      '/api/venture-funnel',
-      { 'Prefer': 'count=exact', 'Range': '0-0' }
-    )
+    // Count new rows in this product's table created within the period.
+    // For OS, fetch company_ids and count in JS so excluded companies drop out;
+    // other products keep the cheaper DB count=exact.
+    let newSignups
+    if (table === 'company_subscriptions') {
+      const { rows: signupRows } = await supabaseWithPagination(
+        SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+        `/${table}?select=company_id&created_at=gte.${encodeURIComponent(periodStartIso)}&limit=2000`,
+        '/api/venture-funnel'
+      )
+      newSignups = signupRows.filter(r => !isExcluded(r)).length
+    } else {
+      const { count } = await supabaseWithPagination(
+        SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+        `/${table}?select=id&created_at=gte.${encodeURIComponent(periodStartIso)}`,
+        '/api/venture-funnel',
+        { 'Prefer': 'count=exact', 'Range': '0-0' }
+      )
+      newSignups = count
+    }
 
     // ── 3. Active trial count + potential MRR ──────────────────────────────
     // Trials = rows with trial tier; for OS include base_price_per_user
     const trialSelect = table === 'company_subscriptions'
-      ? `${trialFilter}&select=user_count,base_price_per_user&subscribed=eq.false&limit=500`
+      ? `${trialFilter}&select=user_count,base_price_per_user,company_id&subscribed=eq.false&limit=500`
       : `${trialFilter}&select=id&limit=500`
 
     const { rows: trialRows } = await supabaseWithPagination(
@@ -95,11 +120,12 @@ module.exports = async function handler(req, res) {
       `/${table}?${trialSelect}`,
       '/api/venture-funnel'
     )
-    const trialCount = trialRows.length
+    const visibleTrialRows = trialRows.filter(r => !isExcluded(r))
+    const trialCount = visibleTrialRows.length
     let potentialMrr = null
     if (trialCount > 0) {
       if (table === 'company_subscriptions') {
-        potentialMrr = trialRows.reduce((sum, c) => {
+        potentialMrr = visibleTrialRows.reduce((sum, c) => {
           if (!c || typeof c !== 'object') return sum
           const seats = Math.max(c.user_count || 0, 1)
           const price = c.base_price_per_user || defaultPrice
