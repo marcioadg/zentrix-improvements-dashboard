@@ -51,8 +51,7 @@ app.use((req, res, next) => {
   if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
     const contentType = req.headers['content-type']
     if (!contentType || !contentType.includes('application/json')) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-      return res.status(415).json({ error: 'Content-Type must be application/json' })
+      return sendError(res, 415, 'Content-Type must be application/json')
     }
   }
   next()
@@ -101,8 +100,7 @@ app.use('/api', (req, res, next) => {
     const ip = getClientIP(req)
     const check = checkRateLimit(ip)
     if (!check.allowed) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-      return res.status(429).json({ error: check.error })
+      return sendError(res, 429, check.error)
     }
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.status(200).end()
@@ -139,12 +137,17 @@ app.get('/', (req, res) => {
   return res.send(html)
 })
 
+// ── Response helpers ──────────────────────────────────────────────────────────
+function sendError(res, statusCode, message, additionalData = {}) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+  return res.status(statusCode).json({ error: message, ...additionalData })
+}
+
 // ── Auth middleware ──────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
   const key = req.headers['x-api-key']
   if (API_KEY && key === API_KEY) return next()
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-  return res.status(401).json({ error: 'Unauthorized' })
+  return sendError(res, 401, 'Unauthorized')
 }
 
 // ── Validation helpers ──────────────────────────────────────────────────────
@@ -168,8 +171,7 @@ function rateLimit(req, res, next) {
   const ip = getClientIP(req)
   const check = checkRateLimit(ip)
   if (!check.allowed) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(429).json({ error: check.error })
+    return sendError(res, 429, check.error)
   }
   next()
 }
@@ -260,9 +262,8 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
       return res.json(data)
     } catch (e) {
       logError('/api/metrics', 'WAIT_ERROR', 'error while waiting for in-flight metrics fetch', { message: e.message })
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
       _metricsInFlight = null
-      return res.status(500).json({ error: 'Metrics fetch failed — please retry' })
+      return sendError(res, 500, 'Metrics fetch failed — please retry')
     }
   }
 
@@ -462,8 +463,7 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
       res.setHeader('X-Cache-Age', ageSeconds.toString())
       return res.json({ ..._metricsCache.data, stale: true, cacheAgeSeconds: ageSeconds })
     }
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(500).json({ error: 'Metrics fetch failed — please retry' })
+    return sendError(res, 500, 'Metrics fetch failed — please retry')
   } finally {
     _metricsInFlight = null
   }
@@ -495,16 +495,15 @@ app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
     res.setHeader('ETag', _agentsCache.etag)
     return res.json(agents)
   } catch (e) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     if (e.code === 'ENOENT') {
       logError('/api/agents', 'FILE_NOT_FOUND', 'agents.json not found', { file: 'agents.json' })
-      return res.status(404).json({ error: 'Agents data not found' })
+      return sendError(res, 404, 'Agents data not found')
     } else if (e instanceof SyntaxError) {
       logError('/api/agents', 'JSON_PARSE_ERROR', 'invalid agents data format', { message: e.message })
-      return res.status(500).json({ error: 'Invalid agents data format' })
+      return sendError(res, 500, 'Invalid agents data format')
     } else {
       logError('/api/agents', e.code || 'READ_ERROR', 'failed to read agents data', { message: e.message })
-      return res.status(500).json({ error: 'Failed to read agents data' })
+      return sendError(res, 500, 'Failed to read agents data')
     }
   }
 })
@@ -512,9 +511,8 @@ app.get('/api/agents', rateLimit, requireAuth, (req, res) => {
 app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
 
   if (!validateAgentsJSON(req.body)) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     logError('/api/agents', 'VALIDATION_ERROR', 'invalid agents data structure', { bodySize: JSON.stringify(req.body).length })
-    return res.status(400).json({ error: 'Invalid agents data structure' })
+    return sendError(res, 400, 'Invalid agents data structure')
   }
   const filePath = path.join(__dirname, 'data', 'agents.json')
   try {
@@ -524,9 +522,8 @@ app.post('/api/agents', rateLimit, requireAuth, (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     return res.json({ ok: true })
   } catch (e) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     logError('/api/agents', e.code || 'WRITE_ERROR', 'failed to save agents', { message: e.message })
-    return res.status(500).json({ error: 'Failed to save agents' })
+    return sendError(res, 500, 'Failed to save agents')
   }
 })
 
@@ -548,8 +545,7 @@ app.post('/api/action', rateLimit, requireAuth, async (req, res) => {
   } catch (err) {
     logError('/api/action', err.name || 'UNHANDLED_ERROR', 'unhandled error in action handler', { message: err.message })
     if (!res.headersSent) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-      return res.status(500).json({ error: 'Internal server error' })
+      return sendError(res, 500, 'Internal server error')
     }
   }
 })
@@ -730,9 +726,8 @@ app.get('/api/validate-entries', rateLimit, (req, res) => {
     }
     return res.status(statusCode).json(cacheData)
   } catch (e) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
     logError('/api/validate-entries', e.code || 'VALIDATION_ERROR', 'failed to validate entries', { message: e.message })
-    return res.status(500).json({ ok: false, error: 'Failed to validate entries' })
+    return sendError(res, 500, 'Failed to validate entries', { ok: false })
   }
 })
 
@@ -867,9 +862,8 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
     if (product !== 'os') {
       const companiesResult = await helper(`/companies?select=id,name,created_at,status&order=created_at.desc&limit=100`)
       if (!companiesResult.ok) {
-        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
         logError('/api/product-accounts', 'SUPABASE_ERROR', 'failed to fetch companies data', { product })
-        return res.status(500).json({ accounts: [], product, error: 'Failed to fetch accounts' })
+        return sendError(res, 500, 'Failed to fetch accounts', { accounts: [], product })
       }
       res.setHeader('Cache-Control', 'public, max-age=300')
       return res.json({ accounts: companiesResult.data.map(c => ({ id: c.id, name: c.name, created_at: c.created_at, status: c.status })), product })
@@ -883,9 +877,8 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
     ])
 
     if (!companiesResult.ok || !subscriptionsResult.ok || !healthResult.ok || !usageResult.ok) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
       logError('/api/product-accounts', 'SUPABASE_PARTIAL_FAILURE', 'one or more supabase requests failed', { companies: companiesResult.ok, subscriptions: subscriptionsResult.ok, health: healthResult.ok, usage: usageResult.ok })
-      return res.status(500).json({ accounts: [], product, error: 'Failed to fetch complete account data' })
+      return sendError(res, 500, 'Failed to fetch complete account data', { accounts: [], product })
     }
 
     const companies = companiesResult.data
@@ -907,9 +900,8 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
     ])
 
     if (!membersResult.ok || !profilesResult.ok) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
       logError('/api/product-accounts', 'SUPABASE_PARTIAL_FAILURE', 'failed to fetch members or profiles', { members: membersResult.ok, profiles: profilesResult.ok })
-      return res.status(500).json({ accounts: [], product, error: 'Failed to fetch account details' })
+      return sendError(res, 500, 'Failed to fetch account details', { accounts: [], product })
     }
 
     const members = membersResult.data
@@ -967,8 +959,7 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
     return res.json({ accounts, product })
   } catch (e) {
     logError('/api/product-accounts', e.name || 'HANDLER_ERROR', 'handler error', { message: e.message, product })
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(500).json({ accounts: [], product, error: e.message })
+    return sendError(res, 500, e.message, { accounts: [], product })
   }
 })
 
@@ -1037,16 +1028,14 @@ app.get('/api/venture-funnel', rateLimit, async (req, res) => {
 
 // ── Global 404 handler ───────────────────────────────────────────────────────
 app.use((req, res) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   logError(req.path, 'NOT_FOUND', `${req.method} request to undefined route`)
-  return res.status(404).json({ error: 'Not found' })
+  return sendError(res, 404, 'Not found')
 })
 
 // ── Global error handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   logError(req.path, 'UNHANDLED_ERROR', 'error in request handler', { method: req.method, message: err.message })
-  return res.status(500).json({ error: 'Internal server error' })
+  return sendError(res, 500, 'Internal server error')
 })
 
 const server = app.listen(PORT, () => console.log(`Dashboard API running on :${PORT}`))
