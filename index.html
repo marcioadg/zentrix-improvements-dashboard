@@ -515,4 +515,78 @@ renderVentureAccountRows(filtered)}function toggleSidebar(){var sidebar = docume
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', wireAll); } else { wireAll(); }
 })();
 </script>
+
+<script>
+(function(){
+  var PRODUCTS = [
+    {full:'Zentrix OS', short:'OS'},
+    {full:'Zentrix Insights', short:'Insights'},
+    {full:'Zentrix CRM', short:'CRM'},
+    {full:'Zentrix Agents', short:'Agents'}
+  ];
+  var LS_KEY = 'cmpHiddenProducts';
+  var hiddenState = (function(){ try { return new Set(JSON.parse(localStorage.getItem(LS_KEY)||'[]')); } catch(e){ return new Set(); } })();
+  function getHidden(){ return hiddenState; }
+  function setHidden(set){ hiddenState=set; try { localStorage.setItem(LS_KEY, JSON.stringify(Array.from(set))); } catch(e){} }
+  function tbody(){ return document.getElementById('biz-comparison-table-body'); }
+  function rowName(tr){ var p=tr.querySelector('td p'); return p ? p.textContent.trim() : ''; }
+  function findBtn(){
+    var btns=document.querySelectorAll('button');
+    for(var i=0;i<btns.length;i++){ var t=(btns[i].textContent||'').trim(); if(t==='Filters' || /^Filters \(\d+\)$/.test(t)) return btns[i]; }
+    return null;
+  }
+  function updateBtnLabel(hidden){ var btn=findBtn(); if(!btn) return; btn.textContent = hidden.size>0 ? 'Filters ('+hidden.size+')' : 'Filters'; }
+  function applyFilter(){
+    var b=tbody(); if(!b) return;
+    var hidden=getHidden();
+    Array.prototype.forEach.call(b.querySelectorAll('tr'), function(tr){ tr.style.display = hidden.has(rowName(tr)) ? 'none' : ''; });
+    updateBtnLabel(hidden);
+  }
+  function buildPopover(){
+    var pop=document.getElementById('cmp-filter-pop'); if(pop) return pop;
+    pop=document.createElement('div'); pop.id='cmp-filter-pop';
+    pop.style.cssText='position:fixed;z-index:1200;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,0.18);padding:10px 8px;min-width:200px;display:none;font-family:Inter,sans-serif;';
+    pop.innerHTML='<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8b9bb4;padding:4px 10px 8px;">Show products</div>';
+    var hidden=getHidden();
+    PRODUCTS.forEach(function(p){
+      var lbl=document.createElement('label');
+      lbl.style.cssText='display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:#0b1c30;';
+      lbl.addEventListener('mouseover',function(){ lbl.style.background='#f3f6ff'; });
+      lbl.addEventListener('mouseout',function(){ lbl.style.background='transparent'; });
+      var cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!hidden.has(p.short);
+      cb.style.cssText='width:15px;height:15px;accent-color:#002fbb;cursor:pointer;';
+      cb.addEventListener('change',function(){ var h=getHidden(); if(cb.checked){ h.delete(p.short); } else { h.add(p.short); } setHidden(h); applyFilter(); });
+      var span=document.createElement('span'); span.textContent=p.full.replace('Zentrix ','');
+      lbl.appendChild(cb); lbl.appendChild(span); pop.appendChild(lbl);
+    });
+    document.body.appendChild(pop);
+    return pop;
+  }
+  function openPopover(btn){
+    var pop=buildPopover();
+    var hidden=getHidden();
+    var boxes=pop.querySelectorAll('input[type=checkbox]');
+    PRODUCTS.forEach(function(p,i){ if(boxes[i]){ boxes[i].checked=!hidden.has(p.short); } });
+    pop.style.display='block';
+    var r=btn.getBoundingClientRect();
+    var pw=pop.offsetWidth||200;
+    pop.style.left=Math.max(8, r.right-pw)+'px';
+    pop.style.top=(r.bottom+8)+'px';
+  }
+  function closePopover(){ var pop=document.getElementById('cmp-filter-pop'); if(pop){ pop.style.display='none'; } }
+  function wire(){
+    var btn=findBtn(); if(!btn){ return false; }
+    if(btn.getAttribute('data-cmp-wired')==='1'){ return true; }
+    btn.setAttribute('data-cmp-wired','1');
+    btn.addEventListener('click',function(e){ e.stopPropagation(); var pop=document.getElementById('cmp-filter-pop'); if(pop && pop.style.display==='block'){ closePopover(); } else { openPopover(btn); } });
+    document.addEventListener('click',function(e){ var pop=document.getElementById('cmp-filter-pop'); if(pop && pop.style.display==='block' && !pop.contains(e.target) && e.target!==findBtn()){ closePopover(); } });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closePopover(); } });
+    return true;
+  }
+  function observe(){ var b=tbody(); if(!b || b.getAttribute('data-cmp-obs')==='1'){ return; } b.setAttribute('data-cmp-obs','1'); new MutationObserver(function(){ applyFilter(); }).observe(b,{childList:true}); }
+  function init(){ wire(); observe(); applyFilter(); }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
+  var tries=0; var iv=setInterval(function(){ tries++; var b=tbody(), btn=findBtn(); if(b){ observe(); applyFilter(); } if(btn){ wire(); } if(tries>20 || (b && btn && btn.getAttribute('data-cmp-wired')==='1')){ clearInterval(iv); } }, 500);
+})();
+</script>
 </body></html>
