@@ -887,9 +887,13 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
     const usageRows = usageResult.data
 
     // Exclude internal/testing companies (same "internal / testing" saved filter as prod)
-    const filterResult = await helper(`/saved_company_filters?select=name,filter_data&limit=50`)
-    const filterMatch = filterResult.ok && Array.isArray(filterResult.data) ? filterResult.data.find(f => f.name === 'internal / testing') : null
-    const excludedIds = new Set(filterMatch?.filter_data?.excludedCompanyIds || [])
+    const includeInternal = req.query.includeInternal === '1' || req.query.includeInternal === 'true'
+    let excludedIds = new Set()
+    if (!includeInternal) {
+      const filterResult = await helper(`/saved_company_filters?select=name,filter_data&limit=50`)
+      const filterMatch = filterResult.ok && Array.isArray(filterResult.data) ? filterResult.data.find(f => f.name === 'internal / testing') : null
+      excludedIds = new Set(filterMatch?.filter_data?.excludedCompanyIds || [])
+    }
     const visibleCompanies = excludedIds.size > 0 ? companies.filter(c => !excludedIds.has(c.id)) : companies
 
     const subMap = {}, healthMap = {}, usageMap = {}
@@ -1003,8 +1007,9 @@ app.get('/api/venture-funnel', rateLimit, async (req, res) => {
 
     // OS only: exclude internal/testing companies (same "internal / testing" saved
     // filter used by the OS account base in prod /api/metrics).
+    const includeInternal = req.query.includeInternal === '1' || req.query.includeInternal === 'true'
     let excludedIds = new Set()
-    if (table === 'company_subscriptions') {
+    if (table === 'company_subscriptions' && !includeInternal) {
       const { rows: filterRows } = await supabaseWithPagination(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/saved_company_filters?select=name,filter_data&limit=50`, '/api/venture-funnel')
       const filterMatch = Array.isArray(filterRows) ? filterRows.find(f => f.name === 'internal / testing') : null
       excludedIds = new Set(filterMatch?.filter_data?.excludedCompanyIds || [])

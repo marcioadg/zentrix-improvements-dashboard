@@ -28,6 +28,9 @@ module.exports = async function handler(req, res) {
     const isDeadlineExceeded = () => Date.now() > deadline
 
     const period = req.query.period || '7d'
+    // Opt-out of the "internal / testing" exclusion (default: exclude). When the UI
+    // toggle is on, includeInternal=1 keeps internal/test companies in the OS counts.
+    const includeInternal = req.query.includeInternal === '1' || req.query.includeInternal === 'true'
     const periodStart = getPeriodStart(period)
     const periodStartUnix = Math.floor(periodStart.getTime() / 1000)
 
@@ -106,7 +109,7 @@ module.exports = async function handler(req, res) {
       }
       // Apply the Super Admin "internal / testing" exclusion list to the OS account
       // base (the conversion-rate denominator), so it counts only real accounts.
-      if (!isDeadlineExceeded()) {
+      if (!isDeadlineExceeded() && !includeInternal) {
         try {
           const [filterRows, osRows] = await Promise.all([
             supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/saved_company_filters?select=name,filter_data&limit=50`, '/api/metrics'),

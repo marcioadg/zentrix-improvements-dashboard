@@ -12,6 +12,8 @@ module.exports = async function handler(req, res) {
   if (methodCheck) return methodCheck
 
   const product = req.query.product || 'os'
+  // Opt-out of the "internal / testing" exclusion (default: exclude).
+  const includeInternal = req.query.includeInternal === '1' || req.query.includeInternal === 'true'
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
@@ -50,9 +52,12 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Exclude internal/testing companies (Super Admin "internal / testing" saved filter) ──
-    const filterRows = await supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/saved_company_filters?select=name,filter_data&limit=50`, '/api/product-accounts')
-    const filterMatch = Array.isArray(filterRows) ? filterRows.find(f => f.name === 'internal / testing') : null
-    const excludedIds = new Set(filterMatch?.filter_data?.excludedCompanyIds || [])
+    let excludedIds = new Set()
+    if (!includeInternal) {
+      const filterRows = await supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/saved_company_filters?select=name,filter_data&limit=50`, '/api/product-accounts')
+      const filterMatch = Array.isArray(filterRows) ? filterRows.find(f => f.name === 'internal / testing') : null
+      excludedIds = new Set(filterMatch?.filter_data?.excludedCompanyIds || [])
+    }
     const visibleCompanies = excludedIds.size > 0 ? companies.filter(c => !excludedIds.has(c.id)) : companies
 
     // ── Build lookup maps ────────────────────────────────────────────────────

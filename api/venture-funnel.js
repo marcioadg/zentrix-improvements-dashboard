@@ -60,8 +60,9 @@ module.exports = async function handler(req, res) {
     // ── OS only: exclude internal/testing companies ─────────────────────────
     // Same Super Admin "internal / testing" saved filter used by the OS account
     // base in /api/metrics, so the funnel counts the same real companies.
+    const includeInternal = req.query.includeInternal === '1' || req.query.includeInternal === 'true'
     let excludedIds = new Set()
-    if (table === 'company_subscriptions') {
+    if (table === 'company_subscriptions' && !includeInternal) {
       const filterRows = await supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/saved_company_filters?select=name,filter_data&limit=50`, '/api/venture-funnel')
       const filterMatch = Array.isArray(filterRows) ? filterRows.find(f => f.name === 'internal / testing') : null
       excludedIds = new Set(filterMatch?.filter_data?.excludedCompanyIds || [])
