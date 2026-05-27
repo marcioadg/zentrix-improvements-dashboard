@@ -200,6 +200,21 @@ with open(output, 'w') as f:
     json.dump(data, f, indent=2)
 print('Security JSON written.')
 PYEOF
+
+# Validate output file was created and contains valid JSON
+if [ ! -f "$OUTPUT" ]; then
+  echo "ERROR: Security JSON file not created at $OUTPUT"
+  exit 1
+fi
+
+# Verify JSON is valid and count repos scored
+REPO_COUNT=$(python3 -c "import json; data=json.load(open('$OUTPUT')); print(len(data.get('repos', [])))" 2>/dev/null)
+if [ $? -ne 0 ] || [ -z "$REPO_COUNT" ]; then
+  echo "ERROR: Security JSON file is invalid or corrupted"
+  exit 1
+fi
+
+echo "✓ Security scores written for $REPO_COUNT repos"
 rm -f "$RESULTS_FILE"
 
 # Commit and push
