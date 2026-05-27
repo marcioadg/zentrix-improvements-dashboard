@@ -239,6 +239,34 @@ async function fetchWithTimeout(url, options = {}, context = {}) {
   }
 }
 
+// Fetch from Supabase REST API with timeout — consolidates duplicate wrapper logic
+// Returns parsed JSON or empty array on error; logs errors with route context
+async function supabaseWithTimeout(supabaseUrl, supabaseKey, path, route = 'API', headers = {}) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1${path}`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      signal: controller.signal
+    })
+    if (!res.ok) {
+      logError(route, 'SUPABASE_HTTP', `request failed for ${path}`, { status: res.status })
+      return []
+    }
+    return res.json()
+  } catch (err) {
+    logError(route, err.name === 'AbortError' ? 'SUPABASE_TIMEOUT' : 'SUPABASE_ERROR', `request failed for ${path}`, { message: err.message })
+    return []
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 module.exports = {
   SLACK_CHANNEL,
   FETCH_TIMEOUT,
@@ -257,5 +285,6 @@ module.exports = {
   setupCORSAndOptions,
   calcSubMRR,
   getPeriodStart,
-  fetchWithTimeout
+  fetchWithTimeout,
+  supabaseWithTimeout
 }

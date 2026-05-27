@@ -2,40 +2,10 @@
 // Returns full company list with all columns matching the OS admin panel:
 // Company, Status, Score, Plan, 7d Usage, Users, Median Login, Created,
 // Device, Source, Medium, Campaign, Content, Term, Adset, Ad, Landing Page, Referral
-const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions } = require('../utils/slack.js')
+const { logError, sendErrorResponse, setupCORSAndOptions, supabaseWithTimeout } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-async function supabase(path, headers = {}) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
-      headers: {
-        'apikey': SUPABASE_SERVICE_ROLE_KEY,
-        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-        ...headers
-      },
-      signal: controller.signal
-    })
-    if (!res.ok) {
-      logError('/api/product-accounts', 'SUPABASE_HTTP', `supabase request failed for ${path}`, { status: res.status })
-      return []
-    }
-    return res.json()
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      logError('/api/product-accounts', 'SUPABASE_TIMEOUT', `supabase request timed out for ${path}`, { timeout: FETCH_TIMEOUT })
-    } else {
-      logError('/api/product-accounts', err.name || 'SUPABASE_ERROR', `supabase request failed for ${path}`, { message: err.message })
-    }
-    return []
-  } finally {
-    clearTimeout(timeout)
-  }
-}
 
 module.exports = async function handler(req, res) {
   const corsResult = setupCORSAndOptions(req, res, 'GET')
@@ -55,10 +25,9 @@ module.exports = async function handler(req, res) {
   try {
     if (product !== 'os') {
       // For non-OS products, return basic list for now
-      const rows = await supabase(`/companies?select=id,name,created_at,status&order=created_at.desc&limit=100`)
+      const rows = await supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/companies?select=id,name,created_at,status&order=created_at.desc&limit=100`, '/api/product-accounts')
       if (!rows || rows.length === undefined) {
         res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-        logError('/api/product-accounts', 'SUPABASE_ERROR', 'failed to fetch companies data', { product })
         return res.status(500).json({ accounts: [], product, error: 'Failed to fetch accounts' })
       }
       res.setHeader('Cache-Control', 'public, max-age=300')
@@ -70,12 +39,12 @@ module.exports = async function handler(req, res) {
 
     // ── Fetch base data in parallel ──────────────────────────────────────────
     const [companies, subscriptions, healthRows, usageRows] = await Promise.all([
-      supabase(`/companies?select=id,name,slug,created_at,status&order=created_at.desc&limit=200`),
-      supabase(`/company_subscriptions?select=company_id,subscribed,subscription_tier,user_count,base_price_per_user,created_at,trial_end&limit=500`),
+      supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/companies?select=id,name,slug,created_at,status&order=created_at.desc&limit=200`, '/api/product-accounts'),
+      supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/company_subscriptions?select=company_id,subscribed,subscription_tier,user_count,base_price_per_user,created_at,trial_end&limit=500`, '/api/product-accounts'),
       // customer_success_tracking has subs_status (Expired/Free Trial/Premium) and account_stage
-      supabase(`/customer_success_tracking?select=company_id,customer_health,account_stage,subs_status&limit=500`),
+      supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/customer_success_tracking?select=company_id,customer_health,account_stage,subs_status&limit=500`, '/api/product-accounts'),
       // 7d usage: sum total_minutes per company for last 7 days
-      supabase(`/company_usage_stats?select=company_id,stat_date,total_minutes&stat_date=gte.${sevenDaysAgo()}&limit=2000`),
+      supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/company_usage_stats?select=company_id,stat_date,total_minutes&stat_date=gte.${sevenDaysAgo()}&limit=2000`, '/api/product-accounts'),
     ])
 
     if (!Array.isArray(companies) || !Array.isArray(subscriptions) || !Array.isArray(healthRows) || !Array.isArray(usageRows)) {
@@ -104,8 +73,8 @@ module.exports = async function handler(req, res) {
     const idList = companyIds.map(id => `"${id}"`).join(',')
 
     const [members, profiles] = await Promise.all([
-      supabase(`/company_members?select=user_id,company_id&company_id=in.(${idList})&limit=1000`),
-      supabase(`/profiles?select=id,last_login_at,first_device_type&limit=2000`)
+      supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/company_members?select=user_id,company_id&company_id=in.(${idList})&limit=1000`, '/api/product-accounts'),
+      supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/profiles?select=id,last_login_at,first_device_type&limit=2000`, '/api/product-accounts')
     ])
 
     if (!Array.isArray(members) || !Array.isArray(profiles)) {
@@ -133,7 +102,7 @@ module.exports = async function handler(req, res) {
     let attributionMap = {}
     if (representativeUserIds.length > 0) {
       const userIdList = representativeUserIds.slice(0, 100).map(id => `"${id}"`).join(',')
-      const attributions = await supabase(`/user_attributions?select=user_id,utm_source,utm_medium,utm_campaign,utm_adset,utm_ad,utm_content,utm_term,landing_page_url,referral_source&user_id=in.(${userIdList})&limit=200`)
+      const attributions = await supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/user_attributions?select=user_id,utm_source,utm_medium,utm_campaign,utm_adset,utm_ad,utm_content,utm_term,landing_page_url,referral_source&user_id=in.(${userIdList})&limit=200`, '/api/product-accounts')
       // Map attribution by user_id
       const attrByUser = {}
       attributions.forEach(a => { attrByUser[a.user_id] = a })
