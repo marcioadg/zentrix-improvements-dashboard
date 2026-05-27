@@ -7,7 +7,7 @@
 //   crm      → no data yet (pre-launch)
 //   agents   → no data yet (pre-launch)
 
-const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, getPeriodStart, fetchWithTimeout } = require('../utils/slack.js')
+const { logError, sendErrorResponse, setupCORSAndOptions, getPeriodStart, supabaseWithPagination } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -26,26 +26,6 @@ const PRODUCT_TABLE = {
 // Which tier values count as "trial" vs "paid" per table
 const TRIAL_TIERS  = { os: ['Trial'], insights: ['Trial'] }
 const PAID_TIERS   = { os: ['Premium'], insights: ['Enterprise', 'Premium', 'Pro'] }
-
-async function sbFetch(path, headers = {}) {
-  const resp = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1${path}`, {
-    headers: {
-      'apikey': SUPABASE_SERVICE_ROLE_KEY,
-      'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      'Content-Type': 'application/json',
-      ...headers
-    }
-  }, { route: '/api/venture-funnel', code: 'SUPABASE', message: `supabase request failed for ${path}` })
-
-  if (!resp) return { rows: [], count: 0, ok: false }
-  if (!resp.ok && resp.status !== 206) return { rows: [], count: 0, ok: false }
-
-  const contentRange = resp.headers.get('content-range')
-  const count = contentRange ? parseInt((contentRange.match(/\/(\d+)$/) || [])[1] || '0', 10) : 0
-  let rows = []
-  try { rows = await resp.json() } catch (_) {}
-  return { rows, count, ok: true }
-}
 
 module.exports = async function handler(req, res) {
   const corsResult = setupCORSAndOptions(req, res, 'GET')
@@ -83,8 +63,10 @@ module.exports = async function handler(req, res) {
   try {
     // ── 1. Avg time to paid ─────────────────────────────────────────────────
     // For rows where they converted (paid tier), measure updated_at - created_at
-    const { rows: paidRows } = await sbFetch(
-      `/${table}?select=created_at,updated_at&${paidFilter}&limit=500`
+    const { rows: paidRows } = await supabaseWithPagination(
+      SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+      `/${table}?select=created_at,updated_at&${paidFilter}&limit=500`,
+      '/api/venture-funnel'
     )
     let avgTimeToPaid = null
     const diffs = []
@@ -99,8 +81,10 @@ module.exports = async function handler(req, res) {
 
     // ── 2. New signups in period ────────────────────────────────────────────
     // Count ALL new rows in this product's table created within the period
-    const { count: newSignups } = await sbFetch(
+    const { count: newSignups } = await supabaseWithPagination(
+      SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
       `/${table}?select=id&created_at=gte.${encodeURIComponent(periodStartIso)}`,
+      '/api/venture-funnel',
       { 'Prefer': 'count=exact', 'Range': '0-0' }
     )
 
@@ -110,7 +94,11 @@ module.exports = async function handler(req, res) {
       ? `${trialFilter}&select=user_count,base_price_per_user&subscribed=eq.false&limit=500`
       : `${trialFilter}&select=id&limit=500`
 
-    const { rows: trialRows } = await sbFetch(`/${table}?${trialSelect}`)
+    const { rows: trialRows } = await supabaseWithPagination(
+      SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+      `/${table}?${trialSelect}`,
+      '/api/venture-funnel'
+    )
     const trialCount = trialRows.length
     let potentialMrr = null
     if (trialCount > 0) {

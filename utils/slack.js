@@ -302,6 +302,38 @@ async function fetchWithTimeoutDeadline(url, options = {}, deadline, context = {
   }
 }
 
+// Fetch from Supabase with timeout and pagination support — returns response with content-range parsing
+// Returns { rows, count, ok } for paginated requests; allows 206 (Partial Content) responses
+async function supabaseWithPagination(supabaseUrl, supabaseKey, path, route = 'API', headers = {}) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1${path}`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      signal: controller.signal
+    })
+    if (!res.ok && res.status !== 206) {
+      logError(route, 'SUPABASE_HTTP', `request failed for ${path}`, { status: res.status })
+      return { rows: [], count: 0, ok: false }
+    }
+    const contentRange = res.headers.get('content-range')
+    const count = contentRange ? parseInt((contentRange.match(/\/(\d+)$/) || [])[1] || '0', 10) : 0
+    let rows = []
+    try { rows = await res.json() } catch (_) {}
+    return { rows, count, ok: true }
+  } catch (err) {
+    logError(route, err.name === 'AbortError' ? 'SUPABASE_TIMEOUT' : 'SUPABASE_ERROR', `request failed for ${path}`, { message: err.message })
+    return { rows: [], count: 0, ok: false }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 module.exports = {
   SLACK_CHANNEL,
   FETCH_TIMEOUT,
@@ -323,5 +355,6 @@ module.exports = {
   getPeriodStartMs,
   fetchWithTimeout,
   supabaseWithTimeout,
-  fetchWithTimeoutDeadline
+  fetchWithTimeoutDeadline,
+  supabaseWithPagination
 }
