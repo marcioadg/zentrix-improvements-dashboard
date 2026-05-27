@@ -886,12 +886,18 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
     const healthRows = healthResult.data
     const usageRows = usageResult.data
 
+    // Exclude internal/testing companies (same "internal / testing" saved filter as prod)
+    const filterResult = await helper(`/saved_company_filters?select=name,filter_data&limit=50`)
+    const filterMatch = filterResult.ok && Array.isArray(filterResult.data) ? filterResult.data.find(f => f.name === 'internal / testing') : null
+    const excludedIds = new Set(filterMatch?.filter_data?.excludedCompanyIds || [])
+    const visibleCompanies = excludedIds.size > 0 ? companies.filter(c => !excludedIds.has(c.id)) : companies
+
     const subMap = {}, healthMap = {}, usageMap = {}
     subscriptions.forEach(s => { subMap[s.company_id] = s })
     healthRows.forEach(h => { healthMap[h.company_id] = h })
     usageRows.forEach(u => { usageMap[u.company_id] = (usageMap[u.company_id] || 0) + (u.total_minutes || 0) })
 
-    const companyIds = companies.slice(0, 100).map(c => c.id)
+    const companyIds = visibleCompanies.slice(0, 100).map(c => c.id)
     const idList = companyIds.map(id => `"${id}"`).join(',')
 
     const [membersResult, profilesResult] = await Promise.all([
@@ -925,7 +931,7 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
 
     res.setHeader('Cache-Control', 'public, max-age=300')
 
-    const accounts = companies.map(c => {
+    const accounts = visibleCompanies.map(c => {
       const sub = subMap[c.id] || {}, health = healthMap[c.id] || {}, usageMinutes = usageMap[c.id] || 0, usageHours = +(usageMinutes / 60).toFixed(1), attr = attributionMap[c.id] || {}
       const userIds = companyUsersMap[c.id] || []
       const loginDates = userIds.map(uid => profileMap[uid]?.last_login_at).filter(Boolean).sort()
@@ -995,25 +1001,44 @@ app.get('/api/venture-funnel', rateLimit, async (req, res) => {
     const trialFilter = `subscription_tier=in.(${trialTiers.join(',')})`
     const paidFilter = `subscription_tier=in.(${paidTiers.join(',')})`
 
-    const { rows: paidRows } = await supabaseWithPagination(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/${table}?select=created_at,updated_at&${paidFilter}&limit=500`, '/api/venture-funnel')
+    // OS only: exclude internal/testing companies (same "internal / testing" saved
+    // filter used by the OS account base in prod /api/metrics).
+    let excludedIds = new Set()
+    if (table === 'company_subscriptions') {
+      const { rows: filterRows } = await supabaseWithPagination(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/saved_company_filters?select=name,filter_data&limit=50`, '/api/venture-funnel')
+      const filterMatch = Array.isArray(filterRows) ? filterRows.find(f => f.name === 'internal / testing') : null
+      excludedIds = new Set(filterMatch?.filter_data?.excludedCompanyIds || [])
+    }
+    const isExcluded = row => row && excludedIds.has(row.company_id)
+    const idCol = table === 'company_subscriptions' ? ',company_id' : ''
+
+    const { rows: paidRows } = await supabaseWithPagination(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/${table}?select=created_at,updated_at${idCol}&${paidFilter}&limit=500`, '/api/venture-funnel')
     let avgTimeToPaid = null
     const diffs = []
     paidRows.forEach(row => {
-      if (!row || typeof row !== 'object' || !row.created_at || !row.updated_at) return
+      if (!row || typeof row !== 'object' || !row.created_at || !row.updated_at || isExcluded(row)) return
       const diffDays = (new Date(row.updated_at) - new Date(row.created_at)) / 86400000
       if (diffDays > 0.5 && diffDays < 730) diffs.push(diffDays)
     })
     if (diffs.length > 0) { avgTimeToPaid = Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) }
 
-    const { count: newSignups } = await supabaseWithPagination(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/${table}?select=id&created_at=gte.${encodeURIComponent(periodStartIso)}`, '/api/venture-funnel', { 'Prefer': 'count=exact', 'Range': '0-0' })
+    let newSignups
+    if (table === 'company_subscriptions') {
+      const { rows: signupRows } = await supabaseWithPagination(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/${table}?select=company_id&created_at=gte.${encodeURIComponent(periodStartIso)}&limit=2000`, '/api/venture-funnel')
+      newSignups = signupRows.filter(r => !isExcluded(r)).length
+    } else {
+      const { count } = await supabaseWithPagination(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/${table}?select=id&created_at=gte.${encodeURIComponent(periodStartIso)}`, '/api/venture-funnel', { 'Prefer': 'count=exact', 'Range': '0-0' })
+      newSignups = count
+    }
 
-    const trialSelect = table === 'company_subscriptions' ? `${trialFilter}&select=user_count,base_price_per_user&subscribed=eq.false&limit=500` : `${trialFilter}&select=id&limit=500`
+    const trialSelect = table === 'company_subscriptions' ? `${trialFilter}&select=user_count,base_price_per_user,company_id&subscribed=eq.false&limit=500` : `${trialFilter}&select=id&limit=500`
     const { rows: trialRows } = await supabaseWithPagination(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/${table}?${trialSelect}`, '/api/venture-funnel')
-    const trialCount = trialRows.length
+    const visibleTrialRows = trialRows.filter(r => !isExcluded(r))
+    const trialCount = visibleTrialRows.length
     let potentialMrr = null
     if (trialCount > 0) {
       if (table === 'company_subscriptions') {
-        potentialMrr = trialRows.reduce((sum, c) => { if (!c || typeof c !== 'object') return sum; const seats = Math.max(c.user_count || 0, 1); const price = c.base_price_per_user || defaultPrice; return sum + (seats * price) }, 0)
+        potentialMrr = visibleTrialRows.reduce((sum, c) => { if (!c || typeof c !== 'object') return sum; const seats = Math.max(c.user_count || 0, 1); const price = c.base_price_per_user || defaultPrice; return sum + (seats * price) }, 0)
       } else { potentialMrr = trialCount * defaultPrice }
     }
 
