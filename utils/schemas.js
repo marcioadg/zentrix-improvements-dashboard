@@ -86,11 +86,55 @@ function validateWeeklyUsageResponse(data) {
   })
 }
 
+// Validate Supabase analytics response structure
+function validateSupabaseSnapshot(data) {
+  if (!Array.isArray(data) || data.length === 0) return null
+  const snapshot = data[0]
+  if (typeof snapshot !== 'object' || snapshot.total_users == null || !snapshot.snapshot_date) return null
+  return snapshot
+}
+
+// Validate Stripe subscriptions response structure
+function validateStripeSubscriptionsResponse(data) {
+  if (typeof data !== 'object' || !Array.isArray(data.data)) return null
+  return data
+}
+
+// Validate entries array structure for data integrity
+function validateEntriesArray(data) {
+  if (!Array.isArray(data)) return false
+  if (data.length === 0) return true
+  return data.every(e => {
+    if (typeof e !== 'object' || e === null) return false
+    if (typeof e.date !== 'string' || typeof e.repo !== 'string') return false
+    if (typeof e.category !== 'string' || typeof e.summary !== 'string') return false
+    if (e.score !== undefined && (typeof e.score !== 'number' || e.score < 0 || e.score > 100)) return false
+    return true
+  })
+}
+
+// Validate metrics response structure to prevent silent data corruption
+function validateMetricsResponse(data) {
+  if (!data || typeof data !== 'object') return false
+  if (typeof data.ventureCount !== 'number' || data.ventureCount < 0) return false
+  if (!Array.isArray(data.ventures) || !data.ventures.every(v => typeof v === 'string')) return false
+  if (typeof data.source !== 'string' || !['live', 'partial'].includes(data.source)) return false
+  if (data.totalAccounts !== null && typeof data.totalAccounts !== 'number') return false
+  if (data.totalPaidAccounts !== null && typeof data.totalPaidAccounts !== 'number') return false
+  if (data.mrr !== null && typeof data.mrr !== 'number') return false
+  if (data.lastUpdated !== null && typeof data.lastUpdated !== 'string') return false
+  return true
+}
+
 module.exports = {
   PRODUCT_TABLE,
   DEFAULT_PRICE,
   TRIAL_TIERS,
   PAID_TIERS,
   WEEKLY_USAGE_SCHEMAS,
-  validateWeeklyUsageResponse
+  validateWeeklyUsageResponse,
+  validateSupabaseSnapshot,
+  validateStripeSubscriptionsResponse,
+  validateEntriesArray,
+  validateMetricsResponse
 }
