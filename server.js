@@ -16,6 +16,13 @@ const {
   getPeriodStart,
   supabaseWithPagination
 } = require('./utils/slack.js')
+const {
+  WEEKLY_USAGE_SCHEMAS,
+  PRODUCT_TABLE,
+  DEFAULT_PRICE,
+  TRIAL_TIERS,
+  PAID_TIERS
+} = require('./utils/schemas.js')
 
 const app = express()
 const PORT = process.env.PORT || 3847
@@ -744,51 +751,6 @@ app.get('/api/validate-entries', rateLimit, (req, res) => {
 })
 
 // Weekly usage endpoint — mirrors Vercel Function for local dev testing
-const WEEKLY_USAGE_SCHEMAS = {
-  os: {
-    fields: '*',
-    headers: {},
-    transform: (row) => row
-  },
-  insights: {
-    fields: 'week_start,week_end,total_hours,paid_hours,trial_hours,free_hours,avg_hours_per_user,total_users,paid_users,wow_hours_change_pct,top_users',
-    headers: { 'Accept-Profile': 'insights' },
-    transform: (row) => ({
-      week_start: row.week_start,
-      week_end: row.week_end,
-      total_hours: row.total_hours,
-      paid_hours: row.paid_hours,
-      trial_hours: row.trial_hours,
-      free_hours: row.free_hours,
-      avg_hours_per_user: row.avg_hours_per_user,
-      total_users: row.total_users,
-      paid_users: row.paid_users,
-      wow_hours_change_pct: row.wow_hours_change_pct,
-      top_users: row.top_users,
-    })
-  },
-  crm: {
-    fields: 'week_start,week_end,total_hours,paid_hours,trial_hours,free_hours,avg_hours_per_tenant,avg_hours_per_user,total_tenants,paid_tenants,wow_hours_change_pct,top_tenants,low_tenants',
-    headers: { 'Accept-Profile': 'crm' },
-    transform: (row) => ({
-      week_start: row.week_start,
-      week_end: row.week_end,
-      total_hours: row.total_hours,
-      paid_hours: row.paid_hours,
-      trial_hours: row.trial_hours,
-      free_hours: row.free_hours,
-      avg_hours_per_tenant: row.avg_hours_per_tenant,
-      avg_hours_per_user: row.avg_hours_per_user,
-      total_tenants: row.total_tenants,
-      total_companies: row.total_tenants,
-      paid_tenants: row.paid_tenants,
-      wow_hours_change_pct: row.wow_hours_change_pct,
-      top_tenants: row.top_tenants,
-      low_tenants: row.low_tenants,
-    })
-  }
-}
-
 app.get('/api/weekly-usage', rateLimit, async (req, res) => {
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -996,10 +958,6 @@ app.get('/api/product-accounts', rateLimit, async (req, res) => {
 app.get('/api/venture-funnel', rateLimit, async (req, res) => {
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const DEFAULT_PRICE = { os: 5, insights: 29, crm: 19, agents: 49 }
-  const PRODUCT_TABLE = { os: 'company_subscriptions', insights: 'subscribers', crm: null, agents: null }
-  const TRIAL_TIERS = { os: ['Trial'], insights: ['Trial'] }
-  const PAID_TIERS = { os: ['Premium'], insights: ['Enterprise', 'Premium', 'Pro'] }
 
   const product = (req.query.product || 'os').toLowerCase()
   const period = req.query.period || '7d'

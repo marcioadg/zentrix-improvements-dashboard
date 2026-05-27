@@ -8,24 +8,10 @@
 //   agents   → no data yet (pre-launch)
 
 const { logError, sendErrorResponse, requireMethod, getPeriodStart, supabaseWithPagination, supabaseWithTimeout } = require('../utils/slack.js')
+const { DEFAULT_PRICE, PRODUCT_TABLE, TRIAL_TIERS, PAID_TIERS } = require('../utils/schemas.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-// Default price per seat when base_price_per_user not in DB
-const DEFAULT_PRICE = { os: 5, insights: 29, crm: 19, agents: 49 }
-
-// Which Supabase table holds subscriber rows per product
-const PRODUCT_TABLE = {
-  os:       'company_subscriptions',
-  insights: 'subscribers',
-  crm:      null,
-  agents:   null
-}
-
-// Which tier values count as "trial" vs "paid" per table
-const TRIAL_TIERS  = { os: ['Trial'], insights: ['Trial'] }
-const PAID_TIERS   = { os: ['Premium'], insights: ['Enterprise', 'Premium', 'Pro'] }
 
 module.exports = async function handler(req, res) {
   const methodCheck = requireMethod(req, res, 'GET')
