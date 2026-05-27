@@ -1,6 +1,6 @@
 // /api/weekly-usage.js
 const { logError, sendErrorResponse, requireMethod, supabaseWithTimeout } = require('../utils/slack.js')
-const { WEEKLY_USAGE_SCHEMAS } = require('../utils/schemas.js')
+const { WEEKLY_USAGE_SCHEMAS, validateWeeklyUsageResponse } = require('../utils/schemas.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -29,6 +29,12 @@ module.exports = async function handler(req, res) {
     }
 
     const data = raw.map(schema.transform)
+
+    // Validate weekly usage response structure before returning to prevent silent data corruption
+    if (!validateWeeklyUsageResponse(data)) {
+      return sendErrorResponse(res, 500, 'VALIDATION_ERROR', 'weekly usage response failed validation — data corruption detected', { product, rowCount: data.length })
+    }
+
     res.setHeader('Cache-Control', 'public, max-age=300')
     return res.json({ data, product })
 

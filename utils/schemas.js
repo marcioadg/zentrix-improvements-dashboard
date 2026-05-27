@@ -74,10 +74,23 @@ const WEEKLY_USAGE_SCHEMAS = {
   }
 }
 
+// Validate weekly usage response array structure to prevent silent data corruption
+function validateWeeklyUsageResponse(data) {
+  if (!Array.isArray(data)) return false
+  return data.every(row => {
+    if (!row || typeof row !== 'object') return false
+    if (typeof row.week_start !== 'string' || typeof row.week_end !== 'string') return false
+    if (row.total_hours !== null && row.total_hours !== undefined && typeof row.total_hours !== 'number') return false
+    if (row.total_users !== null && row.total_users !== undefined && typeof row.total_users !== 'number') return false
+    return true
+  })
+}
+
 module.exports = {
   PRODUCT_TABLE,
   DEFAULT_PRICE,
   TRIAL_TIERS,
   PAID_TIERS,
-  WEEKLY_USAGE_SCHEMAS
+  WEEKLY_USAGE_SCHEMAS,
+  validateWeeklyUsageResponse
 }
