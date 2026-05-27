@@ -235,6 +235,10 @@ function getPeriodStartMs(period) {
   }
 }
 
+function getPeriodStartIso(period) {
+  return new Date(getPeriodStartMs(period)).toISOString().slice(0, 10)
+}
+
 // Wrap fetch with AbortController timeout — consolidates repeated pattern across API handlers
 // Returns response or null on error; logs error with context
 async function fetchWithTimeout(url, options = {}, context = {}) {
@@ -334,6 +338,63 @@ async function supabaseWithPagination(supabaseUrl, supabaseKey, path, route = 'A
   }
 }
 
+// Fetch all pages from Stripe API using cursor-based pagination
+// Invokes callback for each page's data array; returns accumulated items or null on error
+// Supports deadline-aware timeout and continues pagination until has_more is false
+async function stripePaginated(stripeKey, endpoint, params, callback, options = {}) {
+  const { route = 'API', maxPages = 1000, deadline = null, deadline_exceeded_fn = null } = options
+  const accumulated = []
+  let hasMore = true
+  let startingAfter = undefined
+  let pageCount = 0
+
+  while (hasMore && pageCount++ < maxPages) {
+    if (deadline_exceeded_fn && deadline_exceeded_fn()) break
+    const pageParams = new URLSearchParams(params)
+    if (startingAfter) pageParams.append('starting_after', startingAfter)
+
+    const response = deadline
+      ? await fetchWithTimeoutDeadline(
+          `https://api.stripe.com/v1/${endpoint}?${pageParams}`,
+          { headers: { 'Authorization': `Bearer ${stripeKey}` } },
+          deadline,
+          { route, code: 'STRIPE', message: `${endpoint} fetch failed` }
+        )
+      : await fetchWithTimeout(
+          `https://api.stripe.com/v1/${endpoint}?${pageParams}`,
+          { headers: { 'Authorization': `Bearer ${stripeKey}` } },
+          { route, code: 'STRIPE', message: `${endpoint} fetch failed` }
+        )
+
+    if (!response || !response.ok) {
+      if (response) logError(route, 'STRIPE_HTTP', `${endpoint} fetch failed`, { status: response.status })
+      return null
+    }
+
+    const data = await response.json()
+    if (!Array.isArray(data.data)) return null
+
+    accumulated.push(...data.data)
+    if (callback) {
+      try {
+        callback(data.data, accumulated)
+      } catch (e) {
+        logError(route, 'CALLBACK_ERROR', `error processing page for ${endpoint}`, { message: e.message })
+        return null
+      }
+    }
+
+    hasMore = !!data.has_more
+    if (hasMore && data.data.length > 0) {
+      startingAfter = data.data[data.data.length - 1].id
+    } else {
+      hasMore = false
+    }
+  }
+
+  return accumulated
+}
+
 module.exports = {
   SLACK_CHANNEL,
   FETCH_TIMEOUT,
@@ -353,8 +414,10 @@ module.exports = {
   calcSubMRR,
   getPeriodStart,
   getPeriodStartMs,
+  getPeriodStartIso,
   fetchWithTimeout,
   supabaseWithTimeout,
   fetchWithTimeoutDeadline,
-  supabaseWithPagination
+  supabaseWithPagination,
+  stripePaginated
 }

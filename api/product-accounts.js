@@ -2,7 +2,7 @@
 // Returns full company list with all columns matching the OS admin panel:
 // Company, Status, Score, Plan, 7d Usage, Users, Median Login, Created,
 // Device, Source, Medium, Campaign, Content, Term, Adset, Ad, Landing Page, Referral
-const { logError, sendErrorResponse, setupCORSAndOptions, supabaseWithTimeout } = require('../utils/slack.js')
+const { logError, sendErrorResponse, setupCORSAndOptions, supabaseWithTimeout, getPeriodStartIso } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -44,7 +44,7 @@ module.exports = async function handler(req, res) {
       // customer_success_tracking has subs_status (Expired/Free Trial/Premium) and account_stage
       supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/customer_success_tracking?select=company_id,customer_health,account_stage,subs_status&limit=500`, '/api/product-accounts'),
       // 7d usage: sum total_minutes per company for last 7 days
-      supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/company_usage_stats?select=company_id,stat_date,total_minutes&stat_date=gte.${sevenDaysAgo()}&limit=2000`, '/api/product-accounts'),
+      supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/company_usage_stats?select=company_id,stat_date,total_minutes&stat_date=gte.${getPeriodStartIso('7d')}&limit=2000`, '/api/product-accounts'),
     ])
 
     if (!Array.isArray(companies) || !Array.isArray(subscriptions) || !Array.isArray(healthRows) || !Array.isArray(usageRows)) {
@@ -220,6 +220,3 @@ module.exports = async function handler(req, res) {
   }
 }
 
-function sevenDaysAgo() {
-  return new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
-}

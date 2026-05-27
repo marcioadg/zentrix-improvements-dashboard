@@ -2,7 +2,7 @@
 // Returns the list of currently-paying customers (active Stripe subscriptions),
 // enriched with company / owner / status data from Supabase. Driven by Stripe so
 // the count matches the "Total Paid Accounts" card on the dashboard.
-const { logError, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, calcSubMRR, getPeriodStartMs, supabaseWithTimeout, fetchWithTimeout } = require('../utils/slack.js')
+const { logError, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, calcSubMRR, getPeriodStartMs, supabaseWithTimeout, stripePaginated } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -19,32 +19,6 @@ function getSubProductNames(sub) {
   return names
 }
 
-async function fetchActiveSubs(key) {
-  const out = []
-  let hasMore = true
-  let startingAfter
-  let guard = 0
-  while (hasMore && guard++ < 20) {
-    const params = new URLSearchParams({ limit: '100', status: 'active' })
-    params.append('expand[]', 'data.customer')
-    if (startingAfter) params.append('starting_after', startingAfter)
-    const r = await fetchWithTimeout(`https://api.stripe.com/v1/subscriptions?${params}`, {
-      headers: { 'Authorization': `Bearer ${key}` }
-    }, { route: '/api/paid-customers', code: 'STRIPE', message: 'subscriptions fetch failed' })
-    if (!r) break
-    if (!r.ok) {
-      logError('/api/paid-customers', 'STRIPE_HTTP', 'subscriptions fetch failed', { status: r.status })
-      break
-    }
-    const data = await r.json()
-    if (!Array.isArray(data.data)) break
-    out.push(...data.data)
-    hasMore = !!data.has_more
-    startingAfter = data.data.length ? data.data[data.data.length - 1].id : undefined
-    if (!startingAfter) hasMore = false
-  }
-  return out
-}
 
 
 module.exports = async function handler(req, res) {
@@ -65,7 +39,7 @@ module.exports = async function handler(req, res) {
     // 1) Active subscriptions across all Stripe accounts, aggregated per customer
     const byCustomer = new Map()
     for (const key of stripeKeys) {
-      const subs = await fetchActiveSubs(key)
+      const subs = await stripePaginated(key, 'subscriptions', { limit: '100', status: 'active', 'expand[]': 'data.customer' }, null, { route: '/api/paid-customers', maxPages: 20 }) || []
       for (const sub of subs) {
         const cust = sub.customer
         const custId = typeof cust === 'string' ? cust : cust?.id
