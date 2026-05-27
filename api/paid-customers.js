@@ -2,7 +2,7 @@
 // Returns the list of currently-paying customers (active Stripe subscriptions),
 // enriched with company / owner / status data from Supabase. Driven by Stripe so
 // the count matches the "Total Paid Accounts" card on the dashboard.
-const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, calcSubMRR } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, calcSubMRR, supabaseWithTimeout } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -17,31 +17,6 @@ function getSubProductNames(sub) {
     if (pidStr && PRODUCT_NAMES[pidStr]) names.add(PRODUCT_NAMES[pidStr])
   }
   return names
-}
-
-async function supabase(path) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
-      headers: {
-        'apikey': SUPABASE_SERVICE_ROLE_KEY,
-        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      signal: controller.signal
-    })
-    if (!res.ok) {
-      logError('/api/paid-customers', 'SUPABASE_HTTP', `request failed for ${path}`, { status: res.status })
-      return []
-    }
-    return res.json()
-  } catch (err) {
-    logError('/api/paid-customers', err.name === 'AbortError' ? 'SUPABASE_TIMEOUT' : 'SUPABASE_ERROR', `request failed for ${path}`, { message: err.message })
-    return []
-  } finally {
-    clearTimeout(timeout)
-  }
 }
 
 async function fetchActiveSubs(key) {
@@ -151,15 +126,15 @@ module.exports = async function handler(req, res) {
     let subRows = [], companyRows = [], csRows = [], memberRows = [], profileRows = []
     if (SUPABASE_SERVICE_ROLE_KEY) {
       const inIds = customerIds.map(id => `"${id}"`).join(',')
-      subRows = await supabase(`/company_subscriptions?stripe_customer_id=in.(${inIds})&select=company_id,company_name,subscription_tier,user_count,quantity,period_amount_charged,subscribed_at,stripe_customer_id`)
+      subRows = await supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/company_subscriptions?stripe_customer_id=in.(${inIds})&select=company_id,company_name,subscription_tier,user_count,quantity,period_amount_charged,subscribed_at,stripe_customer_id`, '/api/paid-customers')
       subRows = Array.isArray(subRows) ? subRows : []
       const companyIds = [...new Set(subRows.map(s => s.company_id).filter(Boolean))]
       if (companyIds.length) {
         const inC = companyIds.map(id => `"${id}"`).join(',')
         const results = await Promise.all([
-          supabase(`/companies?id=in.(${inC})&select=id,name,status,created_at,billing_email,country`),
-          supabase(`/customer_success_tracking?company_id=in.(${inC})&select=company_id,customer_health,account_stage`),
-          supabase(`/company_members?company_id=in.(${inC})&select=company_id,user_id,email,permission_level&limit=2000`)
+          supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/companies?id=in.(${inC})&select=id,name,status,created_at,billing_email,country`, '/api/paid-customers'),
+          supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/customer_success_tracking?company_id=in.(${inC})&select=company_id,customer_health,account_stage`, '/api/paid-customers'),
+          supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/company_members?company_id=in.(${inC})&select=company_id,user_id,email,permission_level&limit=2000`, '/api/paid-customers')
         ])
         companyRows = Array.isArray(results[0]) ? results[0] : []
         csRows = Array.isArray(results[1]) ? results[1] : []
@@ -167,7 +142,7 @@ module.exports = async function handler(req, res) {
         const ownerUserIds = [...new Set(memberRows.map(m => m.user_id).filter(Boolean))]
         if (ownerUserIds.length) {
           const inU = ownerUserIds.slice(0, 300).map(id => `"${id}"`).join(',')
-          profileRows = await supabase(`/profiles?id=in.(${inU})&select=id,full_name,email`)
+          profileRows = await supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/profiles?id=in.(${inU})&select=id,full_name,email`, '/api/paid-customers')
           profileRows = Array.isArray(profileRows) ? profileRows : []
         }
       }
