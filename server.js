@@ -213,6 +213,19 @@ function validateEntriesArray(data) {
   })
 }
 
+// Validate metrics response structure to prevent silent data corruption
+function validateMetricsResponse(data) {
+  if (!data || typeof data !== 'object') return false
+  if (typeof data.ventureCount !== 'number' || data.ventureCount < 0) return false
+  if (!Array.isArray(data.ventures) || !data.ventures.every(v => typeof v === 'string')) return false
+  if (typeof data.source !== 'string' || !['live', 'partial'].includes(data.source)) return false
+  if (data.totalAccounts !== null && typeof data.totalAccounts !== 'number') return false
+  if (data.totalPaidAccounts !== null && typeof data.totalPaidAccounts !== 'number') return false
+  if (data.mrr !== null && typeof data.mrr !== 'number') return false
+  if (data.lastUpdated !== null && typeof data.lastUpdated !== 'string') return false
+  return true
+}
+
 // ── Routes ───────────────────────────────────────────────────────────────────
 
 // Health check (not rate-limited: critical system endpoint for load balancers/monitors)
@@ -397,6 +410,17 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
     results.mrr = Math.round(totalMRR * 100) / 100
     results.totalPaidAccounts = paidCustomers.size
     results.source = results.totalAccounts != null ? 'live' : 'partial'
+  }
+
+  // Validate metrics response before caching
+  if (!validateMetricsResponse(results)) {
+    logError('/api/metrics', 'VALIDATION_ERROR', 'metrics response failed validation — data corruption detected', {
+      totalAccounts: results.totalAccounts,
+      totalPaidAccounts: results.totalPaidAccounts,
+      mrr: results.mrr,
+      source: results.source
+    })
+    throw new Error('Metrics response validation failed')
   }
 
   // Log data source degradation for monitoring
