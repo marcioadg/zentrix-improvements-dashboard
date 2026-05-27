@@ -125,6 +125,21 @@ function sendErrorResponse(res, statusCode, errorCode, message, context = {}) {
   return res.status(statusCode).json({ error: message })
 }
 
+// Setup CORS and OPTIONS handling for API endpoints (Vercel Functions)
+function setupCORSAndOptions(req, res, allowedMethods = 'GET') {
+  const origin = req.headers.origin
+  if (origin && (origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+  }
+  res.setHeader('Access-Control-Allow-Methods', `${allowedMethods}, OPTIONS`)
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-api-key')
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res.status(200).end()
+  }
+  return null
+}
+
 async function handleAction(req, res, slackToken) {
   const validation = validateActionPayload(req.body)
   if (!validation.valid) {
@@ -167,5 +182,6 @@ module.exports = {
   logError,
   cleanup,
   handleAction,
-  sendErrorResponse
+  sendErrorResponse,
+  setupCORSAndOptions
 }

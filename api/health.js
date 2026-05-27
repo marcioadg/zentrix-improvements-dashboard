@@ -1,17 +1,9 @@
-const { sendErrorResponse } = require('../utils/slack.js')
+const { sendErrorResponse, setupCORSAndOptions } = require('../utils/slack.js')
 
 module.exports = async function handler(req, res) {
-  const origin = req.headers.origin
-  // Allow localhost for development and any Vercel domain for preview/production
-  if (origin && (origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app'))) {
-    res.setHeader('Access-Control-Allow-Origin', origin)
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(200).end()
-  }
+  const corsResult = setupCORSAndOptions(req, res, 'GET')
+  if (corsResult) return corsResult
+
   if (req.method !== 'GET') {
     return sendErrorResponse(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
   }

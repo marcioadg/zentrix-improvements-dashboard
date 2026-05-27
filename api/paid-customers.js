@@ -2,7 +2,7 @@
 // Returns the list of currently-paying customers (active Stripe subscriptions),
 // enriched with company / owner / status data from Supabase. Driven by Stripe so
 // the count matches the "Total Paid Accounts" card on the dashboard.
-const { logError, FETCH_TIMEOUT, sendErrorResponse } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -120,16 +120,9 @@ function periodStartMs(period) {
 }
 
 module.exports = async function handler(req, res) {
-  const origin = req.headers.origin
-  if (origin && (origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app'))) {
-    res.setHeader('Access-Control-Allow-Origin', origin)
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res.status(200).end()
-  }
+  const corsResult = setupCORSAndOptions(req, res, 'GET')
+  if (corsResult) return corsResult
+
   if (req.method !== 'GET') {
     return sendErrorResponse(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
   }
