@@ -12,7 +12,9 @@ const {
   checkRateLimit,
   logError,
   cleanup: cleanupRateLimit,
-  handleAction
+  handleAction,
+  getPeriodStart,
+  supabaseWithPagination
 } = require('./utils/slack.js')
 
 const app = express()
@@ -994,39 +996,6 @@ app.get('/api/venture-funnel', rateLimit, async (req, res) => {
     return res.json({ avgTimeToPaid: null, newSignups: 0, potentialMrr: null, trialCount: 0, product, period, prelaunch: true })
   }
 
-  const getPeriodStart = (p) => {
-    const now = new Date()
-    switch (p) {
-      case 'day': return new Date(now - 86400000)
-      case '7d': return new Date(now - 7 * 86400000)
-      case '14d': return new Date(now - 14 * 86400000)
-      case '30d': return new Date(now - 30 * 86400000)
-      case 'month': return new Date(now.getFullYear(), now.getMonth(), 1)
-      case 'quarter': return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
-      case 'semester': return new Date(now.getFullYear(), now.getMonth() >= 6 ? 6 : 0, 1)
-      case 'year': return new Date(now.getFullYear(), 0, 1)
-      default: return new Date(now - 7 * 86400000)
-    }
-  }
-
-  const sbFetch = async (path, headers = {}) => {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-    try {
-      const resp = await fetch(`${SUPABASE_URL}/rest/v1${path}`, { headers: { 'apikey': SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json', ...headers }, signal: controller.signal })
-      if (!resp.ok && resp.status !== 206) return { rows: [], count: 0, ok: false }
-      const contentRange = resp.headers.get('content-range')
-      const count = contentRange ? parseInt((contentRange.match(/\/(\d+)$/) || [])[1] || '0', 10) : 0
-      let rows = []
-      try { rows = await resp.json() } catch (_) {}
-      return { rows, count, ok: true }
-    } catch (err) {
-      if (err.name === 'AbortError') { logError('/api/venture-funnel', 'SUPABASE_TIMEOUT', `request timed out for ${path}`, { timeout: FETCH_TIMEOUT }) }
-      else { logError('/api/venture-funnel', err.name || 'SUPABASE_ERROR', `request failed for ${path}`, { message: err.message }) }
-      return { rows: [], count: 0, ok: false }
-    } finally { clearTimeout(timeout) }
-  }
-
   try {
     const periodStart = getPeriodStart(period)
     const periodStartIso = periodStart.toISOString()
@@ -1035,7 +1004,7 @@ app.get('/api/venture-funnel', rateLimit, async (req, res) => {
     const trialFilter = `subscription_tier=in.(${trialTiers.join(',')})`
     const paidFilter = `subscription_tier=in.(${paidTiers.join(',')})`
 
-    const { rows: paidRows } = await sbFetch(`/${table}?select=created_at,updated_at&${paidFilter}&limit=500`)
+    const { rows: paidRows } = await supabaseWithPagination(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/${table}?select=created_at,updated_at&${paidFilter}&limit=500`, '/api/venture-funnel')
     let avgTimeToPaid = null
     const diffs = []
     paidRows.forEach(row => {
@@ -1045,10 +1014,10 @@ app.get('/api/venture-funnel', rateLimit, async (req, res) => {
     })
     if (diffs.length > 0) { avgTimeToPaid = Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) }
 
-    const { count: newSignups } = await sbFetch(`/${table}?select=id&created_at=gte.${encodeURIComponent(periodStartIso)}`, { 'Prefer': 'count=exact', 'Range': '0-0' })
+    const { count: newSignups } = await supabaseWithPagination(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/${table}?select=id&created_at=gte.${encodeURIComponent(periodStartIso)}`, '/api/venture-funnel', { 'Prefer': 'count=exact', 'Range': '0-0' })
 
     const trialSelect = table === 'company_subscriptions' ? `${trialFilter}&select=user_count,base_price_per_user&subscribed=eq.false&limit=500` : `${trialFilter}&select=id&limit=500`
-    const { rows: trialRows } = await sbFetch(`/${table}?${trialSelect}`)
+    const { rows: trialRows } = await supabaseWithPagination(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/${table}?${trialSelect}`, '/api/venture-funnel')
     const trialCount = trialRows.length
     let potentialMrr = null
     if (trialCount > 0) {
