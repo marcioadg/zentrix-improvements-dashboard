@@ -49,6 +49,12 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ accounts: [], product, error: 'Failed to fetch complete account data' })
     }
 
+    // ── Exclude internal/testing companies (Super Admin "internal / testing" saved filter) ──
+    const filterRows = await supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/saved_company_filters?select=name,filter_data&limit=50`, '/api/product-accounts')
+    const filterMatch = Array.isArray(filterRows) ? filterRows.find(f => f.name === 'internal / testing') : null
+    const excludedIds = new Set(filterMatch?.filter_data?.excludedCompanyIds || [])
+    const visibleCompanies = excludedIds.size > 0 ? companies.filter(c => !excludedIds.has(c.id)) : companies
+
     // ── Build lookup maps ────────────────────────────────────────────────────
     const subMap = {}
     subscriptions.forEach(s => { subMap[s.company_id] = s })
@@ -65,7 +71,7 @@ module.exports = async function handler(req, res) {
 
     // ── For attribution: need company → user mapping (company_members) ───────
     // Fetch company_members for all companies (batch by company ids)
-    const companyIds = companies.slice(0, 100).map(c => c.id)
+    const companyIds = visibleCompanies.slice(0, 100).map(c => c.id)
     const idList = companyIds.map(id => `"${id}"`).join(',')
 
     const [members, profiles] = await Promise.all([
@@ -110,7 +116,7 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Build final account rows ─────────────────────────────────────────────
-    const accounts = companies.map(c => {
+    const accounts = visibleCompanies.map(c => {
       const sub = subMap[c.id] || {}
       const health = healthMap[c.id] || {}
       const usageMinutes = usageMap[c.id] || 0

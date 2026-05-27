@@ -1,4 +1,4 @@
-const { logError, FETCH_TIMEOUT, sendErrorResponse, requireMethod, PRODUCT_NAMES, getPeriodStart, calcSubMRR, fetchWithTimeoutDeadline } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse, requireMethod, PRODUCT_NAMES, getPeriodStart, calcSubMRR, fetchWithTimeoutDeadline, supabaseWithTimeout } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -102,6 +102,23 @@ module.exports = async function handler(req, res) {
           }
         } catch (e) {
           logError('/api/metrics', e.name || 'SUPABASE_ERROR', `product account count for ${product} failed`, { message: e.message })
+        }
+      }
+      // Apply the Super Admin "internal / testing" exclusion list to the OS account
+      // base (the conversion-rate denominator), so it counts only real accounts.
+      if (!isDeadlineExceeded()) {
+        try {
+          const [filterRows, osRows] = await Promise.all([
+            supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/saved_company_filters?select=name,filter_data&limit=50`, '/api/metrics'),
+            supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/company_subscriptions?select=company_id&limit=2000`, '/api/metrics')
+          ])
+          const match = Array.isArray(filterRows) ? filterRows.find(f => f.name === 'internal / testing') : null
+          const excludedIds = new Set(match?.filter_data?.excludedCompanyIds || [])
+          if (excludedIds.size > 0 && Array.isArray(osRows)) {
+            productAccountCounts['Zentrix OS'] = osRows.filter(r => !excludedIds.has(r.company_id)).length
+          }
+        } catch (e) {
+          logError('/api/metrics', e.name || 'SUPABASE_ERROR', 'exclusion filter apply failed', { message: e.message })
         }
       }
       results.productAccountCounts = productAccountCounts
