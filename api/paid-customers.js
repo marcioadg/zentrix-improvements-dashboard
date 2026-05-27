@@ -2,7 +2,7 @@
 // Returns the list of currently-paying customers (active Stripe subscriptions),
 // enriched with company / owner / status data from Supabase. Driven by Stripe so
 // the count matches the "Total Paid Accounts" card on the dashboard.
-const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, calcSubMRR, getPeriodStartMs, supabaseWithTimeout } = require('../utils/slack.js')
+const { logError, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, calcSubMRR, getPeriodStartMs, supabaseWithTimeout, fetchWithTimeout } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -28,29 +28,20 @@ async function fetchActiveSubs(key) {
     const params = new URLSearchParams({ limit: '100', status: 'active' })
     params.append('expand[]', 'data.customer')
     if (startingAfter) params.append('starting_after', startingAfter)
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-    try {
-      const r = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
-        headers: { 'Authorization': `Bearer ${key}` },
-        signal: controller.signal
-      })
-      if (!r.ok) {
-        logError('/api/paid-customers', 'STRIPE_HTTP', 'subscriptions fetch failed', { status: r.status })
-        break
-      }
-      const data = await r.json()
-      if (!Array.isArray(data.data)) break
-      out.push(...data.data)
-      hasMore = !!data.has_more
-      startingAfter = data.data.length ? data.data[data.data.length - 1].id : undefined
-      if (!startingAfter) hasMore = false
-    } catch (e) {
-      logError('/api/paid-customers', e.name === 'AbortError' ? 'STRIPE_TIMEOUT' : 'STRIPE_ERROR', 'subscriptions fetch failed', { message: e.message })
+    const r = await fetchWithTimeout(`https://api.stripe.com/v1/subscriptions?${params}`, {
+      headers: { 'Authorization': `Bearer ${key}` }
+    }, { route: '/api/paid-customers', code: 'STRIPE', message: 'subscriptions fetch failed' })
+    if (!r) break
+    if (!r.ok) {
+      logError('/api/paid-customers', 'STRIPE_HTTP', 'subscriptions fetch failed', { status: r.status })
       break
-    } finally {
-      clearTimeout(timeout)
     }
+    const data = await r.json()
+    if (!Array.isArray(data.data)) break
+    out.push(...data.data)
+    hasMore = !!data.has_more
+    startingAfter = data.data.length ? data.data[data.data.length - 1].id : undefined
+    if (!startingAfter) hasMore = false
   }
   return out
 }
