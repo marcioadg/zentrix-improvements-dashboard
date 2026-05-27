@@ -220,6 +220,25 @@ function getPeriodStart(period) {
   }
 }
 
+// Wrap fetch with AbortController timeout — consolidates repeated pattern across API handlers
+// Returns response or null on error; logs error with context
+async function fetchWithTimeout(url, options = {}, context = {}) {
+  const { route = 'API', code = 'FETCH_ERROR', message = 'fetch failed' } = context
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal })
+    clearTimeout(timeout)
+    return response
+  } catch (err) {
+    const errorCode = err.name === 'AbortError' ? 'TIMEOUT' : err.name || 'ERROR'
+    logError(route, `${code}_${errorCode}`, message, { timeout: FETCH_TIMEOUT, message: err.message, ...context })
+    return null
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 module.exports = {
   SLACK_CHANNEL,
   FETCH_TIMEOUT,
@@ -237,5 +256,6 @@ module.exports = {
   sendErrorResponse,
   setupCORSAndOptions,
   calcSubMRR,
-  getPeriodStart
+  getPeriodStart,
+  fetchWithTimeout
 }

@@ -1,4 +1,4 @@
-const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, fetchWithTimeout } = require('../utils/slack.js')
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_SECRET_KEY_NEW = process.env.STRIPE_SECRET_KEY_NEW
@@ -16,46 +16,33 @@ async function fetchAllSubscriptions(stripeKey) {
     const params = new URLSearchParams({ limit: '100', status: 'all' })
     if (startingAfter) params.append('starting_after', startingAfter)
 
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-    try {
-      const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
-        headers: { 'Authorization': `Bearer ${stripeKey}` },
-        signal: controller.signal
-      })
+    const response = await fetchWithTimeout(`https://api.stripe.com/v1/subscriptions?${params}`, {
+      headers: { 'Authorization': `Bearer ${stripeKey}` }
+    }, { route: '/api/mrr-history', code: 'STRIPE', message: 'subscriptions request failed' })
 
-      if (!response.ok) {
-        logError('/api/mrr-history', 'STRIPE_HTTP', 'subscriptions fetch failed', { status: response.status })
-        break
-      }
-
-      const data = await response.json()
-      if (!validateStripeResponse(data)) {
-        logError('/api/mrr-history', 'STRIPE_INVALID', 'subscriptions response validation failed')
-        break
-      }
-
-      for (const sub of data.data) {
-        if (sub && typeof sub === 'object' && Array.isArray(sub.items?.data)) {
-          subs.push(sub)
-        }
-      }
-
-      hasMore = data.has_more
-      if (hasMore && data.data.length > 0) {
-        startingAfter = data.data[data.data.length - 1].id
-      } else {
-        hasMore = false
-      }
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        logError('/api/mrr-history', 'STRIPE_TIMEOUT', 'subscriptions request timed out', { timeout: FETCH_TIMEOUT })
-      } else {
-        logError('/api/mrr-history', err.name || 'STRIPE_ERROR', 'subscriptions request failed', { message: err.message })
-      }
+    if (!response) break
+    if (!response.ok) {
+      logError('/api/mrr-history', 'STRIPE_HTTP', 'subscriptions fetch failed', { status: response.status })
       break
-    } finally {
-      clearTimeout(timeout)
+    }
+
+    const data = await response.json()
+    if (!validateStripeResponse(data)) {
+      logError('/api/mrr-history', 'STRIPE_INVALID', 'subscriptions response validation failed')
+      break
+    }
+
+    for (const sub of data.data) {
+      if (sub && typeof sub === 'object' && Array.isArray(sub.items?.data)) {
+        subs.push(sub)
+      }
+    }
+
+    hasMore = data.has_more
+    if (hasMore && data.data.length > 0) {
+      startingAfter = data.data[data.data.length - 1].id
+    } else {
+      hasMore = false
     }
   }
 

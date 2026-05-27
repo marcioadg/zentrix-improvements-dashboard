@@ -7,7 +7,7 @@
 //   crm      → no data yet (pre-launch)
 //   agents   → no data yet (pre-launch)
 
-const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, getPeriodStart } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, getPeriodStart, fetchWithTimeout } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -28,34 +28,23 @@ const TRIAL_TIERS  = { os: ['Trial'], insights: ['Trial'] }
 const PAID_TIERS   = { os: ['Premium'], insights: ['Enterprise', 'Premium', 'Pro'] }
 
 async function sbFetch(path, headers = {}) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-  try {
-    const resp = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
-      headers: {
-        'apikey': SUPABASE_SERVICE_ROLE_KEY,
-        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-        ...headers
-      },
-      signal: controller.signal
-    })
-    if (!resp.ok && resp.status !== 206) return { rows: [], count: 0, ok: false }
-    const contentRange = resp.headers.get('content-range')
-    const count = contentRange ? parseInt((contentRange.match(/\/(\d+)$/) || [])[1] || '0', 10) : 0
-    let rows = []
-    try { rows = await resp.json() } catch (_) {}
-    return { rows, count, ok: true }
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      logError('/api/venture-funnel', 'SUPABASE_TIMEOUT', `supabase request timed out for ${path}`, { timeout: FETCH_TIMEOUT })
-    } else {
-      logError('/api/venture-funnel', err.name || 'SUPABASE_ERROR', `supabase request failed for ${path}`, { message: err.message })
+  const resp = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1${path}`, {
+    headers: {
+      'apikey': SUPABASE_SERVICE_ROLE_KEY,
+      'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+      ...headers
     }
-    return { rows: [], count: 0, ok: false }
-  } finally {
-    clearTimeout(timeout)
-  }
+  }, { route: '/api/venture-funnel', code: 'SUPABASE', message: `supabase request failed for ${path}` })
+
+  if (!resp) return { rows: [], count: 0, ok: false }
+  if (!resp.ok && resp.status !== 206) return { rows: [], count: 0, ok: false }
+
+  const contentRange = resp.headers.get('content-range')
+  const count = contentRange ? parseInt((contentRange.match(/\/(\d+)$/) || [])[1] || '0', 10) : 0
+  let rows = []
+  try { rows = await resp.json() } catch (_) {}
+  return { rows, count, ok: true }
 }
 
 module.exports = async function handler(req, res) {
