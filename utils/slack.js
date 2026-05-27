@@ -282,6 +282,26 @@ async function supabaseWithTimeout(supabaseUrl, supabaseKey, path, route = 'API'
   }
 }
 
+// Fetch with deadline-aware timeout — consolidates repeated AbortController pattern with deadline logic
+// Returns response or null on error; logs error with context. Timeout = min(FETCH_TIMEOUT, remaining time to deadline)
+async function fetchWithTimeoutDeadline(url, options = {}, deadline, context = {}) {
+  const { route = 'API', code = 'FETCH_ERROR', message = 'fetch failed' } = context
+  const timeoutMs = Math.min(FETCH_TIMEOUT, Math.max(100, deadline - Date.now()))
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal })
+    clearTimeout(timeout)
+    return response
+  } catch (err) {
+    const errorCode = err.name === 'AbortError' ? 'TIMEOUT' : err.name || 'ERROR'
+    logError(route, `${code}_${errorCode}`, message, { timeout: timeoutMs, message: err.message, ...context })
+    return null
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 module.exports = {
   SLACK_CHANNEL,
   FETCH_TIMEOUT,
@@ -302,5 +322,6 @@ module.exports = {
   getPeriodStart,
   getPeriodStartMs,
   fetchWithTimeout,
-  supabaseWithTimeout
+  supabaseWithTimeout,
+  fetchWithTimeoutDeadline
 }

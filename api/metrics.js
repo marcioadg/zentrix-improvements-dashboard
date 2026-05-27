@@ -1,4 +1,4 @@
-const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, getPeriodStart, calcSubMRR } = require('../utils/slack.js')
+const { logError, FETCH_TIMEOUT, sendErrorResponse, setupCORSAndOptions, PRODUCT_NAMES, getPeriodStart, calcSubMRR, fetchWithTimeoutDeadline } = require('../utils/slack.js')
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -52,30 +52,25 @@ module.exports = async function handler(req, res) {
   // ── Supabase: Total Accounts ──
   try {
     if (SUPABASE_SERVICE_ROLE_KEY && !isDeadlineExceeded()) {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT, deadline - Date.now()))
-      try {
-        const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
-          {
-            headers: {
-              'apikey': SUPABASE_SERVICE_ROLE_KEY,
-              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            signal: controller.signal
+      const response = await fetchWithTimeoutDeadline(
+        `${SUPABASE_URL}/rest/v1/platform_analytics_snapshots?select=snapshot_date,total_companies,paid_companies,total_users&order=snapshot_date.desc&limit=1`,
+        {
+          headers: {
+            'apikey': SUPABASE_SERVICE_ROLE_KEY,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            'Content-Type': 'application/json'
           }
-        )
-        if (response.ok) {
-          const data = await response.json()
-          const snapshot = data[0]
-          if (snapshot) {
-            results.totalAccounts = snapshot.total_users
-            results.lastUpdated = snapshot.snapshot_date
-          }
+        },
+        deadline,
+        { route: '/api/metrics', code: 'SUPABASE', message: 'platform analytics fetch failed' }
+      )
+      if (response && response.ok) {
+        const data = await response.json()
+        const snapshot = data[0]
+        if (snapshot) {
+          results.totalAccounts = snapshot.total_users
+          results.lastUpdated = snapshot.snapshot_date
         }
-      } finally {
-        clearTimeout(timeout)
       }
 
       // Per-product account counts
@@ -87,10 +82,8 @@ module.exports = async function handler(req, res) {
       }
       for (const [product, table] of Object.entries(productTables)) {
         if (isDeadlineExceeded()) break
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT, deadline - Date.now()))
         try {
-          const countResp = await fetch(
+          const countResp = await fetchWithTimeoutDeadline(
             `${SUPABASE_URL}/rest/v1/${table}?select=id`,
             {
               method: 'HEAD',
@@ -98,11 +91,12 @@ module.exports = async function handler(req, res) {
                 'apikey': SUPABASE_SERVICE_ROLE_KEY,
                 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
                 'Prefer': 'count=exact'
-              },
-              signal: controller.signal
-            }
+              }
+            },
+            deadline,
+            { route: '/api/metrics', code: 'SUPABASE', message: `product account count for ${product}` }
           )
-          if (countResp.ok) {
+          if (countResp && countResp.ok) {
             const contentRange = countResp.headers.get('content-range')
             // content-range format: "0-24/356" — we want the total after "/"
             if (contentRange) {
@@ -112,8 +106,6 @@ module.exports = async function handler(req, res) {
           }
         } catch (e) {
           logError('/api/metrics', e.name || 'SUPABASE_ERROR', `product account count for ${product} failed`, { message: e.message })
-        } finally {
-          clearTimeout(timeout)
         }
       }
       results.productAccountCounts = productAccountCounts
@@ -156,19 +148,17 @@ module.exports = async function handler(req, res) {
         while (hasMore && !isDeadlineExceeded()) {
           const params = new URLSearchParams({ limit: '100', status: 'all' })
           if (startingAfter) params.append('starting_after', startingAfter)
-          const controller = new AbortController()
-          const timeout = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT, deadline - Date.now()))
-          let data
-          try {
-            const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
-              headers: { 'Authorization': `Bearer ${stripeKey}` },
-              signal: controller.signal
-            })
-            if (!response.ok) { logError('/api/metrics', 'STRIPE_HTTP', 'subscriptions fetch failed', { status: response.status }); break }
-            data = await response.json()
-          } finally {
-            clearTimeout(timeout)
+          const response = await fetchWithTimeoutDeadline(
+            `https://api.stripe.com/v1/subscriptions?${params}`,
+            { headers: { 'Authorization': `Bearer ${stripeKey}` } },
+            deadline,
+            { route: '/api/metrics', code: 'STRIPE', message: 'subscriptions fetch failed' }
+          )
+          if (!response || !response.ok) {
+            if (response) logError('/api/metrics', 'STRIPE_HTTP', 'subscriptions fetch failed', { status: response.status })
+            break
           }
+          const data = await response.json()
 
           for (const sub of data.data) {
             const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
@@ -242,19 +232,17 @@ module.exports = async function handler(req, res) {
         while (hasMore && !isDeadlineExceeded()) {
           const params = new URLSearchParams({ limit: '100', status: 'active', 'created[gte]': String(periodStartUnix) })
           if (startingAfter) params.append('starting_after', startingAfter)
-          const controller = new AbortController()
-          const timeout = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT, deadline - Date.now()))
-          let data
-          try {
-            const response = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
-              headers: { 'Authorization': `Bearer ${stripeKey}` },
-              signal: controller.signal
-            })
-            if (!response.ok) { logError('/api/metrics', 'STRIPE_HTTP', 'new subscriptions fetch failed', { status: response.status }); break }
-            data = await response.json()
-          } finally {
-            clearTimeout(timeout)
+          const response = await fetchWithTimeoutDeadline(
+            `https://api.stripe.com/v1/subscriptions?${params}`,
+            { headers: { 'Authorization': `Bearer ${stripeKey}` } },
+            deadline,
+            { route: '/api/metrics', code: 'STRIPE', message: 'new subscriptions fetch failed' }
+          )
+          if (!response || !response.ok) {
+            if (response) logError('/api/metrics', 'STRIPE_HTTP', 'new subscriptions fetch failed', { status: response.status })
+            break
           }
+          const data = await response.json()
           for (const sub of data.data) {
             const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
             if (customerId) newCustomers.add(keyTag + ':' + customerId)
