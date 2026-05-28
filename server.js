@@ -33,6 +33,7 @@ const weeklyUsageHandler = require('./api/weekly-usage.js')
 const mrrHistoryHandler = require('./api/mrr-history.js')
 const productAccountsHandler = require('./api/product-accounts.js')
 const ventureFunnelHandler = require('./api/venture-funnel.js')
+const savedFiltersHandler = require('./api/saved-filters.js')
 
 const app = express()
 const PORT = process.env.PORT || 3847
@@ -585,6 +586,9 @@ app.get('/api/product-accounts', rateLimit, productAccountsHandler)
 
 // Venture funnel endpoint — uses Vercel Function handler for single source of truth
 app.get('/api/venture-funnel', rateLimit, ventureFunnelHandler)
+
+// Saved filters endpoint — used by the Portfolio Overview "Filters" dropdown
+app.get('/api/saved-filters', rateLimit, savedFiltersHandler)
 
 // ── Global 404 handler ───────────────────────────────────────────────────────
 app.use((req, res) => {
