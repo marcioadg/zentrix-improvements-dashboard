@@ -31,6 +31,10 @@ module.exports = async function handler(req, res) {
     // Opt-out of the "internal / testing" exclusion (default: exclude). When the UI
     // toggle is on, includeInternal=1 keeps internal/test companies in the OS counts.
     const includeInternal = req.query.includeInternal === '1' || req.query.includeInternal === 'true'
+    // OS paid count derived from company_subscriptions (canonical rule), used to
+    // override the raw Stripe "active" count which over-counts same-day-lapsed and
+    // out-of-sync subscriptions. null = not computed (fall back to Stripe).
+    let osCanonicalPaidCount = null
     const periodStart = getPeriodStart(period)
     const periodStartUnix = Math.floor(periodStart.getTime() / 1000)
 
@@ -122,6 +126,27 @@ module.exports = async function handler(req, res) {
           }
         } catch (e) {
           logError('/api/metrics', e.name || 'SUPABASE_ERROR', 'exclusion filter apply failed', { message: e.message })
+        }
+      }
+      // Count OS paid accounts from company_subscriptions using the canonical rule —
+      // Premium + subscribed + active Stripe period + not cancelled + (not internal/test
+      // unless includeInternal). Matches the OS admin dashboard and avoids over-counting
+      // subscriptions that are still "active" in Stripe but lapsed/out-of-sync in our DB.
+      // Note: cancel_at_period_end=true subs are still counted (they're paid through the
+      // current period) — matches how the OS admin displays them as "Paid · Cancelling".
+      if (!isDeadlineExceeded()) {
+        try {
+          const nowIso = new Date().toISOString()
+          const [paidRows, itRows] = await Promise.all([
+            supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/company_subscriptions?select=company_id&subscription_tier=eq.Premium&subscribed=is.true&cancelled_at=is.null&stripe_current_period_end=gt.${encodeURIComponent(nowIso)}&limit=2000`, '/api/metrics'),
+            includeInternal ? null : supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/customer_success_tracking?select=company_id&account_stage=in.(${encodeURIComponent('"Internal Company","Test Company"')})&limit=2000`, '/api/metrics')
+          ])
+          if (Array.isArray(paidRows)) {
+            const itIds = new Set(Array.isArray(itRows) ? itRows.map(r => r.company_id) : [])
+            osCanonicalPaidCount = paidRows.filter(r => !itIds.has(r.company_id)).length
+          }
+        } catch (e) {
+          logError('/api/metrics', e.name || 'SUPABASE_ERROR', 'OS canonical paid count failed', { message: e.message })
         }
       }
       results.productAccountCounts = productAccountCounts
@@ -275,12 +300,18 @@ module.exports = async function handler(req, res) {
     for (const [name, set] of Object.entries(productCustomers)) {
       productCounts[name] = set.size
     }
+    // Override OS with the canonical company_subscriptions count (see osCanonicalPaidCount).
+    const stripeOsPaid = productCustomers['Zentrix OS']?.size || 0
+    if (osCanonicalPaidCount != null) productCounts['Zentrix OS'] = osCanonicalPaidCount
+    const totalPaidCorrected = osCanonicalPaidCount != null
+      ? Math.max(0, paidCustomers.size - stripeOsPaid + osCanonicalPaidCount)
+      : paidCustomers.size
 
     // Build productMRR response
     const productMRR = {}
     // convRate calculated per-product below using productAccountCounts
     const convRate = results.totalAccounts > 0
-      ? Math.round((paidCustomers.size / results.totalAccounts) * 1000) / 10
+      ? Math.round((totalPaidCorrected / results.totalAccounts) * 1000) / 10
       : null
 
     for (const p of ALL_PRODUCTS) {
@@ -301,7 +332,9 @@ module.exports = async function handler(req, res) {
       const newCount = productNewCustomers[p].size
 
       const productAccounts = results.productAccountCounts?.[p] ?? null
-      const productPaidCount = productCustomers[p]?.size || 0
+      const productPaidCount = (p === 'Zentrix OS' && osCanonicalPaidCount != null)
+        ? osCanonicalPaidCount
+        : (productCustomers[p]?.size || 0)
       // Only show conv rate if this product has paying customers OR has a known account count
       // Never fall back to portfolio-level — that would show a misleading % for pre-launch products
       const productConvRate = productAccounts != null && productAccounts > 0
@@ -311,7 +344,7 @@ module.exports = async function handler(req, res) {
     }
 
     results.mrr = Math.round(totalMRR * 100) / 100
-    results.totalPaidAccounts = paidCustomers.size
+    results.totalPaidAccounts = totalPaidCorrected
     results.newPayingCustomers = newCustomers.size
     results.productBreakdown = Object.keys(productCounts).length > 0 ? productCounts : null
     results.productMRR = productMRR
