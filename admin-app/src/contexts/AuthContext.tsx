@@ -314,8 +314,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName: string, referralSource?: string, userRole?: string, eosUsage?: string, investmentWillingness?: string, isDisqualified?: boolean, isMQL?: boolean, phone?: string) => {
     logger.debug('Starting sign up process');
-    // SAFE FOR PRODUCTION: Uses environment variable if available, otherwise falls back to production URL
-    const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || `https://zentrix.one/auth/callback?app=os`;
+    const isEmbeddedAdminApp = import.meta.env.BASE_URL === '/admin-bundle/';
+    const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL
+      || (isEmbeddedAdminApp
+        ? `${window.location.origin}/auth/callback?app=os`
+        : `https://zentrix.one/auth/callback?app=os`);
     try {
       const metadata: Record<string, any> = { full_name: fullName };
       if (phone) {
@@ -391,10 +394,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string) => {
     logger.debug('Initiating password reset');
-    // SAFE FOR PRODUCTION: Uses environment variable if available, otherwise falls back to production URL
+    const isEmbeddedAdminApp = import.meta.env.BASE_URL === '/admin-bundle/';
     const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL
       ? `${import.meta.env.VITE_AUTH_REDIRECT_URL.replace('/auth/callback', '/reset-password')}`
-      : `https://zentrixos.com/reset-password`;
+      : (isEmbeddedAdminApp
+        ? `${window.location.origin}/reset-password`
+        : `https://zentrixos.com/reset-password`);
 
     // Set flag to help AuthCallback detect this is a recovery flow
     setRecoveryFlag();

@@ -18,10 +18,14 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export const Login = () => {
   // Redirect plain login visits to zentrix.one SSO — skip if invite/special params present.
+  // The improvements dashboard embeds this app under /admin-bundle; there,
+  // login must remain same-origin so /admin and /company-management do not
+  // bounce users back to Business OS.
   // Do this synchronously before any render to avoid flashing the old login form.
+  const _isEmbeddedAdminApp = import.meta.env.BASE_URL === '/admin-bundle/';
   const _params = new URLSearchParams(window.location.search);
   const _isInvite = _params.get('invited') === '1' || _params.get('token') || _params.get('company_id') || _params.get('c');
-  if (!_isInvite) {
+  if (!_isInvite && !_isEmbeddedAdminApp) {
     const _next = _params.get('next') || _params.get('redirect') || '';
     // Despia App Store users stay in-app: route to /m/login (the dedicated
     // mobile login page) instead of redirecting cross-origin to zentrix.one

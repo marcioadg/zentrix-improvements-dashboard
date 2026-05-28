@@ -9,6 +9,230 @@
     {
       "source": "/company-management",
       "destination": "/company-management/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/m/:path*",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/signup",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/forgot-password",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/reset-password",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/auth/callback",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/complete-invitation",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/accept-invitation",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/join/:token",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/account-deactivated",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/onboarding",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/new-company",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/tasks",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/tasks2",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/tasks3",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/goals",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/issues",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/metrics",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/newmetrics",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/processes",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/processes/:processId",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/meetings",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/meeting/:path*",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/people",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/partner_hub",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/partner-hub",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/process",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/process2",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/strategy",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/org-chart",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/health",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/tools",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/tools/:path*",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/clarity-break",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/zentrix-ai",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/zentrixai",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/academy",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/academy/:path*",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/permissions",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/testing",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/sidebar-test",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/speed",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/profile",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/analytics",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/sops",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/notifications",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/rls",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/rls2",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/rls3",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/platform-usage",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/internal",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/checkout",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/prototype/:path*",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/theme-picker",
+      "destination": "/admin/index.html"
     }
   ],
   "headers": [
