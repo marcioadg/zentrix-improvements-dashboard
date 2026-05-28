@@ -121,13 +121,33 @@ app.use('/api', (req, res, next) => {
   next()
 })
 
-// Serve data files with ETag validation for 304 responses (avoid re-downloading unchanged files)
+// Pre-compute ETags for static data files (eliminate fs.statSync on every request)
+const _staticETagCache = new Map()
+function initDataFileETags() {
+  const dataDir = path.join(__dirname, 'data')
+  try {
+    const files = fs.readdirSync(dataDir)
+    for (const file of files) {
+      const filePath = path.join(dataDir, file)
+      try {
+        const stat = fs.statSync(filePath)
+        _staticETagCache.set(filePath, generateETag(stat.mtime.getTime().toString()))
+      } catch (e) {
+        console.warn(`[WARN] Failed to compute ETag for ${file}: ${e.message}`)
+      }
+    }
+  } catch (e) {
+    console.warn(`[WARN] Failed to initialize data file ETags: ${e.message}`)
+  }
+}
+initDataFileETags()
+
+// Serve data files with cached ETag validation for 304 responses (avoid re-downloading unchanged files)
 app.use('/data', express.static(path.join(__dirname, 'data'), {
   setHeaders: (res, filePath) => {
-    // Generate ETag from file mtime to allow 304 revalidation without body transmission
-    const stat = fs.statSync(filePath)
-    const etag = generateETag(stat.mtime.getTime().toString())
-    res.setHeader('ETag', etag)
+    // Use pre-computed ETag from cache instead of expensive fs.statSync
+    const etag = _staticETagCache.get(filePath)
+    if (etag) res.setHeader('ETag', etag)
     // Allow validation but prevent stale cache on file updates (must revalidate after 24h)
     res.setHeader('Cache-Control', 'public, must-revalidate, max-age=86400')
   }
