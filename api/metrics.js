@@ -129,15 +129,16 @@ module.exports = async function handler(req, res) {
         }
       }
       // Count OS paid accounts from company_subscriptions using the canonical rule —
-      // Premium + subscribed + active Stripe period + not cancelled + not scheduled to
-      // cancel at period end + (not internal/test unless includeInternal). Matches the
-      // OS admin dashboard and avoids over-counting subscriptions that are still
-      // "active" in Stripe but lapsed, out-of-sync, or on their way out.
+      // Premium + subscribed + active Stripe period + not cancelled + (not internal/test
+      // unless includeInternal). Matches the OS admin dashboard and avoids over-counting
+      // subscriptions that are still "active" in Stripe but lapsed/out-of-sync in our DB.
+      // Note: cancel_at_period_end=true subs are still counted (they're paid through the
+      // current period) — matches how the OS admin displays them as "Paid · Cancelling".
       if (!isDeadlineExceeded()) {
         try {
           const nowIso = new Date().toISOString()
           const [paidRows, itRows] = await Promise.all([
-            supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/company_subscriptions?select=company_id&subscription_tier=eq.Premium&subscribed=is.true&cancelled_at=is.null&cancel_at_period_end=is.false&stripe_current_period_end=gt.${encodeURIComponent(nowIso)}&limit=2000`, '/api/metrics'),
+            supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/company_subscriptions?select=company_id&subscription_tier=eq.Premium&subscribed=is.true&cancelled_at=is.null&stripe_current_period_end=gt.${encodeURIComponent(nowIso)}&limit=2000`, '/api/metrics'),
             includeInternal ? null : supabaseWithTimeout(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, `/customer_success_tracking?select=company_id&account_stage=in.(${encodeURIComponent('"Internal Company","Test Company"')})&limit=2000`, '/api/metrics')
           ])
           if (Array.isArray(paidRows)) {
