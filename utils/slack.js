@@ -203,49 +203,34 @@ function calcSubMRR(sub) {
   return mrr
 }
 
-function getPeriodStart(period) {
+// Calculate period start time once, return in requested format
+function _calculatePeriodStart(period) {
   const now = new Date()
+  let d = new Date(now)
   switch (period) {
-    case 'day':      return new Date(now - 24*60*60*1000)
-    case '7d':       return new Date(now - 7*24*60*60*1000)
-    case '14d':      return new Date(now - 14*24*60*60*1000)
-    case '30d':      return new Date(now - 30*24*60*60*1000)
-    case 'month': {
-      const d = new Date(now); d.setDate(1); d.setHours(0,0,0,0); return d
-    }
-    case 'quarter': {
-      const d = new Date(now)
-      const q = Math.floor(d.getMonth() / 3)
-      d.setMonth(q * 3, 1); d.setHours(0,0,0,0); return d
-    }
-    case 'semester': {
-      const d = new Date(now)
-      d.setMonth(d.getMonth() < 6 ? 0 : 6, 1); d.setHours(0,0,0,0); return d
-    }
-    case 'year': {
-      const d = new Date(now); d.setMonth(0, 1); d.setHours(0,0,0,0); return d
-    }
-    default: return new Date(now - 7*24*60*60*1000)
+    case 'day':      return now - 24*60*60*1000
+    case '7d':       return now - 7*24*60*60*1000
+    case '14d':      return now - 14*24*60*60*1000
+    case '30d':      return now - 30*24*60*60*1000
+    case 'month':    { d.setDate(1); d.setHours(0,0,0,0); return d.getTime() }
+    case 'quarter':  { const q = Math.floor(d.getMonth() / 3); d.setMonth(q * 3, 1); d.setHours(0,0,0,0); return d.getTime() }
+    case 'semester': { d.setMonth(d.getMonth() < 6 ? 0 : 6, 1); d.setHours(0,0,0,0); return d.getTime() }
+    case 'year':     { d.setMonth(0, 1); d.setHours(0,0,0,0); return d.getTime() }
+    default:         return now - 7*24*60*60*1000
   }
+}
+
+function getPeriodStart(period) {
+  return new Date(_calculatePeriodStart(period))
 }
 
 function getPeriodStartMs(period) {
-  const d = new Date()
-  switch (period) {
-    case 'day':  return Date.now() - 86400000
-    case '7d':   return Date.now() - 7 * 86400000
-    case '14d':  return Date.now() - 14 * 86400000
-    case '30d':  return Date.now() - 30 * 86400000
-    case 'month':    { d.setDate(1); d.setHours(0, 0, 0, 0); return d.getTime() }
-    case 'quarter':  { const q = Math.floor(d.getMonth() / 3); d.setMonth(q * 3, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
-    case 'semester': { d.setMonth(d.getMonth() < 6 ? 0 : 6, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
-    case 'year':     { d.setMonth(0, 1); d.setHours(0, 0, 0, 0); return d.getTime() }
-    default: return null
-  }
+  return _calculatePeriodStart(period) || null
 }
 
 function getPeriodStartIso(period) {
-  return new Date(getPeriodStartMs(period)).toISOString().slice(0, 10)
+  const ms = _calculatePeriodStart(period)
+  return ms ? new Date(ms).toISOString().slice(0, 10) : null
 }
 
 // Wrap fetch with AbortController timeout — consolidates repeated pattern across API handlers
