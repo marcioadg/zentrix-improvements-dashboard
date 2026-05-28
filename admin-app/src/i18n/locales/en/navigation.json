@@ -1,0 +1,36 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "metrics": "Metrics",
+    "tasks": "Tasks",
+    "goals": "Goals",
+    "issues": "Issues",
+    "meetings": "Meetings",
+    "people": "People",
+    "orgChart": "Org Chart",
+    "orgHealth": "Org Health",
+    "strategy": "Strategy",
+    "zentrixAI": "Zentrix AI",
+    "academy": "Academy",
+    "settings": "Settings",
+    "help": "Help",
+    "productFeedback": "Product Feedback",
+    "superAdmin": "Super Admin",
+    "zentrixInsights": "Zentrix Insights"
+  },
+  "sections": {
+    "execution": "EXECUTION",
+    "strategy": "STRATEGY"
+  },
+  "dashboard": {
+    "welcome": "Welcome",
+    "welcomeBack": "Welcome back",
+    "redirectingMobile": "Redirecting to mobile view...",
+    "newVersionAvailable": "New version available",
+    "refreshPrompt": "Please refresh to get the latest updates.",
+    "refreshNow": "Refresh Now",
+    "allTeams": "All Teams",
+    "loadingTeams": "Loading...",
+    "refreshed": "Dashboard refreshed"
+  }
+}

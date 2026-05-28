@@ -1,0 +1,31 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "49852BV2QQ.com.zentrixos"
+        ],
+        "components": [
+          {
+            "/": "/auth/callback*",
+            "comment": "Email verification callback"
+          },
+          {
+            "/": "/onboarding*",
+            "comment": "Onboarding flow"
+          },
+          {
+            "/": "/email-verified*",
+            "comment": "Email verification success"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "49852BV2QQ.com.zentrixos"
+    ]
+  }
+}

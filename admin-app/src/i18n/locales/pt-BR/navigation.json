@@ -1,0 +1,36 @@
+{
+  "nav": {
+    "dashboard": "Painel",
+    "metrics": "Métricas",
+    "tasks": "Tarefas",
+    "goals": "Objetivos",
+    "issues": "Problemas",
+    "meetings": "Reuniões",
+    "people": "Pessoas",
+    "orgChart": "Organograma",
+    "orgHealth": "Saúde Org.",
+    "strategy": "Estratégia",
+    "zentrixAI": "Zentrix AI",
+    "academy": "Academia",
+    "settings": "Configurações",
+    "help": "Ajuda",
+    "productFeedback": "Feedback do Produto",
+    "superAdmin": "Super Admin",
+    "zentrixInsights": "Zentrix Insights"
+  },
+  "sections": {
+    "execution": "EXECUÇÃO",
+    "strategy": "ESTRATÉGIA"
+  },
+  "dashboard": {
+    "welcome": "Bem-vindo",
+    "welcomeBack": "Bem-vindo de volta",
+    "redirectingMobile": "Redirecionando para visão mobile...",
+    "newVersionAvailable": "Nova versão disponível",
+    "refreshPrompt": "Atualize para obter as últimas novidades.",
+    "refreshNow": "Atualizar Agora",
+    "allTeams": "Todas as Equipes",
+    "loadingTeams": "Carregando...",
+    "refreshed": "Painel atualizado"
+  }
+}

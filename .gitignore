@@ -1,3 +1,6 @@
 .env
 .vercel
 node_modules/
+/admin-bundle/
+/admin/
+/company-management/

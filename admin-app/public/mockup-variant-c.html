@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Variant C — Spotlight Guided Tour</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Design tokens from index.css ── */
+  :root {
+    --bg: #fbfbfb;
+    --card: #ffffff;
+    --foreground: #2d2d2e;
+    --muted-fg: #959699;
+    --border: #e0e0e2;
+    --primary: #5e6ad2;
+    --state-hover: #ececec;
+    --state-active: #e8e8ea;
+    --sidebar-bg: #f3f3f3;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--foreground);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+  }
+
+  /* ══════════════════════════════
+     SIDEBAR — matches AppSidebar.tsx
+  ══════════════════════════════ */
+  .sidebar {
+    width: 240px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 12px 10px 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .company-logo {
+    width: 28px; height: 28px;
+    background: var(--primary);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .company-name { font-size: 13px; font-weight: 600; color: var(--foreground); }
+  .company-plan { font-size: 11px; color: var(--muted-fg); }
+
+  .sidebar-content { padding: 4px 0; overflow-y: auto; flex: 1; }
+
+  .nav-section-label {
+    padding: 8px 10px 2px;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(149,150,153,0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    margin: 1px 4px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted-fg);
+    cursor: pointer;
+    height: 28px;
+    transition: background 0.1s, color 0.1s;
+    white-space: nowrap;
+  }
+  .nav-item:hover { background: var(--state-hover); color: var(--foreground); }
+  .nav-item.active { background: var(--state-active); color: var(--foreground); }
+  .nav-item svg { width: 16px; height: 16px; stroke-width: 1.5; flex-shrink: 0; opacity: 0.7; }
+  .nav-item.active svg { opacity: 1; }
+  .nav-item span { font-size: 13px; }
+
+  /* ══════════════════════════════
+     MAIN LAYOUT
+  ══════════════════════════════ */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+  .topbar {
+    height: 48px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .topbar-title { font-size: 14px; font-weight: 600; color: var(--foreground); }
+  .topbar-breadcrumb { font-size: 13px; color: var(--muted-fg); }
+
+  .page-body { flex: 1; overflow-y: auto; padding: 24px 24px 32px; }
+
+  /* ══════════════════════════════
+     SCREEN SWITCHING
+  ══════════════════════════════ */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ══════════════════════════════
+     MEETINGS PAGE — matches Meetings.tsx + QuickStartMeetings.tsx
+  ══════════════════════════════ */
+  .page-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .page-title { font-size: 20px; font-weight: 600; color: var(--foreground); letter-spacing: -0.3px; }
+  .page-subtitle { font-size: 13px; color: var(--muted-fg); margin-top: 2px; }
+  .btn-outline-sm {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--foreground);
+    background: transparent;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .section-heading { font-size: 16px; font-weight: 500; color: var(--foreground); margin-bottom: 12px; }
+
+  /* Meeting cards grid — 4 columns matches lg:grid-cols-4 */
+  .meeting-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .meeting-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    cursor: pointer;
+    transition: background 0.12s;
+    position: relative;
+  }
+  .meeting-card:hover { background: rgba(149,150,153,0.07); }
+  .meeting-card-top { display: flex; align-items: center; justify-content: space-between; }
+  .card-icon-wrap {
+    width: 32px; height: 32px;
+    background: var(--state-active);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card-icon-wrap svg { width: 16px; height: 16px; stroke-width: 1.5; color: var(--muted-fg); }
+  .card-arrow svg { width: 16px; height: 16px; stroke-width: 1.5; color: var(--border); }
+  .card-label { font-size: 13px; font-weight: 500; color: var(--foreground); margin-top: 10px; }
+  .card-duration { font-size: 11px; color: var(--muted-fg); margin-top: 1px; }
+
+  /* Custom meeting builder card — slightly different */
+  .card-builder {
+    border: 1px dashed var(--border);
+    background: transparent;
+  }
+  .card-builder:hover { background: rgba(94,106,210,0.04); border-color: var(--primary); }
+
+  /* ══════════════════════════════
+     TASKS PAGE — matches Tasks page
+  ══════════════════════════════ */
+  .tasks-empty {
+    text-align: center;
+    padding: 48px 20px;
+  }
+  .tasks-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
+  .tasks-title { font-size: 15px; font-weight: 500; color: var(--foreground); margin-bottom: 6px; }
+  .tasks-sub { font-size: 13px; color: var(--muted-fg); }
+
+  .task-filter-row {
+    display: flex; gap: 8px; margin-bottom: 16px;
+  }
+  .filter-chip {
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--muted-fg);
+    cursor: pointer;
+    background: var(--card);
+  }
+  .filter-chip.active { border-color: var(--primary); color: var(--primary); background: rgba(94,106,210,0.06); }
+
+  .task-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .task-check {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .task-text { flex: 1; color: var(--foreground); }
+  .task-assignee { font-size: 11px; color: var(--muted-fg); }
+  .task-due { font-size: 11px; color: var(--muted-fg); }
+
+  /* ══════════════════════════════
+     PEOPLE / INVITE PAGE
+  ══════════════════════════════ */
+  .people-header-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .btn-primary-sm {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .member-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    margin-bottom: 6px;
+  }
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .avatar.grey { background: var(--state-active); color: var(--muted-fg); }
+  .member-name { font-size: 13px; font-weight: 500; color: var(--foreground); }
+  .member-email { font-size: 11px; color: var(--muted-fg); }
+  .member-role {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted-fg);
+    background: var(--state-active);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .pending-badge {
+    font-size: 11px;
+    color: #d97706;
+    background: #fef3c7;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: auto;
+  }
+
+  /* Invite modal */
+  .invite-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .invite-modal-overlay.open { display: flex; }
+  .invite-modal {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 24px;
+    width: 420px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--muted-fg); margin-bottom: 20px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--muted-fg); margin-bottom: 5px; display: block; }
+  .form-input {
+    width: 100%;
+    padding: 8px 11px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--font);
+    color: var(--foreground);
+    outline: none;
+    background: var(--card);
+  }
+  .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(94,106,210,0.12); }
+  .form-select {
+    width: 100%;
+    padding: 8px 11px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--font);
+    color: var(--foreground);
+    background: var(--card);
+    appearance: none;
+  }
+  .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+  .btn-cancel {
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--foreground);
+    background: transparent;
+    cursor: pointer;
+  }
+  .btn-send {
+    padding: 7px 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* ══════════════════════════════
+     SPOTLIGHT + TOOLTIP
+  ══════════════════════════════ */
+  .spotlight-target {
+    position: relative !important;
+    z-index: 200 !important;
+    border-radius: 6px;
+    outline: 2.5px solid var(--primary);
+    outline-offset: 4px;
+  }
+  @keyframes pulse-ring {
+    0%   { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(1.06); opacity: 0; }
+  }
+
+  .tooltip {
+    position: fixed;
+    z-index: 400;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    width: 268px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.05);
+    display: none;
+  }
+  .tooltip.visible { display: block; }
+  .tip-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--primary);
+    margin-bottom: 6px;
+  }
+  .tip-body {
+    font-size: 13.5px;
+    color: var(--foreground);
+    line-height: 1.55;
+    margin-bottom: 14px;
+  }
+  .tip-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .tip-skip { font-size: 12px; color: var(--muted-fg); cursor: pointer; text-decoration: underline; pointer-events: all; }
+  .tip-skip:hover { color: var(--foreground); }
+  .tip-next {
+    padding: 7px 15px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    pointer-events: all;
+    letter-spacing: -0.1px;
+  }
+  .tip-next:hover { background: #4e5abc; }
+
+  /* Tooltip arrow */
+  .tooltip::before {
+    content: '';
+    position: absolute;
+    width: 8px; height: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    transform: rotate(45deg);
+  }
+  .tooltip.arr-right::before { left: -5px; top: 24px; border-right: none; border-top: none; }
+  .tooltip.arr-top::before   { top: -5px; left: 22px; border-left: none; border-bottom: none; }
+  .tooltip.arr-bottom::before { bottom: -5px; left: 22px; border-right: none; border-top: none; }
+  .tooltip.arr-left::before  { right: -5px; top: 24px; border-left: none; border-bottom: none; }
+</style>
+</head>
+<body>
+
+<!-- ══════ SIDEBAR ══════ -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="company-logo">Z</div>
+    <div>
+      <div class="company-name">Acme Corp</div>
+      <div class="company-plan">Trial · 14 days left</div>
+    </div>
+  </div>
+  <div class="sidebar-content">
+    <div class="nav-item active" id="nav-dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Dashboard</span>
+    </div>
+
+    <div class="nav-section-label">Execution</div>
+
+    <div class="nav-item" id="nav-metrics">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Metrics</span>
+    </div>
+    <div class="nav-item" id="nav-tasks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <span>Tasks</span>
+    </div>
+    <div class="nav-item" id="nav-goals">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      <span>Goals</span>
+    </div>
+    <div class="nav-item" id="nav-issues">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Issues</span>
+    </div>
+    <div class="nav-item" id="nav-meetings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Meetings</span>
+    </div>
+
+    <div class="nav-section-label">Strategy</div>
+
+    <div class="nav-item" id="nav-people">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <span>People</span>
+    </div>
+    <div class="nav-item" id="nav-orgchart">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+      <span>Org Chart</span>
+    </div>
+    <div class="nav-item" id="nav-strategy">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      <span>Strategy</span>
+    </div>
+    <div class="nav-item" id="nav-ai">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      <span>Zentrix AI</span>
+    </div>
+    <div class="nav-item" id="nav-academy">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      <span>Academy</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MAIN ══════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+  </div>
+  <div class="page-body">
+
+    <!-- Screen: Dashboard -->
+    <div class="screen active" id="screen-dashboard">
+      <div style="text-align:center;padding:60px 20px;color:var(--muted-fg);font-size:13px;">
+        <div style="font-size:32px;margin-bottom:12px;opacity:0.3;">🏠</div>
+        Your dashboard will fill up as your team uses Zentrix OS.
+      </div>
+    </div>
+
+    <!-- Screen: Meetings list (matches Meetings.tsx + QuickStartMeetings.tsx exactly) -->
+    <div class="screen" id="screen-meetings">
+      <div class="page-title-row">
+        <div>
+          <div class="page-title">Meetings</div>
+          <div class="page-subtitle">Start new meetings or join active ones</div>
+        </div>
+        <button class="btn-outline-sm">Past meetings</button>
+      </div>
+
+      <div class="section-heading">Start a meeting</div>
+      <div class="meeting-grid" id="meeting-grid">
+
+        <!-- Weekly Meeting -->
+        <div class="meeting-card" id="card-weekly" onclick="cardClick('weekly')">
+          <div class="meeting-card-top">
+            <div class="card-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <div class="card-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+          <div class="card-label">Weekly Meeting</div>
+          <div class="card-duration">90 minutes</div>
+        </div>
+
+        <!-- Quarterly Meeting -->
+        <div class="meeting-card" id="card-quarterly">
+          <div class="meeting-card-top">
+            <div class="card-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="card-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></div>
+          </div>
+          <div class="card-label">Quarterly Meeting</div>
+          <div class="card-duration">8 hours</div>
+        </div>
+
+        <!-- Annual Meeting -->
+        <div class="meeting-card" id="card-annual">
+          <div class="meeting-card-top">
+            <div class="card-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div class="card-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></div>
+          </div>
+          <div class="card-label">Annual Meeting</div>
+          <div class="card-duration">2 days</div>
+        </div>
+
+        <!-- Custom / Builder -->
+        <div class="meeting-card card-builder" id="card-custom">
+          <div class="meeting-card-top">
+            <div class="card-icon-wrap" style="background:rgba(94,106,210,0.08);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#5e6ad2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+            </div>
+            <div class="card-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></div>
+          </div>
+          <div class="card-label" style="color:var(--primary);">+ Custom Meeting</div>
+          <div class="card-duration">Build your own agenda</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Screen: Tasks -->
+    <div class="screen" id="screen-tasks">
+      <div class="page-title-row">
+        <div>
+          <div class="page-title">Tasks</div>
+          <div class="page-subtitle">Track and manage your team's tasks</div>
+        </div>
+        <button class="btn-primary-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Task
+        </button>
+      </div>
+      <div class="task-filter-row">
+        <div class="filter-chip active">All</div>
+        <div class="filter-chip">My Tasks</div>
+        <div class="filter-chip">Due Today</div>
+        <div class="filter-chip">Overdue</div>
+      </div>
+      <div class="task-row"><div class="task-check"></div><div class="task-text">Review Q1 financial report</div><div class="task-assignee">Sarah K.</div><div class="task-due">Apr 7</div></div>
+      <div class="task-row"><div class="task-check"></div><div class="task-text">Update company scorecard metrics</div><div class="task-assignee">You</div><div class="task-due">Apr 8</div></div>
+      <div class="task-row"><div class="task-check"></div><div class="task-text">Prepare agenda for next L10</div><div class="task-assignee">You</div><div class="task-due">Apr 9</div></div>
+      <div class="task-row" style="opacity:0.5;"><div class="task-check" style="background:#e8e8ea;border-color:transparent;"></div><div class="task-text" style="text-decoration:line-through;color:var(--muted-fg);">Onboard new team member</div><div class="task-assignee">Mike R.</div><div class="task-due" style="color:#16a34a;">Done</div></div>
+    </div>
+
+    <!-- Screen: People / Invite -->
+    <div class="screen" id="screen-people">
+      <div class="people-header-row">
+        <div>
+          <div class="page-title">People</div>
+          <div class="page-subtitle">Manage your team members and invitations</div>
+        </div>
+        <button class="btn-primary-sm" id="btn-invite" onclick="openInviteModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Invite Member
+        </button>
+      </div>
+      <div class="member-row">
+        <div class="avatar">MC</div>
+        <div><div class="member-name">Marcio Goncalves</div><div class="member-email">marcio@acmecorp.com</div></div>
+        <div class="member-role">Director</div>
+      </div>
+      <div class="member-row">
+        <div class="avatar" style="background:#16a34a;">SK</div>
+        <div><div class="member-name">Sarah Kim</div><div class="member-email">sarah@acmecorp.com</div></div>
+        <div class="member-role">Manager</div>
+      </div>
+      <div class="member-row">
+        <div class="avatar grey">?</div>
+        <div><div class="member-name">Pending Invite</div><div class="member-email">mike@acmecorp.com</div></div>
+        <div class="pending-badge">Pending</div>
+      </div>
+    </div>
+
+  </div><!-- /page-body -->
+</div><!-- /main -->
+
+<!-- Invite Modal -->
+<div class="invite-modal-overlay" id="invite-overlay">
+  <div class="invite-modal" id="invite-modal-box">
+    <div class="modal-title">Invite a team member</div>
+    <div class="modal-sub">They'll receive an email with a link to join your workspace.</div>
+    <div class="form-group">
+      <label class="form-label">Email address</label>
+      <input class="form-input" type="email" placeholder="colleague@company.com" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Role</label>
+      <select class="form-select">
+        <option>Member — Basic access to teams and tasks</option>
+        <option>Manager — Can manage teams and view analytics</option>
+        <option>Director — Full company access</option>
+        <option>View Only — Can view but not edit</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeInviteModal()">Cancel</button>
+      <button class="btn-send" onclick="nextStep()">Send Invitation</button>
+    </div>
+  </div>
+</div>
+
+<!-- Spotlight SVG Overlay -->
+<svg id="spotlight-svg" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:150;display:none;" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <mask id="spotlight-mask">
+      <rect width="100%" height="100%" fill="white"/>
+      <rect id="spotlight-hole" x="0" y="0" width="0" height="0" rx="10" fill="black"/>
+    </mask>
+  </defs>
+  <rect width="100%" height="100%" fill="rgba(0,0,0,0.55)" mask="url(#spotlight-mask)"/>
+</svg>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip">
+  <div class="tip-tag" id="tip-tag">Step 1 of 5</div>
+  <div class="tip-body" id="tip-body"></div>
+  <div class="tip-footer">
+    <span class="tip-skip" onclick="skipTour()">Skip tour</span>
+    <button class="tip-next" id="tip-next-btn" onclick="nextStep()">Next →</button>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+  {
+    target: 'nav-meetings',
+    screen: 'dashboard',
+    topbar: 'Dashboard',
+    nav: null,
+    tag: 'Step 1 of 5',
+    body: 'Welcome! Your Meetings section is where everything happens — L10s, quarterly reviews, custom meetings. Start here.',
+    btn: 'Next →',
+    tip: 'right',
+    modalOpen: false,
+  },
+  {
+    target: 'meeting-grid',
+    screen: 'meetings',
+    topbar: 'Meetings',
+    nav: 'nav-meetings',
+    tag: 'Step 2 of 5',
+    body: 'You have four meeting types: Weekly (L10), Quarterly, Annual, and Custom. The Weekly Meeting is the backbone of EOS — most teams run it every week with their leadership team.',
+    btn: 'Next →',
+    tip: 'bottom',
+    modalOpen: false,
+  },
+  {
+    target: 'card-weekly',
+    screen: 'meetings',
+    topbar: 'Meetings',
+    nav: 'nav-meetings',
+    tag: 'Step 3 of 5',
+    body: 'Click "Weekly Meeting" to start your first L10. It launches immediately with a pre-built 90-min agenda — no setup needed. Or pick Custom to build your own from scratch.',
+    btn: 'Next →',
+    tip: 'bottom',
+    modalOpen: false,
+  },
+  {
+    target: 'task-section',
+    screen: 'tasks',
+    topbar: 'Tasks',
+    nav: 'nav-tasks',
+    tag: 'Step 4 of 5',
+    body: 'Tasks created during meetings show up here automatically. Every action item, owner, and due date from your L10 is tracked in one place — no copy-pasting from notes.',
+    btn: 'Next →',
+    tip: 'bottom',
+    modalOpen: false,
+  },
+  {
+    target: 'btn-invite',
+    screen: 'people',
+    topbar: 'People',
+    nav: 'nav-people',
+    tag: 'Step 5 of 5',
+    body: 'Invite your team so everyone joins the same meeting. They'll get an email link to set up their account and jump right in.',
+    btn: 'Invite Now →',
+    tip: 'bottom',
+    modalOpen: true,
+  },
+];
+
+let step = 0;
+let prevTarget = null;
+
+function applyStep(i) {
+  const s = STEPS[i];
+
+  // Remove previous spotlight
+  if (prevTarget) {
+    prevTarget.classList.remove('spotlight-target');
+    prevTarget.style.pointerEvents = '';
+    prevTarget._tourHandler = null;
+  }
+
+  // Switch screen
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+  document.getElementById('screen-' + s.screen).classList.add('active');
+  document.getElementById('topbar-title').textContent = s.topbar;
+
+  // Update active nav
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  if (s.nav) document.getElementById(s.nav).classList.add('active');
+  else if (s.screen === 'dashboard') document.getElementById('nav-dashboard').classList.add('active');
+
+  // Open modal if needed
+  if (s.modalOpen) {
+    openInviteModal();
+  } else {
+    closeInviteModal();
+  }
+
+  // Apply spotlight — special case for task-section (whole page body)
+  let target;
+  if (s.target === 'task-section') {
+    target = document.getElementById('screen-tasks');
+  } else {
+    target = document.getElementById(s.target);
+  }
+
+  // Update tooltip content immediately
+  document.getElementById('tip-tag').textContent = s.tag;
+  document.getElementById('tip-body').textContent = s.body;
+  document.getElementById('tip-next-btn').textContent = s.btn;
+
+  if (target) {
+    // Use requestAnimationFrame to ensure DOM has painted after screen switch
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        target.classList.add('spotlight-target');
+        target.style.pointerEvents = 'all';
+        prevTarget = target;
+        updateSpotlight(target);
+        positionTooltip(target, s.tip);
+        document.getElementById('tooltip').classList.add('visible');
+      });
+    });
+  } else {
+    document.getElementById('tooltip').classList.add('visible');
+  }
+}
+
+function positionTooltip(target, placement) {
+  const tip = document.getElementById('tooltip');
+  const rect = target.getBoundingClientRect();
+  const TW = 268, pad = 14;
+
+  tip.className = 'tooltip visible arr-' + (placement === 'right' ? 'right' : placement === 'bottom' ? 'top' : placement === 'top' ? 'bottom' : 'right');
+
+  if (placement === 'right') {
+    tip.style.left = (rect.right + pad) + 'px';
+    tip.style.top  = Math.max(10, rect.top + rect.height / 2 - 70) + 'px';
+  } else if (placement === 'bottom') {
+    tip.style.left = Math.min(rect.left, window.innerWidth - TW - 16) + 'px';
+    tip.style.top  = (rect.bottom + pad) + 'px';
+  } else if (placement === 'top') {
+    tip.style.left = Math.min(rect.left, window.innerWidth - TW - 16) + 'px';
+    tip.style.top  = (rect.top - 140 - pad) + 'px';
+  }
+
+  // Special positioning when invite modal is open
+  if (document.getElementById('invite-overlay').classList.contains('open')) {
+    const modal = document.getElementById('invite-modal-box');
+    const mr = modal.getBoundingClientRect();
+    tip.style.left = (mr.right + pad) + 'px';
+    tip.style.top  = (mr.top) + 'px';
+    tip.className = 'tooltip visible arr-left';
+  }
+}
+
+function nextStep() {
+  if (step < STEPS.length - 1) {
+    step++;
+    applyStep(step);
+  } else {
+    endTour();
+  }
+}
+
+function skipTour() { endTour(); }
+
+function updateSpotlight(target) {
+  const svg = document.getElementById('spotlight-svg');
+  const hole = document.getElementById('spotlight-hole');
+  if (!target) { svg.style.display = 'none'; return; }
+  const r = target.getBoundingClientRect();
+  if (r.width === 0 && r.height === 0) { svg.style.display = 'none'; return; }
+  const pad = 10;
+  const x = r.left - pad, y = r.top - pad;
+  const w = r.width + pad*2, h = r.height + pad*2;
+  svg.style.display = 'block';
+  hole.setAttribute('x', x); hole.setAttribute('y', y);
+  hole.setAttribute('width', w); hole.setAttribute('height', h);
+}
+
+function endTour() {
+  if (prevTarget) prevTarget.classList.remove('spotlight-target');
+  document.getElementById('tooltip').classList.remove('visible');
+  document.getElementById('spotlight-svg').style.display = 'none';
+  closeInviteModal();
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-meetings').classList.add('active');
+}
+
+function openInviteModal() {
+  document.getElementById('invite-overlay').classList.add('open');
+}
+function closeInviteModal() {
+  document.getElementById('invite-overlay').classList.remove('open');
+}
+function cardClick(type) {
+  if (step === 2) nextStep();
+}
+
+// Kick off
+applyStep(0);
+</script>
+</body>
+</html>

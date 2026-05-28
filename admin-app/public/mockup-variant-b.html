@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Variant B — Meeting-First Wizard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #fbfbfb;
+    color: #2d2d2e;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Simulated App Background ── */
+  .app-bg {
+    display: flex;
+    height: 100vh;
+    filter: blur(2px);
+    opacity: 0.4;
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+  .app-sidebar {
+    width: 220px;
+    background: #f3f3f3;
+    border-right: 1px solid #e0e0e2;
+    padding: 20px 12px;
+    flex-shrink: 0;
+  }
+  .app-sidebar .logo {
+    font-size: 15px;
+    font-weight: 700;
+    color: #2d2d2e;
+    padding: 0 8px 20px;
+    letter-spacing: -0.3px;
+  }
+  .app-sidebar .nav-item {
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #5e5e5f;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .app-sidebar .nav-item.active {
+    background: #5e6ad220;
+    color: #5e6ad2;
+    font-weight: 500;
+  }
+  .app-main {
+    flex: 1;
+    background: #fbfbfb;
+    padding: 32px;
+  }
+  .app-main .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2d2d2e;
+    margin-bottom: 24px;
+  }
+
+  /* ── Modal Overlay ── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 480px;
+    padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08);
+    position: relative;
+  }
+
+  /* ── Progress Dots ── */
+  .progress {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #e0e0e2;
+    transition: background 0.2s;
+  }
+  .dot.active { background: #5e6ad2; }
+  .dot.done { background: #5e6ad280; }
+
+  /* ── Step content ── */
+  .step { display: none; }
+  .step.visible { display: block; }
+
+  .step-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2d2d2e;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .step-subtitle {
+    font-size: 14px;
+    color: #5e5e5f;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  /* ── Meeting Type Cards ── */
+  .type-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .type-card {
+    border: 2px solid #e0e0e2;
+    border-radius: 10px;
+    padding: 18px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+  }
+  .type-card:hover {
+    border-color: #5e6ad2;
+    background: #f8f8ff;
+  }
+  .type-card.selected {
+    border-color: #5e6ad2;
+    background: #f0f1ff;
+  }
+  .type-card .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2d2d2e;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .type-card .card-title .badge {
+    font-size: 11px;
+    font-weight: 600;
+    background: #5e6ad220;
+    color: #5e6ad2;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .type-card .card-desc {
+    font-size: 13px;
+    color: #5e5e5f;
+    line-height: 1.4;
+  }
+
+  /* ── Agenda List ── */
+  .agenda-list {
+    background: #f7f7f8;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 24px;
+  }
+  .agenda-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e2;
+    font-size: 14px;
+    color: #2d2d2e;
+  }
+  .agenda-item:last-child { border-bottom: none; }
+  .agenda-item .check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #5e6ad2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .agenda-item .check svg { width: 10px; height: 10px; }
+  .agenda-item .time {
+    margin-left: auto;
+    font-size: 12px;
+    color: #959699;
+  }
+
+  /* ── Toggle Agenda Items ── */
+  .toggle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .toggle-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #f7f7f8;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+  .toggle-item.on { border-color: #5e6ad230; background: #f0f1ff; }
+  .toggle-switch {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    background: #e0e0e2;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-switch.on { background: #5e6ad2; }
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-switch.on::after { transform: translateX(16px); }
+
+  /* ── Form Elements ── */
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5e5e5f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e0e0e2;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #2d2d2e;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus { border-color: #5e6ad2; box-shadow: 0 0 0 3px #5e6ad215; }
+  .form-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e0e0e2;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #2d2d2e;
+    background: #fff;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  /* ── Success State ── */
+  .success-icon {
+    width: 56px;
+    height: 56px;
+    background: #f0f1ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 26px;
+  }
+  .meeting-summary {
+    background: #f7f7f8;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 24px;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 14px;
+    border-bottom: 1px solid #e0e0e2;
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-label { color: #5e5e5f; }
+  .summary-value { font-weight: 500; color: #2d2d2e; }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    width: 100%;
+    padding: 13px 20px;
+    background: #5e6ad2;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    letter-spacing: -0.1px;
+  }
+  .btn-primary:hover { background: #4e5abc; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary {
+    width: 100%;
+    padding: 11px 20px;
+    background: transparent;
+    color: #5e6ad2;
+    border: 1.5px solid #5e6ad2;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.15s;
+  }
+  .btn-secondary:hover { background: #f0f1ff; }
+  .skip-link {
+    display: block;
+    text-align: center;
+    margin-top: 16px;
+    font-size: 13px;
+    color: #959699;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .skip-link:hover { color: #5e5e5f; }
+</style>
+</head>
+<body>
+
+<!-- Simulated App Background -->
+<div class="app-bg">
+  <div class="app-sidebar">
+    <div class="logo">Zentrix OS</div>
+    <div class="nav-item">🏠 Dashboard</div>
+    <div class="nav-item">📊 Metrics</div>
+    <div class="nav-item">✅ Tasks</div>
+    <div class="nav-item">🎯 Goals</div>
+    <div class="nav-item">⚠️ Issues</div>
+    <div class="nav-item active">📅 Meetings</div>
+    <div class="nav-item">👥 People</div>
+    <div class="nav-item">🌿 Org Chart</div>
+    <div class="nav-item">💚 Org Health</div>
+    <div class="nav-item">🚀 Strategy</div>
+    <div class="nav-item">🤖 Zentrix AI</div>
+    <div class="nav-item">🎓 Academy</div>
+  </div>
+  <div class="app-main">
+    <div class="page-title">Dashboard</div>
+  </div>
+</div>
+
+<!-- Modal Overlay -->
+<div class="overlay">
+  <div class="modal">
+
+    <!-- Progress Dots -->
+    <div class="progress">
+      <div class="dot active" id="dot1"></div>
+      <div class="dot" id="dot2"></div>
+      <div class="dot" id="dot3"></div>
+    </div>
+
+    <!-- Step 1: Choose Meeting Type -->
+    <div class="step visible" id="step1">
+      <div class="step-title">Let's set up your first meeting</div>
+      <div class="step-subtitle">Your whole team will run it together. What kind of meeting do you want?</div>
+
+      <div class="type-cards">
+        <div class="type-card" id="card-l10" onclick="selectType('l10')">
+          <div class="card-title">
+            Level 10 Meeting
+            <span class="badge">Recommended</span>
+          </div>
+          <div class="card-desc">The standard EOS weekly meeting — structured 90-minute agenda your whole team runs together.</div>
+        </div>
+        <div class="type-card" id="card-custom" onclick="selectType('custom')">
+          <div class="card-title">Custom Meeting</div>
+          <div class="card-desc">Define your own agenda, cadence, and sections. Full flexibility.</div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="goToStep2()" id="next1-btn" style="opacity:0.5;pointer-events:none;">Continue →</button>
+      <span class="skip-link" onclick="close()">Skip for now</span>
+    </div>
+
+    <!-- Step 2a: L10 Ready -->
+    <div class="step" id="step2a">
+      <div class="step-title">Your L10 is ready ✓</div>
+      <div class="step-subtitle">Here's your standard agenda. You can customize sections anytime after setup.</div>
+
+      <div class="agenda-list">
+        <div class="agenda-item"><div class="check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div> Good News <span class="time">5 min</span></div>
+        <div class="agenda-item"><div class="check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div> Metrics <span class="time">5 min</span></div>
+        <div class="agenda-item"><div class="check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div> Goals <span class="time">5 min</span></div>
+        <div class="agenda-item"><div class="check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div> Headlines <span class="time">5 min</span></div>
+        <div class="agenda-item"><div class="check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div> Tasks <span class="time">5 min</span></div>
+        <div class="agenda-item"><div class="check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div> Issues <span class="time">60 min</span></div>
+        <div class="agenda-item"><div class="check"><svg viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div> Wrap Up <span class="time">5 min</span></div>
+      </div>
+
+      <button class="btn-primary" onclick="goToStep3('L10 Meeting', 'Level 10', 'Weekly')">Schedule My First L10 →</button>
+      <span class="skip-link" onclick="close()">Skip for now</span>
+    </div>
+
+    <!-- Step 2b: Custom -->
+    <div class="step" id="step2b">
+      <div class="step-title">Set up your meeting</div>
+      <div class="step-subtitle">Customize your agenda — you can always change this later.</div>
+
+      <div class="form-group">
+        <label class="form-label">Meeting name</label>
+        <input class="form-input" id="meeting-name" type="text" placeholder="e.g. Weekly Leadership Sync" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cadence</label>
+        <select class="form-select" id="meeting-cadence">
+          <option>Weekly</option>
+          <option>Biweekly</option>
+          <option>Monthly</option>
+        </select>
+      </div>
+
+      <label class="form-label" style="margin-bottom:10px;display:block;">Agenda sections</label>
+      <div class="toggle-list" id="agenda-toggles">
+        <div class="toggle-item on" onclick="toggleAgenda(this)"><span>Good News</span><div class="toggle-switch on"></div></div>
+        <div class="toggle-item on" onclick="toggleAgenda(this)"><span>Metrics</span><div class="toggle-switch on"></div></div>
+        <div class="toggle-item on" onclick="toggleAgenda(this)"><span>Goals</span><div class="toggle-switch on"></div></div>
+        <div class="toggle-item on" onclick="toggleAgenda(this)"><span>Headlines</span><div class="toggle-switch on"></div></div>
+        <div class="toggle-item on" onclick="toggleAgenda(this)"><span>Tasks</span><div class="toggle-switch on"></div></div>
+        <div class="toggle-item on" onclick="toggleAgenda(this)"><span>Issues</span><div class="toggle-switch on"></div></div>
+        <div class="toggle-item on" onclick="toggleAgenda(this)"><span>Wrap Up</span><div class="toggle-switch on"></div></div>
+      </div>
+
+      <button class="btn-primary" onclick="goToStep3Custom()">Continue →</button>
+      <span class="skip-link" onclick="close()">Skip for now</span>
+    </div>
+
+    <!-- Step 3: All Set -->
+    <div class="step" id="step3">
+      <div class="success-icon">🎉</div>
+      <div class="step-title" style="text-align:center;">You're all set!</div>
+      <div class="step-subtitle" style="text-align:center;">Your meeting has been created. Invite your team and run it together.</div>
+
+      <div class="meeting-summary">
+        <div class="summary-row"><span class="summary-label">Meeting</span><span class="summary-value" id="sum-name">—</span></div>
+        <div class="summary-row"><span class="summary-label">Type</span><span class="summary-value" id="sum-type">—</span></div>
+        <div class="summary-row"><span class="summary-label">Cadence</span><span class="summary-value" id="sum-cadence">—</span></div>
+      </div>
+
+      <button class="btn-primary" onclick="alert('Opening meeting...')">Open My Meeting →</button>
+      <button class="btn-secondary" onclick="alert('Invite flow...')">+ Invite Teammates</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let selectedType = null;
+
+  function selectType(type) {
+    selectedType = type;
+    document.getElementById('card-l10').classList.toggle('selected', type === 'l10');
+    document.getElementById('card-custom').classList.toggle('selected', type === 'custom');
+    const btn = document.getElementById('next1-btn');
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  }
+
+  function goToStep2() {
+    if (!selectedType) return;
+    hide('step1');
+    updateDots(2);
+    if (selectedType === 'l10') show('step2a');
+    else show('step2b');
+  }
+
+  function goToStep3(name, type, cadence) {
+    hide('step2a'); hide('step2b');
+    updateDots(3);
+    document.getElementById('sum-name').textContent = name;
+    document.getElementById('sum-type').textContent = type;
+    document.getElementById('sum-cadence').textContent = cadence;
+    show('step3');
+  }
+
+  function goToStep3Custom() {
+    const name = document.getElementById('meeting-name').value || 'My Meeting';
+    const cadence = document.getElementById('meeting-cadence').value;
+    goToStep3(name, 'Custom', cadence);
+  }
+
+  function toggleAgenda(el) {
+    el.classList.toggle('on');
+    el.querySelector('.toggle-switch').classList.toggle('on');
+  }
+
+  function show(id) { document.getElementById(id).classList.add('visible'); }
+  function hide(id) { document.getElementById(id).classList.remove('visible'); }
+
+  function updateDots(active) {
+    for (let i = 1; i <= 3; i++) {
+      const dot = document.getElementById('dot' + i);
+      dot.classList.remove('active', 'done');
+      if (i < active) dot.classList.add('done');
+      if (i === active) dot.classList.add('active');
+    }
+  }
+</script>
+</body>
+</html>

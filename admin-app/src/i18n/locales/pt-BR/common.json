@@ -1,0 +1,95 @@
+{
+  "nav": {
+    "dashboard": "Painel",
+    "goals": "Objetivos",
+    "tasks": "Tarefas",
+    "metrics": "Métricas",
+    "meetings": "Reuniões",
+    "issues": "Problemas",
+    "people": "Pessoas",
+    "strategy": "Estratégia",
+    "tools": "Ferramentas",
+    "settings": "Configurações",
+    "aiAssistant": "Assistente IA"
+  },
+  "actions": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "add": "Adicionar",
+    "create": "Criar",
+    "update": "Atualizar",
+    "archive": "Arquivar",
+    "restore": "Restaurar",
+    "close": "Fechar",
+    "open": "Abrir",
+    "view": "Ver",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "done": "Concluído",
+    "confirm": "Confirmar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "assign": "Atribuir",
+    "complete": "Concluir",
+    "resolve": "Resolver",
+    "invite": "Convidar",
+    "remove": "Remover",
+    "refresh": "Atualizar",
+    "loading": "Carregando...",
+    "saving": "Salvando...",
+    "deleting": "Excluindo..."
+  },
+  "status": {
+    "active": "Ativo",
+    "completed": "Concluído",
+    "archived": "Arquivado",
+    "deleted": "Excluído",
+    "pending": "Pendente",
+    "inProgress": "Em Andamento",
+    "onTrack": "No Caminho",
+    "atRisk": "Em Risco",
+    "offTrack": "Fora do Caminho",
+    "overdue": "Atrasado",
+    "dueSoon": "Vence em Breve"
+  },
+  "time": {
+    "today": "Hoje",
+    "thisWeek": "Esta Semana",
+    "thisMonth": "Este Mês",
+    "last7Days": "Últimos 7 Dias",
+    "last30Days": "Últimos 30 Dias"
+  },
+  "roles": {
+    "owner": "Proprietário",
+    "admin": "Administrador",
+    "member": "Membro",
+    "you": "Você"
+  },
+  "empty": {
+    "noGoals": "Nenhum objetivo ainda",
+    "noTasks": "Nenhuma tarefa ainda",
+    "noMetrics": "Nenhuma métrica ainda",
+    "noIssues": "Nenhum problema ainda",
+    "noMeetings": "Nenhuma reunião ainda",
+    "noMembers": "Nenhum membro ainda",
+    "noTeams": "Nenhuma equipe ainda",
+    "getStarted": "Comece criando um"
+  },
+  "errors": {
+    "somethingWentWrong": "Algo deu errado",
+    "tryAgain": "Tente novamente",
+    "checkConnection": "Verifique sua conexão e tente novamente",
+    "tryRefreshing": "Tente atualizar a página"
+  },
+  "language": {
+    "label": "Idioma",
+    "english": "English",
+    "portuguese": "Português (BR)",
+    "selectLanguage": "Selecionar idioma",
+    "description": "Escolha o idioma da interface"
+  }
+}

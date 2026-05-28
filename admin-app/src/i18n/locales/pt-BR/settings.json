@@ -1,0 +1,47 @@
+{
+  "title": "Configurações",
+  "subtitle": "Gerencie suas preferências de conta e configurações do aplicativo",
+  "tabs": {
+    "general": "Geral",
+    "shortcuts": "Atalhos",
+    "notifications": "Notificações",
+    "api": "API",
+    "company": "Empresa",
+    "billing": "Faturamento"
+  },
+  "appearance": {
+    "title": "Aparência",
+    "subtitle": "Escolha como o aplicativo aparece e funciona.",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Escuro",
+    "themeSystem": "Sistema",
+    "themeLightDescription": "Sempre usar tema claro",
+    "themeDarkDescription": "Sempre usar tema escuro",
+    "themeSystemDescription": "Seguir preferência do sistema"
+  },
+  "language": {
+    "title": "Idioma",
+    "subtitle": "Escolha o idioma da interface.",
+    "label": "Idioma da Interface",
+    "saved": "Idioma atualizado",
+    "savedDescription": "O idioma da interface foi alterado"
+  },
+  "profile": {
+    "title": "Perfil",
+    "subtitle": "Gerencie suas informações pessoais."
+  },
+  "dangerZone": {
+    "title": "Zona de Perigo",
+    "description": "Excluir sua conta removerá permanentemente seus dados pessoais e anonimizará seu nome dos registros organizacionais.",
+    "deleteAccount": "Excluir Conta"
+  },
+  "version": {
+    "newVersion": "Nova versão disponível",
+    "refreshPrompt": "Atualize para obter as últimas novidades.",
+    "refreshNow": "Atualizar Agora"
+  },
+  "subscription": {
+    "required": "Assinatura Necessária: Atualize a assinatura da empresa para acessar os recursos da empresa."
+  }
+}

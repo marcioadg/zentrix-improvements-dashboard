@@ -1,0 +1,47 @@
+{
+  "title": "Settings",
+  "subtitle": "Manage your account preferences and application settings",
+  "tabs": {
+    "general": "General",
+    "shortcuts": "Shortcuts",
+    "notifications": "Notifications",
+    "api": "API",
+    "company": "Company",
+    "billing": "Billing"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "subtitle": "Choose how the application looks and feels.",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "themeLightDescription": "Always use light theme",
+    "themeDarkDescription": "Always use dark theme",
+    "themeSystemDescription": "Follow system preference"
+  },
+  "language": {
+    "title": "Language",
+    "subtitle": "Choose the language for the interface.",
+    "label": "Interface Language",
+    "saved": "Language updated",
+    "savedDescription": "The interface language has been changed"
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage your personal information."
+  },
+  "dangerZone": {
+    "title": "Danger Zone",
+    "description": "Deleting your account will permanently remove your personal data and anonymize your name from organizational records.",
+    "deleteAccount": "Delete Account"
+  },
+  "version": {
+    "newVersion": "New version available",
+    "refreshPrompt": "Please refresh to get the latest updates.",
+    "refreshNow": "Refresh Now"
+  },
+  "subscription": {
+    "required": "Subscription Required: Please update the company subscription to access company features."
+  }
+}

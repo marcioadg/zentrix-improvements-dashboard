@@ -1,0 +1,95 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "goals": "Goals",
+    "tasks": "Tasks",
+    "metrics": "Metrics",
+    "meetings": "Meetings",
+    "issues": "Issues",
+    "people": "People",
+    "strategy": "Strategy",
+    "tools": "Tools",
+    "settings": "Settings",
+    "aiAssistant": "AI Assistant"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "create": "Create",
+    "update": "Update",
+    "archive": "Archive",
+    "restore": "Restore",
+    "close": "Close",
+    "open": "Open",
+    "view": "View",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "done": "Done",
+    "confirm": "Confirm",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "assign": "Assign",
+    "complete": "Complete",
+    "resolve": "Resolve",
+    "invite": "Invite",
+    "remove": "Remove",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "deleting": "Deleting..."
+  },
+  "status": {
+    "active": "Active",
+    "completed": "Completed",
+    "archived": "Archived",
+    "deleted": "Deleted",
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "onTrack": "On Track",
+    "atRisk": "At Risk",
+    "offTrack": "Off Track",
+    "overdue": "Overdue",
+    "dueSoon": "Due Soon"
+  },
+  "time": {
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "last7Days": "Last 7 Days",
+    "last30Days": "Last 30 Days"
+  },
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "member": "Member",
+    "you": "You"
+  },
+  "empty": {
+    "noGoals": "No goals yet",
+    "noTasks": "No tasks yet",
+    "noMetrics": "No metrics yet",
+    "noIssues": "No issues yet",
+    "noMeetings": "No meetings yet",
+    "noMembers": "No members yet",
+    "noTeams": "No teams yet",
+    "getStarted": "Get started by creating one"
+  },
+  "errors": {
+    "somethingWentWrong": "Something went wrong",
+    "tryAgain": "Try again",
+    "checkConnection": "Check your connection and retry",
+    "tryRefreshing": "Try refreshing the page"
+  },
+  "language": {
+    "label": "Language",
+    "english": "English",
+    "portuguese": "Português (BR)",
+    "selectLanguage": "Select language",
+    "description": "Choose the language for the interface"
+  }
+}

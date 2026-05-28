@@ -1,14 +1,14 @@
 {
   "outputDirectory": ".",
-  "buildCommand": null,
+  "buildCommand": "npm ci --prefix admin-app --legacy-peer-deps && npm run build --prefix admin-app && mkdir -p admin company-management && cp admin-bundle/app.html admin/index.html && cp admin-bundle/app.html company-management/index.html && rm -rf admin-app",
   "rewrites": [
     {
       "source": "/admin",
-      "destination": "/admin-pages.html"
+      "destination": "/admin/index.html"
     },
     {
       "source": "/company-management",
-      "destination": "/admin-pages.html"
+      "destination": "/company-management/index.html"
     }
   ],
   "headers": [

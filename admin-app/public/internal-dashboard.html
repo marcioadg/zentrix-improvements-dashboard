@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zentrix — Marketing Funnel Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ─── DESIGN TOKENS ─────────────────────────────────── */
+    :root,
+    [data-theme="light"] {
+      --background: #fbfbfb;
+      --foreground: #2d2d2e;
+      --card: #ffffff;
+      --border: rgb(224, 224, 226);
+      --primary: #5e6ad2;
+      --muted: #ececec;
+      --muted-foreground: #959699;
+      --success: #16a34a;
+      --warning: #d97706;
+      --error: #dc2626;
+      --surface-sidebar: #f3f3f3;
+      --surface-raised: #f8f8f8;
+      --state-hover: #ececec;
+      --radius: 6px;
+
+      /* chart / accent colors */
+      --c1: #5e6ad2;
+      --c2: #8b8fe8;
+      --c3: #7c3aed;
+      --c4: #0891b2;
+      --c5: #16a34a;
+      --shadow: 0 1px 2px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    [data-theme="dark"] {
+      --background: #161618;
+      --foreground: #f5f5f5;
+      --card: #1e1e20;
+      --border: rgba(255,255,255,0.1);
+      --primary: #5e6ad2;
+      --muted: #2a2a2c;
+      --muted-foreground: #6b6b6e;
+      --success: #22c55e;
+      --warning: #fbbf24;
+      --error: #f87171;
+      --surface-sidebar: #1a1a1c;
+      --surface-raised: #222224;
+      --state-hover: #2a2a2c;
+      --radius: 6px;
+
+      --c1: #818cf8;
+      --c2: #a5b4fc;
+      --c3: #a78bfa;
+      --c4: #22d3ee;
+      --c5: #4ade80;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+      background: var(--background);
+      color: var(--foreground);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    /* ─── HEADER ─────────────────────────────────────────── */
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--foreground);
+    }
+
+    .logo-icon {
+      width: 28px; height: 28px;
+      background: var(--primary);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .logo-divider {
+      color: var(--muted-foreground);
+      font-weight: 400;
+      font-size: 14px;
+      margin-left: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-meta {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; color: var(--muted-foreground);
+    }
+
+    .badge {
+      background: rgba(94,106,210,0.1);
+      color: var(--primary);
+      border: 1px solid rgba(94,106,210,0.25);
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-spend {
+      background: rgba(217,119,6,0.1);
+      color: var(--warning);
+      border: 1px solid rgba(217,119,6,0.25);
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .live-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 2px rgba(22,163,74,0.2); }
+      50%       { box-shadow: 0 0 0 5px rgba(22,163,74,0.05); }
+    }
+
+    /* ─── THEME TOGGLE ───────────────────────────────────── */
+    .theme-toggle {
+      width: 32px; height: 32px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface-raised);
+      color: var(--muted-foreground);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .theme-toggle:hover {
+      background: var(--state-hover);
+      color: var(--foreground);
+    }
+
+    /* ─── DATA SOURCE BAR ────────────────────────────────── */
+    .data-source-bar {
+      background: var(--surface-raised);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 28px;
+      font-size: 11px;
+      color: var(--muted-foreground);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .data-source-bar strong { color: var(--primary); font-weight: 600; }
+
+    /* ─── LAYOUT ─────────────────────────────────────────── */
+    .container { max-width: 1400px; margin: 0 auto; padding: 24px 28px 48px; }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted-foreground);
+      margin-bottom: 12px;
+    }
+
+    /* ─── KPI CARDS ──────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 680px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      transition: box-shadow 0.15s, transform 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .kpi-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .kpi-card:nth-child(1)::after { background: var(--primary); }
+    .kpi-card:nth-child(2)::after { background: #7c3aed; }
+    .kpi-card:nth-child(3)::after { background: #0891b2; }
+    .kpi-card:nth-child(4)::after { background: #0891b2; }
+    .kpi-card:nth-child(5)::after { background: #d97706; }
+    .kpi-card:nth-child(6)::after { background: var(--success); }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted-foreground);
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1;
+      margin-bottom: 6px;
+      color: var(--foreground);
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--muted-foreground);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .kpi-pill {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(94,106,210,0.1);
+      color: var(--primary);
+    }
+
+    /* ─── MAIN SECTION: Chart + Table side-by-side ────────── */
+    .chart-table-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) { .chart-table-grid { grid-template-columns: 1fr; } }
+
+    /* ─── CARD ───────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 8px;
+    }
+
+    .card-title { font-size: 14px; font-weight: 700; color: var(--foreground); }
+    .card-subtitle { font-size: 11px; color: var(--muted-foreground); margin-top: 2px; }
+
+    .card-tag {
+      font-size: 11px;
+      color: var(--muted-foreground);
+      background: var(--surface-raised);
+      padding: 3px 9px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    /* ─── CHART ──────────────────────────────────────────── */
+    .chart-wrap { position: relative; height: 280px; }
+
+    /* ─── CONVERSION TABLE ───────────────────────────────── */
+    .conv-table-wrap { overflow-x: auto; }
+
+    .conv-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .conv-table thead th {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--muted-foreground);
+      padding: 7px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      background: var(--card);
+    }
+
+    .conv-table tbody tr { transition: background 0.1s; }
+    .conv-table tbody tr:hover td { background: var(--state-hover); }
+
+    .conv-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      color: var(--foreground);
+    }
+
+    .conv-table tr:last-child td { border-bottom: none; }
+
+    .conv-table tfoot td {
+      padding: 10px;
+      background: var(--surface-raised);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted-foreground);
+    }
+
+    .stage-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+
+    .stage-name {
+      display: flex;
+      align-items: center;
+    }
+
+    /* Rate badges */
+    .rate-badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .rate-green  { background: rgba(22,163,74,0.1);  color: var(--success);  border: 1px solid rgba(22,163,74,0.2); }
+    .rate-yellow { background: rgba(217,119,6,0.1);  color: var(--warning);  border: 1px solid rgba(217,119,6,0.2); }
+    .rate-red    { background: rgba(220,38,38,0.1);  color: var(--error);    border: 1px solid rgba(220,38,38,0.2); }
+    .rate-muted  { background: var(--surface-raised); color: var(--muted-foreground); border: 1px solid var(--border); }
+    .rate-primary{ background: rgba(94,106,210,0.1); color: var(--primary);  border: 1px solid rgba(94,106,210,0.2); }
+
+    .drop-val { color: var(--error); font-size: 11px; font-weight: 600; }
+
+    /* ─── VOLUME BAR ─────────────────────────────────────── */
+    .vol-cell { display: flex; flex-direction: column; gap: 4px; }
+    .vol-num  { font-size: 12px; font-weight: 700; }
+
+    .vol-bar-track {
+      width: 64px; height: 3px;
+      background: var(--muted);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .vol-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1s ease;
+    }
+
+    /* ─── BOTTOM GRID ────────────────────────────────────── */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 860px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+    /* ─── ACTIVITY ───────────────────────────────────────── */
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .activity-item:last-child { border-bottom: none; }
+
+    .avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .activity-info { flex: 1; min-width: 0; }
+    .activity-name  { font-size: 13px; font-weight: 600; color: var(--foreground); }
+    .activity-stage { font-size: 11px; color: var(--muted-foreground); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .activity-right { text-align: right; flex-shrink: 0; }
+    .activity-date  { font-size: 11px; color: var(--muted-foreground); margin-top: 3px; }
+
+    .stage-pill {
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(94,106,210,0.1);
+      color: var(--primary);
+      border: 1px solid rgba(94,106,210,0.2);
+    }
+
+    /* ─── MEETINGS ───────────────────────────────────────── */
+    .stat-trio {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat-box {
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-box-val   { font-size: 22px; font-weight: 800; color: var(--foreground); letter-spacing: -0.5px; }
+    .stat-box-label { font-size: 10px; color: var(--muted-foreground); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .info-block {
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .info-block:last-child { margin-bottom: 0; }
+
+    .info-block-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .info-icon {
+      width: 28px; height: 28px;
+      border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .info-title { font-size: 13px; font-weight: 600; color: var(--foreground); }
+    .info-meta  { font-size: 11px; color: var(--muted-foreground); margin-top: 1px; }
+    .info-body  { font-size: 12px; color: var(--muted-foreground); margin-top: 4px; }
+
+    .success-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+      background: rgba(22,163,74,0.1);
+      border: 1px solid rgba(22,163,74,0.2);
+      color: var(--success);
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    /* ─── FOOTER ─────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 32px 28px 20px;
+      font-size: 11px;
+      color: var(--muted-foreground);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+    <span>Zentrix</span>
+    <span class="logo-divider">/ Marketing Funnel</span>
+  </div>
+  <div class="header-right">
+    <div class="header-meta">
+      <div style="display:flex;align-items:center;gap:5px"><div class="live-dot"></div><span>Live</span></div>
+      <span class="badge-spend">$833.32 spent</span>
+      <span class="badge">Super Admin</span>
+    </div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+      <span id="themeIcon">🌙</span>
+    </button>
+  </div>
+</header>
+
+<!-- DATA SOURCE BAR -->
+<div class="data-source-bar">
+  <strong>Live data from Meta Ads API + Supabase</strong> &nbsp;—&nbsp; Last updated: Apr 2, 2026 &nbsp;·&nbsp; Period: Mar 3 – Apr 1, 2026
+</div>
+
+<div class="container">
+
+  <!-- DYNAMIC FOCUS ALERT -->
+  <div id="focus-alert" style="
+    display:flex; align-items:flex-start; gap:12px;
+    padding:12px 16px; margin-bottom:16px;
+    border-radius:var(--radius); border:1px solid;
+    font-size:0.85rem; line-height:1.5;
+  "></div>
+
+  <!-- KPI CARDS -->
+  <div class="section-label">Funnel Overview — Last 30 Days</div>
+  <div class="kpi-grid">
+
+    <div class="kpi-card">
+      <div class="kpi-label">Impressions</div>
+      <div class="kpi-value" style="color:var(--primary)">17,178</div>
+      <div style="margin-top:6px">
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted-foreground);margin-bottom:3px">
+          <span>Target: 25,000</span><span>69%</span>
+        </div>
+        <div style="height:4px;background:var(--muted);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:69%;background:var(--primary);border-radius:99px"></div>
+        </div>
+      </div>
+      <div class="kpi-sub" style="margin-top:6px">
+        <span>Meta Ads reach</span>
+        <span class="kpi-pill" style="background:rgba(217,119,6,0.1);color:#d97706">Below Target</span>
+      </div>
+    </div>
+
+    <!-- CTR + Clicks combined -->
+    <div class="kpi-card">
+      <div class="kpi-label">CTR <span style="font-weight:400;color:var(--muted-foreground);font-size:0.75rem">· 532 clicks</span></div>
+      <div class="kpi-value" style="color:#7c3aed">3.1%</div>
+      <div style="margin-top:6px">
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted-foreground);margin-bottom:3px">
+          <span>Target: 1.0%</span><span>3.1% / 1.0%</span>
+        </div>
+        <div style="height:4px;background:var(--muted);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:100%;background:var(--success);border-radius:99px"></div>
+        </div>
+      </div>
+      <div class="kpi-sub" style="margin-top:6px">
+        <span>$1.57 CPC · $833.32 spend</span>
+        <span class="kpi-pill" style="background:rgba(22,163,74,0.1);color:var(--success)">Exceeding</span>
+      </div>
+    </div>
+
+    <!-- New Signups -->
+    <div class="kpi-card">
+      <div class="kpi-label">Signups (30d)</div>
+      <div class="kpi-value" style="color:#0891b2">45 <span style="font-size:1rem;font-weight:500">· 8.5%</span></div>
+      <div style="font-size:10px;color:var(--muted-foreground);margin-top:3px;margin-bottom:4px;letter-spacing:0.1px">
+        <span style="color:#1877f2;font-weight:600">6 from Meta</span> · <span style="color:var(--primary);font-weight:600">33 organic</span> · <span style="color:#0a66c2;font-weight:600">2 LinkedIn</span>
+      </div>
+      <div style="margin-top:4px">
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted-foreground);margin-bottom:3px">
+          <span>Target: 10%</span><span>8.5% / 10%</span>
+        </div>
+        <div style="height:4px;background:var(--muted);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:85%;background:#0891b2;border-radius:99px"></div>
+        </div>
+      </div>
+      <div class="kpi-sub" style="margin-top:6px">
+        <span>of clicks → signups</span>
+        <span class="kpi-pill" style="background:rgba(217,119,6,0.1);color:#d97706">On Track</span>
+      </div>
+    </div>
+
+        <!-- 1st L10 -->
+    <div class="kpi-card">
+      <div class="kpi-label">1st L10 Meeting <span style="font-weight:400;color:var(--muted-foreground);font-size:0.75rem">· 46.7%</span></div>
+      <div class="kpi-value" style="color:var(--warning)">21</div>
+      <div style="font-size:10px;color:var(--muted-foreground);margin-top:3px;margin-bottom:4px;">
+        <span style="color:var(--error);font-weight:600">0 from paid cohort (30d)</span>
+      </div>
+      <div style="margin-top:4px">
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted-foreground);margin-bottom:3px">
+          <span>Target: 60%</span><span>46.7% / 60%</span>
+        </div>
+        <div style="height:4px;background:var(--muted);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:78%;background:var(--warning);border-radius:99px"></div>
+        </div>
+      </div>
+      <div class="kpi-sub" style="margin-top:6px">
+        <span>of new signups activated</span>
+        <span class="kpi-pill" style="background:rgba(217,119,6,0.1);color:var(--warning)">Needs Work</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- L10 Card Note -->
+  <p style="font-size:11px;color:var(--muted-foreground);margin-top:-16px;margin-bottom:20px;padding:0 2px;display:flex;align-items:center;gap:5px;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.7"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
+    L10 activation from paid users: 0 of 6 Meta signups have run an L10 meeting yet. All-time L10 companies are organic.
+  </p>
+
+  <!-- ATTRIBUTION BREAKDOWN -->
+  <div class="section-label">Attribution Breakdown — Last 30 Days</div>
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Paid vs. Organic Attribution</div>
+        <div class="card-subtitle">Source breakdown from Supabase user_attributions table · 42 attributed signups</div>
+      </div>
+      <span class="card-tag">42 Attributed</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;">
+
+      <!-- LEFT: Traffic Sources bar chart -->
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--foreground);margin-bottom:14px;letter-spacing:0.1px;">Traffic Sources — Last 30 Days</div>
+
+        <!-- Direct/Organic -->
+        <div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <div style="display:flex;align-items:center;gap:7px;">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#5e6ad2;flex-shrink:0;"></span>
+              <span style="font-size:12px;font-weight:600;color:var(--foreground);">Direct / Organic</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted-foreground);display:flex;gap:8px;align-items:center;">
+              <span style="font-weight:700;color:var(--foreground);">33</span>
+              <span style="font-weight:600;color:#5e6ad2;">79%</span>
+            </div>
+          </div>
+          <div style="height:7px;background:var(--muted);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:79%;background:#5e6ad2;border-radius:99px;"></div>
+          </div>
+        </div>
+
+        <!-- Meta -->
+        <div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <div style="display:flex;align-items:center;gap:7px;">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1877f2;flex-shrink:0;"></span>
+              <span style="font-size:12px;font-weight:600;color:var(--foreground);">Meta (paid)</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted-foreground);display:flex;gap:8px;align-items:center;">
+              <span style="font-weight:700;color:var(--foreground);">6</span>
+              <span style="font-weight:600;color:#1877f2;">14%</span>
+            </div>
+          </div>
+          <div style="height:7px;background:var(--muted);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:14%;background:#1877f2;border-radius:99px;"></div>
+          </div>
+        </div>
+
+        <!-- LinkedIn -->
+        <div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <div style="display:flex;align-items:center;gap:7px;">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#0a66c2;flex-shrink:0;"></span>
+              <span style="font-size:12px;font-weight:600;color:var(--foreground);">LinkedIn</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted-foreground);display:flex;gap:8px;align-items:center;">
+              <span style="font-weight:700;color:var(--foreground);">2</span>
+              <span style="font-weight:600;color:#0a66c2;">5%</span>
+            </div>
+          </div>
+          <div style="height:7px;background:var(--muted);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:5%;background:#0a66c2;border-radius:99px;"></div>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div style="margin-bottom:4px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <div style="display:flex;align-items:center;gap:7px;">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#16a34a;flex-shrink:0;"></span>
+              <span style="font-size:12px;font-weight:600;color:var(--foreground);">Email</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted-foreground);display:flex;gap:8px;align-items:center;">
+              <span style="font-weight:700;color:var(--foreground);">1</span>
+              <span style="font-weight:600;color:#16a34a;">2%</span>
+            </div>
+          </div>
+          <div style="height:7px;background:var(--muted);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:2%;background:#16a34a;border-radius:99px;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;font-size:11px;color:var(--muted-foreground);padding:8px 10px;background:var(--surface-raised);border-radius:var(--radius);border:1px solid var(--border);">
+          79% of signups come in organically — paid Meta accounts for just 14% of attributed conversions.
+        </div>
+      </div>
+
+      <!-- RIGHT: Paid Funnel (Meta only) -->
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--foreground);margin-bottom:14px;letter-spacing:0.1px;display:flex;align-items:center;gap:7px;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1877f2;flex-shrink:0;"></span>
+          Paid Funnel — Meta Only
+        </div>
+
+        <!-- Funnel steps -->
+        <div style="display:flex;flex-direction:column;gap:0;">
+
+          <!-- Impressions -->
+          <div style="background:rgba(24,119,242,0.07);border:1px solid rgba(24,119,242,0.2);border-radius:var(--radius);padding:10px 14px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted-foreground);">Impressions</div>
+              <div style="font-size:20px;font-weight:800;color:#1877f2;letter-spacing:-0.5px;">17,178</div>
+            </div>
+            <span style="font-size:10px;font-weight:700;background:rgba(24,119,242,0.1);color:#1877f2;border:1px solid rgba(24,119,242,0.2);padding:2px 8px;border-radius:20px;">Top of Funnel</span>
+          </div>
+
+          <!-- Arrow + rate -->
+          <div style="display:flex;align-items:center;gap:6px;padding:3px 14px;margin-bottom:4px;">
+            <span style="font-size:14px;color:var(--muted-foreground)">↓</span>
+            <span style="font-size:11px;color:var(--muted-foreground);">CTR</span>
+            <span style="font-size:11px;font-weight:700;color:#1877f2;background:rgba(24,119,242,0.1);border:1px solid rgba(24,119,242,0.15);padding:1px 7px;border-radius:20px;">3.1%</span>
+          </div>
+
+          <!-- Clicks -->
+          <div style="background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.2);border-radius:var(--radius);padding:10px 14px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted-foreground);">Clicks</div>
+              <div style="font-size:20px;font-weight:800;color:#7c3aed;letter-spacing:-0.5px;">532</div>
+            </div>
+            <span style="font-size:10px;font-weight:700;background:rgba(24,119,242,0.1);color:#1877f2;border:1px solid rgba(24,119,242,0.2);padding:2px 8px;border-radius:20px;">$1.57 CPC</span>
+          </div>
+
+          <!-- Arrow + rate -->
+          <div style="display:flex;align-items:center;gap:6px;padding:3px 14px;margin-bottom:4px;">
+            <span style="font-size:14px;color:var(--muted-foreground)">↓</span>
+            <span style="font-size:11px;color:var(--muted-foreground);">Clicks → Signups</span>
+            <span style="font-size:11px;font-weight:700;color:var(--warning);background:rgba(217,119,6,0.1);border:1px solid rgba(217,119,6,0.15);padding:1px 7px;border-radius:20px;">1.1%</span>
+          </div>
+
+          <!-- Signups -->
+          <div style="background:rgba(8,145,178,0.07);border:1px solid rgba(8,145,178,0.2);border-radius:var(--radius);padding:10px 14px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted-foreground);">Signups (Meta)</div>
+              <div style="font-size:20px;font-weight:800;color:#0891b2;letter-spacing:-0.5px;">6</div>
+            </div>
+            <span style="font-size:10px;font-weight:700;background:rgba(217,119,6,0.1);color:var(--warning);border:1px solid rgba(217,119,6,0.2);padding:2px 8px;border-radius:20px;">~$138.89 CPL</span>
+          </div>
+
+          <!-- Arrow + rate -->
+          <div style="display:flex;align-items:center;gap:6px;padding:3px 14px;margin-bottom:4px;">
+            <span style="font-size:14px;color:var(--muted-foreground)">↓</span>
+            <span style="font-size:11px;color:var(--muted-foreground);">L10 Activation</span>
+            <span style="font-size:11px;font-weight:700;color:var(--error);background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.15);padding:1px 7px;border-radius:20px;">0%</span>
+          </div>
+
+          <!-- L10 Meetings -->
+          <div style="background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.2);border-radius:var(--radius);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted-foreground);">L10 Meetings (paid cohort)</div>
+              <div style="font-size:20px;font-weight:800;color:var(--error);letter-spacing:-0.5px;">0</div>
+            </div>
+            <span style="font-size:10px;font-weight:700;background:rgba(220,38,38,0.1);color:var(--error);border:1px solid rgba(220,38,38,0.2);padding:2px 8px;border-radius:20px;">No Activation Yet</span>
+          </div>
+
+        </div>
+
+        <div style="margin-top:12px;font-size:11px;color:var(--muted-foreground);padding:8px 10px;background:var(--surface-raised);border-radius:var(--radius);border:1px solid var(--border);">
+          🎯 <strong style="color:var(--foreground)">Action needed:</strong> 6 paid Meta signups have not run an L10 meeting. Onboarding nudge or personal outreach could convert these.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CHART + TABLE side-by-side -->
+  <div class="chart-table-grid">
+
+    <!-- FUNNEL CHART -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Funnel Visualization</div>
+          <div class="card-subtitle">Volume at each stage · logarithmic scale · Mar 3 – Apr 1</div>
+        </div>
+        <span class="card-tag">Live Data</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="funnelChart"></canvas>
+      </div>
+    </div>
+
+    <!-- CONVERSION BREAKDOWN TABLE -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Conversion Breakdown</div>
+          <div class="card-subtitle">Stage-by-stage analysis</div>
+        </div>
+      </div>
+      <div class="conv-table-wrap">
+        <table class="conv-table">
+          <thead>
+            <tr>
+              <th>Stage</th>
+              <th>Volume</th>
+              <th>Conv</th>
+              <th>Drop-off</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Impressions -->
+            <tr>
+              <td>
+                <div class="stage-name">
+                  <span class="stage-dot" style="background:var(--primary)"></span>
+                  Impressions
+                </div>
+              </td>
+              <td>
+                <div class="vol-cell">
+                  <span class="vol-num" style="color:var(--primary)">17,178</span>
+                  <div class="vol-bar-track"><div class="vol-bar-fill" style="background:var(--primary);" data-pct="100"></div></div>
+                </div>
+              </td>
+              <td><span class="rate-badge rate-muted">Top</span></td>
+              <td><span style="color:var(--muted-foreground);font-size:11px">—</span></td>
+            </tr>
+            <!-- Clicks -->
+            <tr>
+              <td>
+                <div class="stage-name">
+                  <span class="stage-dot" style="background:#7c3aed"></span>
+                  Clicks
+                </div>
+              </td>
+              <td>
+                <div class="vol-cell">
+                  <span class="vol-num" style="color:#7c3aed">532</span>
+                  <div class="vol-bar-track"><div class="vol-bar-fill" style="background:#7c3aed;" data-pct="3.1"></div></div>
+                </div>
+              </td>
+              <td><span class="rate-badge rate-yellow">3.1%</span></td>
+              <td><span class="drop-val">-96.9%</span></td>
+            </tr>
+            <!-- Leads -->
+            <tr>
+              <td>
+                <div class="stage-name">
+                  <span class="stage-dot" style="background:#0891b2"></span>
+                  Leads (30d)
+                </div>
+              </td>
+              <td>
+                <div class="vol-cell">
+                  <span class="vol-num" style="color:#0891b2">45</span>
+                  <div class="vol-bar-track"><div class="vol-bar-fill" style="background:#0891b2;" data-pct="0.26"></div></div>
+                </div>
+              </td>
+              <td><span class="rate-badge rate-green">8.5%</span></td>
+              <td><span class="drop-val">-91.5%</span></td>
+            </tr>
+            <!-- Users -->
+            <tr>
+              <td>
+                <div class="stage-name">
+                  <span class="stage-dot" style="background:var(--warning)"></span>
+                  Users (All-time)
+                </div>
+              </td>
+              <td>
+                <div class="vol-cell">
+                  <span class="vol-num" style="color:var(--warning)">445</span>
+                  <div class="vol-bar-track"><div class="vol-bar-fill" style="background:var(--warning);" data-pct="2.59"></div></div>
+                </div>
+              </td>
+              <td><span class="rate-badge rate-green">83.6%*</span></td>
+              <td><span style="color:var(--muted-foreground);font-size:11px">—</span></td>
+            </tr>
+            <!-- L10 -->
+            <tr>
+              <td>
+                <div class="stage-name">
+                  <span class="stage-dot" style="background:var(--success)"></span>
+                  1st L10 Meeting
+                </div>
+              </td>
+              <td>
+                <div class="vol-cell">
+                  <span class="vol-num" style="color:var(--success)">21 co.</span>
+                  <div class="vol-bar-track"><div class="vol-bar-fill" style="background:var(--success);" data-pct="0.12"></div></div>
+                </div>
+              </td>
+              <td><span class="rate-badge rate-green">11.3%</span></td>
+              <td><span class="drop-val">-88.7%</span></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4">
+                <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+                  <span style="font-weight:600;color:var(--foreground);">Ad Spend</span>
+                  <span style="background:rgba(217,119,6,0.1);color:var(--warning);border:1px solid rgba(217,119,6,0.2);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700">CPC $1.57</span>
+                  <span style="background:rgba(217,119,6,0.1);color:var(--warning);border:1px solid rgba(217,119,6,0.2);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700">Total $833.32</span>
+                  <span style="background:rgba(217,119,6,0.1);color:var(--warning);border:1px solid rgba(217,119,6,0.2);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700">CPL ~$18.52</span>
+                </div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--muted-foreground);padding:8px 10px;background:var(--surface-raised);border-radius:var(--radius);border:1px solid var(--border);">
+        * 83.6% = all-time users (445) ÷ all-time clicks (532). L10 conv = 21/186 companies.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM GRID: Recent Activity + L10 Meetings -->
+  <div class="bottom-grid">
+
+    <!-- RECENT SIGNUPS -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Recent Signups</div>
+          <div class="card-subtitle">Latest registrations from Supabase</div>
+        </div>
+        <span style="font-size:11px;color:var(--success);font-weight:600">● Live</span>
+      </div>
+
+      <div class="activity-item">
+        <div class="avatar" style="background:rgba(94,106,210,0.12);color:var(--primary)">DM</div>
+        <div class="activity-info">
+          <div class="activity-name">Doug Miller</div>
+          <div class="activity-stage">Elite Tax Strategies · doug@elitetaxstrategies.net</div>
+        </div>
+        <div class="activity-right">
+          <span class="stage-pill">User</span>
+          <div class="activity-date">Mar 22, 2026</div>
+        </div>
+      </div>
+
+      <div class="activity-item">
+        <div class="avatar" style="background:rgba(124,58,237,0.12);color:#7c3aed">IL</div>
+        <div class="activity-info">
+          <div class="activity-name">Isadora Lima</div>
+          <div class="activity-stage">Isadora · isadora@dustinbaldwin.net</div>
+        </div>
+        <div class="activity-right">
+          <span class="stage-pill">User</span>
+          <div class="activity-date">Mar 20, 2026</div>
+        </div>
+      </div>
+
+      <div class="activity-item">
+        <div class="avatar" style="background:rgba(22,163,74,0.12);color:var(--success)">JJ</div>
+        <div class="activity-info">
+          <div class="activity-name">John Jones</div>
+          <div class="activity-stage">V and J Web Design · vandjwebdesign@gmail.com</div>
+        </div>
+        <div class="activity-right">
+          <span class="stage-pill">User</span>
+          <div class="activity-date">Mar 20, 2026</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- L10 MEETINGS -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">L10 Meetings</div>
+          <div class="card-subtitle">Platform usage · Supabase production</div>
+        </div>
+        <span class="card-tag">1,890 total</span>
+      </div>
+
+      <div class="stat-trio">
+        <div class="stat-box">
+          <div class="stat-box-val" style="color:var(--primary)">1,890</div>
+          <div class="stat-box-label">Meetings Run</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val" style="color:var(--success)">21</div>
+          <div class="stat-box-label">Active Companies</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val" style="color:#0891b2">90</div>
+          <div class="stat-box-label">Avg per Company</div>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-header">
+          <div class="info-icon" style="background:rgba(22,163,74,0.1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
+          <div>
+            <div class="info-title">Strong Meeting Velocity</div>
+            <div class="info-meta">21 companies · 1,890 total L10 meetings run</div>
+          </div>
+        </div>
+        <div class="info-body">Companies running regular L10 meetings signal high product engagement and retention.</div>
+        <div class="success-tag">1,890 L10 Meetings Completed</div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-header">
+          <div class="info-icon" style="background:rgba(94,106,210,0.1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
+          <div>
+            <div class="info-title">VTO Leads — New Channel</div>
+            <div class="info-meta">vto_leads table · just launched</div>
+          </div>
+        </div>
+        <div class="info-body">1 lead captured so far. Expected to scale as VTO feature gains traction.</div>
+        <div style="margin-top:8px">
+          <span style="background:rgba(94,106,210,0.1);color:var(--primary);border:1px solid rgba(94,106,210,0.2);padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700">1 VTO Lead Captured</span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  Zentrix Marketing Intelligence &nbsp;·&nbsp; Super Admin Dashboard &nbsp;·&nbsp; Live data from Meta Ads API + Supabase &nbsp;·&nbsp; Last updated: Apr 2, 2026 &nbsp;·&nbsp; Built by Sienna Rove
+</footer>
+
+<script>
+  // ─── DYNAMIC FOCUS ALERT ──────────────────────────────
+  (function() {
+    const funnel = [
+      { stage: 'Impressions → CTR',   rate: 3.1,  threshold: 1,   label: 'CTR is 3.1% — already exceeding the 1% target. Great ad relevance!' },
+      { stage: 'Clicks → Signups',    rate: 8.5,  threshold: 10,  label: 'Clicks to signups at 8.5% — good, but optimizing landing page copy could push this above 10%.' },
+      { stage: 'Users → L10 Meeting', rate: 46.7, threshold: 60,  label: '21 of 45 new signups have run their first L10 meeting (46.7%). Activation is below the 60% target — focus on onboarding & nudging users to run their first meeting.' },
+    ];
+
+    // Find the stage with the biggest gap relative to threshold
+    let worst = funnel[0];
+    let worstGap = (worst.threshold - worst.rate) / worst.threshold;
+    funnel.forEach(f => {
+      const gap = (f.threshold - f.rate) / f.threshold;
+      if (gap > worstGap) { worst = f; worstGap = gap; }
+    });
+
+    const alert = document.getElementById('focus-alert');
+    if (!alert) return;
+
+    const isWarning = worstGap > 0.3;
+    const color = isWarning ? '#d97706' : '#0891b2';
+    const bg = isWarning ? 'rgba(217,119,6,0.07)' : 'rgba(8,145,178,0.07)';
+    const warningSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" style="flex-shrink:0;margin-top:2px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/></svg>`;
+    const infoSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+    const icon = isWarning ? warningSvg : infoSvg;
+
+    alert.style.background = bg;
+    alert.style.borderColor = color;
+    alert.style.color = 'var(--foreground)';
+    alert.innerHTML = `
+      ${icon}
+      <div>
+        <strong style="color:${color}">Focus Area: ${worst.stage}</strong>
+        <div style="margin-top:2px;color:var(--muted-foreground)">${worst.label}</div>
+      </div>`;
+  })();
+
+  // ─── THEME MANAGEMENT ─────────────────────────────────
+  const STORAGE_KEY = 'zentrix_theme_preference';
+  const html = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+
+  function applyTheme(theme) {
+    html.setAttribute('data-theme', theme);
+    themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  }
+
+  function toggleTheme() {
+    const current = html.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch (e) {}
+    // Optionally sync to Supabase (auth required; skipped for standalone)
+  }
+
+  // Init from saved preference
+  (function initTheme() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved === 'dark' || saved === 'light') {
+        applyTheme(saved);
+      } else {
+        applyTheme('light');
+      }
+    } catch (e) {
+      applyTheme('light');
+    }
+  })();
+
+  themeToggle.addEventListener('click', toggleTheme);
+
+  // ─── FUNNEL CHART ─────────────────────────────────────
+  const stages = ['Impressions', 'Clicks', 'Leads (30d)', 'Users (Total)', '1st L10'];
+  const counts = [17178, 532, 45, 445, 21];
+  const COLORS_LIGHT = ['#5e6ad2', '#7c3aed', '#0891b2', '#d97706', '#16a34a'];
+  const COLORS_DARK  = ['#818cf8', '#a78bfa', '#22d3ee', '#fbbf24', '#4ade80'];
+
+  function getColors() {
+    return html.getAttribute('data-theme') === 'dark' ? COLORS_DARK : COLORS_LIGHT;
+  }
+
+  function getChartTextColor() {
+    return html.getAttribute('data-theme') === 'dark' ? '#6b6b6e' : '#959699';
+  }
+
+  function getGridColor() {
+    return html.getAttribute('data-theme') === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  }
+
+  function getTooltipBg() {
+    return html.getAttribute('data-theme') === 'dark' ? '#1e1e20' : '#ffffff';
+  }
+
+  function getTooltipBorder() {
+    return html.getAttribute('data-theme') === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgb(224,224,226)';
+  }
+
+  const ctx = document.getElementById('funnelChart').getContext('2d');
+  const funnelChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: stages,
+      datasets: [{
+        label: 'Count',
+        data: counts,
+        backgroundColor: getColors().map(c => c + 'cc'),
+        borderColor: getColors(),
+        borderWidth: 1.5,
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 900, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: getTooltipBg(),
+          borderColor: getTooltipBorder(),
+          borderWidth: 1,
+          titleColor: html.getAttribute('data-theme') === 'dark' ? '#f5f5f5' : '#2d2d2e',
+          bodyColor: '#959699',
+          padding: 10,
+          callbacks: {
+            label: ctx => ' ' + ctx.parsed.y.toLocaleString() + ' records'
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: getGridColor() },
+          ticks: { color: getChartTextColor(), font: { size: 10, weight: '600' } }
+        },
+        y: {
+          type: 'logarithmic',
+          grid: { color: getGridColor() },
+          ticks: {
+            color: getChartTextColor(),
+            font: { size: 10 },
+            callback: v => v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v
+          }
+        }
+      }
+    }
+  });
+
+  // Update chart colors on theme switch
+  themeToggle.addEventListener('click', () => {
+    const colors = getColors();
+    funnelChart.data.datasets[0].backgroundColor = colors.map(c => c + 'cc');
+    funnelChart.data.datasets[0].borderColor = colors;
+    funnelChart.options.scales.x.grid.color = getGridColor();
+    funnelChart.options.scales.y.grid.color = getGridColor();
+    funnelChart.options.scales.x.ticks.color = getChartTextColor();
+    funnelChart.options.scales.y.ticks.color = getChartTextColor();
+    funnelChart.options.plugins.tooltip.backgroundColor = getTooltipBg();
+    funnelChart.options.plugins.tooltip.borderColor = getTooltipBorder();
+    funnelChart.update();
+  });
+
+  // ─── ANIMATE VOLUME BARS ──────────────────────────────
+  setTimeout(() => {
+    document.querySelectorAll('.vol-bar-fill').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
+  }, 500);
+</script>
+</body>
+</html>

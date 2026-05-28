@@ -34,7 +34,6 @@ const mrrHistoryHandler = require('./api/mrr-history.js')
 const productAccountsHandler = require('./api/product-accounts.js')
 const ventureFunnelHandler = require('./api/venture-funnel.js')
 const savedFiltersHandler = require('./api/saved-filters.js')
-const adminUsersHandler = require('./api/admin-users.js')
 
 const app = express()
 const PORT = process.env.PORT || 3847
@@ -86,17 +85,6 @@ const { _indexCache, _indexTemplate } = (() => {
     return { _indexCache: { content, etag }, _indexTemplate: content }
   } catch (e) {
     console.error('[ERROR] Failed to initialize index.html:', e.message)
-    process.exit(1)
-  }
-})()
-
-const { _adminCache, _adminTemplate } = (() => {
-  try {
-    const content = fs.readFileSync(path.join(__dirname, 'admin-pages.html'), 'utf8')
-    const etag = generateETag(content)
-    return { _adminCache: { content, etag }, _adminTemplate: content }
-  } catch (e) {
-    console.error('[ERROR] Failed to initialize admin-pages.html:', e.message)
     process.exit(1)
   }
 })()
@@ -186,25 +174,6 @@ app.get('/', (req, res) => {
 
   return res.send(html)
 })
-
-function sendAdminPage(req, res, route) {
-  res.setHeader('Cache-Control', 'public, max-age=300')
-  res.setHeader('ETag', _adminCache.etag)
-  if (req.headers['if-none-match'] === _adminCache.etag) {
-    return res.status(304).end()
-  }
-
-  const nonce = res.locals.nonce
-  const html = _adminTemplate
-    .replace(/<style>/g, `<style nonce="${nonce}">`)
-    .replace(/<script>/g, `<script nonce="${nonce}">`)
-    .replace('window.__ADMIN_ROUTE__ || location.pathname', JSON.stringify(route))
-
-  return res.send(html)
-}
-
-app.get('/admin', (req, res) => sendAdminPage(req, res, '/admin'))
-app.get('/company-management', (req, res) => sendAdminPage(req, res, '/company-management'))
 
 // ── Response helpers ──────────────────────────────────────────────────────────
 function sendError(res, statusCode, message, additionalData = {}) {
@@ -620,9 +589,6 @@ app.get('/api/venture-funnel', rateLimit, ventureFunnelHandler)
 
 // Saved filters endpoint — used by the Portfolio Overview "Filters" dropdown
 app.get('/api/saved-filters', rateLimit, savedFiltersHandler)
-
-// Admin users endpoint — read-only mirror data for the admin pages
-app.get('/api/admin-users', rateLimit, adminUsersHandler)
 
 // ── Global 404 handler ───────────────────────────────────────────────────────
 app.use((req, res) => {
