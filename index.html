@@ -562,4 +562,21 @@ renderVentureAccountRows(filtered)}function toggleSidebar(){var sidebar = docume
   var tries=0; var iv=setInterval(function(){ tries++; observe(); applyFilter(); if(tries>40){ clearInterval(iv); } }, 500);
 })();
 </script>
+<style>
+.admin-mirror-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;color:#cbd5e1;text-decoration:none;font-size:13px;font-weight:700;transition:background 150ms,color 150ms}.admin-mirror-link:hover{background:rgba(255,255,255,.08);color:#fff}.admin-mirror-link .material-symbols-outlined{font-size:19px}.admin-mirror-section{margin-top:10px;padding:10px 10px 0;border-top:1px solid rgba(255,255,255,.08)}.admin-mirror-label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin:0 4px 6px}
+</style>
+<script>
+(function(){
+  function addAdminLinks(){
+    var sidebar=document.getElementById('sidebar');
+    if(!sidebar || document.getElementById('admin-mirror-links')) return;
+    var section=document.createElement('div');
+    section.id='admin-mirror-links';
+    section.className='admin-mirror-section';
+    section.innerHTML='<div class="admin-mirror-label">Workspace</div><a class="admin-mirror-link" href="/admin"><span class="material-symbols-outlined">space_dashboard</span><span>Admin Panel</span></a><a class="admin-mirror-link" href="/company-management"><span class="material-symbols-outlined">shield</span><span>Super Admin</span></a>';
+    sidebar.appendChild(section);
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',addAdminLinks);}else{addAdminLinks();}
+})();
+</script>
 </body></html>

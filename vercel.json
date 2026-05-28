@@ -1,6 +1,16 @@
 {
   "outputDirectory": ".",
   "buildCommand": null,
+  "rewrites": [
+    {
+      "source": "/admin",
+      "destination": "/admin-pages.html"
+    },
+    {
+      "source": "/company-management",
+      "destination": "/admin-pages.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
