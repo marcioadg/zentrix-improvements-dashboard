@@ -14,7 +14,8 @@ const {
   cleanup: cleanupRateLimit,
   handleAction,
   getPeriodStart,
-  supabaseWithPagination
+  supabaseWithPagination,
+  calcSubMRR
 } = require('./utils/slack.js')
 const {
   WEEKLY_USAGE_SCHEMAS,
@@ -366,22 +367,8 @@ app.get('/api/metrics', rateLimit, async (req, res) => {
               // Track unique paid customers
               const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id
               if (customerId) paidCustomers.add(stripeKey + ':' + customerId)
-
-              // Sum MRR
-              for (const item of sub.items.data) {
-                const price = item.price
-                if (!price || !price.unit_amount) continue
-                const quantity = item.quantity || 1
-                const amount = (price.unit_amount / 100) * quantity
-                const interval = price.recurring?.interval
-                if (interval === 'month') {
-                  totalMRR += amount
-                } else if (interval === 'year') {
-                  totalMRR += amount / 12
-                } else if (interval === 'week') {
-                  totalMRR += amount * 4.33
-                }
-              }
+              // Sum MRR using shared calculation
+              totalMRR += calcSubMRR(sub)
             }
 
             hasMore = validData.has_more || false
@@ -617,18 +604,7 @@ app.get('/api/mrr-history', rateLimit, async (req, res) => {
 
       if (subStart > monthEnd || subEnd < monthStart) continue
 
-      const items = sub.items?.data || []
-      for (const item of items) {
-        if (!item || typeof item !== 'object') continue
-        const price = item.price
-        if (!price || typeof price !== 'object' || !price.unit_amount) continue
-        const quantity = item.quantity || 1
-        const amount = (price.unit_amount / 100) * quantity
-        const interval = price.recurring?.interval
-        if (interval === 'month') mrr += amount
-        else if (interval === 'year') mrr += amount / 12
-        else if (interval === 'week') mrr += amount * 4.33
-      }
+      mrr += calcSubMRR(sub)
     }
     return Math.round(mrr * 100) / 100
   }
