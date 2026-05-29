@@ -31,6 +31,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
                           window.location.pathname.startsWith('/new-company');
   const isSettingsPath = window.location.pathname.startsWith('/settings') || 
                          window.location.pathname.startsWith('/m/settings');
+  const isEmbeddedAdminPage = import.meta.env.BASE_URL === '/admin-bundle/' && (
+    window.location.pathname === '/admin' ||
+    window.location.pathname === '/company-management'
+  );
   
   // Check if this is a mobile route (/m/*) - these routes bypass subscription
   const isMobileRoute = window.location.pathname.startsWith('/m/');
@@ -106,7 +110,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   // After auth is ready, wait for company data on non-onboarding routes
-  if (user && companyLoading && !isOnboardingPath && !isSettingsPath) {
+  if (user && companyLoading && !isOnboardingPath && !isSettingsPath && !isEmbeddedAdminPage) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -116,7 +120,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   // While we're waiting for a defensive re-fetch (retryAttempted but not hasInitialized yet),
   // show a spinner instead of redirecting to onboarding.
-  if (user && !companyLoading && !currentCompany && !hasInitialized.current && retryAttempted.current && !isOnboardingPath && !isSettingsPath) {
+  if (user && !companyLoading && !currentCompany && !hasInitialized.current && retryAttempted.current && !isOnboardingPath && !isSettingsPath && !isEmbeddedAdminPage) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -150,6 +154,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       });
     }
     return <Navigate to="/account-deactivated" replace />;
+  }
+
+  if (isEmbeddedAdminPage) {
+    return <>{children}</>;
   }
 
   // If user has no company and isn't on settings/onboarding, redirect to onboarding

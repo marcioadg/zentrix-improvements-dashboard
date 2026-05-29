@@ -2,7 +2,7 @@ import React from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { OptimizedProviders } from "@/contexts/OptimizedProviders";
 import { AppLoadingProvider } from "@/contexts/AppLoadingContext";
 import { OptimisticMeetingEndProvider } from "@/contexts/OptimisticMeetingEndContext";
@@ -175,6 +175,29 @@ const queryClient = new QueryClient({
   }
 });
 
+const EMBEDDED_ADMIN_ALLOWED_ROUTES = new Set([
+  '/admin',
+  '/company-management',
+  '/login',
+  '/auth/callback',
+  '/reset-password',
+]);
+
+const EmbeddedAdminRouteLimiter = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isEmbeddedAdminApp = import.meta.env.BASE_URL === '/admin-bundle/';
+
+  React.useEffect(() => {
+    if (!isEmbeddedAdminApp) return;
+    if (!EMBEDDED_ADMIN_ALLOWED_ROUTES.has(location.pathname)) {
+      navigate('/admin', { replace: true });
+    }
+  }, [isEmbeddedAdminApp, location.pathname, navigate]);
+
+  return null;
+};
+
 import { logger } from '@/utils/logger';
 import { captureAttribution } from '@/utils/marketingAttribution';
 
@@ -211,6 +234,7 @@ const App = () => {
               <MobileRouteGuard>
               <RouteHistoryTracker />
               <GA4RouteTracker />
+              <EmbeddedAdminRouteLimiter />
               <PerformancePreloader />
               <LoginTracker />
               <ActivityTracker />
@@ -930,28 +954,24 @@ const App = () => {
               } />
               <Route path="/admin" element={
                 <ProtectedRoute>
-                  <SuperAdminRoute>
-                    <AppLayout>
-                      <RouteErrorBoundary>
-                        <PageSuspense>
-                          <LazyAdminPanel />
-                        </PageSuspense>
-                      </RouteErrorBoundary>
-                    </AppLayout>
-                  </SuperAdminRoute>
+                  <AppLayout>
+                    <RouteErrorBoundary>
+                      <PageSuspense>
+                        <LazyAdminPanel />
+                      </PageSuspense>
+                    </RouteErrorBoundary>
+                  </AppLayout>
                 </ProtectedRoute>
               } />
               <Route path="/company-management" element={
                 <ProtectedRoute>
-                  <SuperAdminRoute>
-                    <AppLayout>
-                      <RouteErrorBoundary>
-                        <PageSuspense>
-                          <LazyCompanyManagement />
-                        </PageSuspense>
-                      </RouteErrorBoundary>
-                    </AppLayout>
-                  </SuperAdminRoute>
+                  <AppLayout>
+                    <RouteErrorBoundary>
+                      <PageSuspense>
+                        <LazyCompanyManagement />
+                      </PageSuspense>
+                    </RouteErrorBoundary>
+                  </AppLayout>
                 </ProtectedRoute>
               } />
               <Route path="/platform-usage" element={

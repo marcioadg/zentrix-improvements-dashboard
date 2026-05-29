@@ -90,11 +90,12 @@ export const AppSidebar = memo(() => {
   const { hasCapability, permissionLevel } = useUserCapabilities();
   const { hasDirectorAccess, isSuperAdmin } = useCurrentUserPermissionLevel();
   const { t } = useTranslation('navigation');
+  const isEmbeddedAdminApp = import.meta.env.BASE_URL === '/admin-bundle/';
   
   // Use proper permission checking instead of profile.role
   const canAccessTools = hasCapability('access_analytics') || hasCapability('manage_all_teams') || hasCapability('access_admin_panel');
   const canAccessManagement = hasCapability('manage_users') || hasCapability('access_admin_panel');
-  const canAccessSuperAdmin = hasCapability('access_admin_panel');
+  const canAccessSuperAdmin = isEmbeddedAdminApp || hasCapability('access_admin_panel');
   const hasInvitations = invitations.length > 0;
   const [chatOpen, setChatOpen] = useState(false);
   const [supportModalOpen, setSupportModalOpen] = useState(false);
